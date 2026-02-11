@@ -14,6 +14,7 @@
 - [RAG System Architecture](architecture/RAG_SYSTEM_ARCHITECTURE.md)
 - [AI Capabilities Summary](implementation/AI_CAPABILITIES_SUMMARY.md)
 - [Deployment Guide](deployment/DEPLOYMENT.md)
+- [Nexus Rollout Runbook (Marcoby)](deployment/NEXUS_ROLLOUT_RUNBOOK.md)
 - [Testing Checklist](testing/TESTING_CHECKLIST.md)
 
 ## Development Guides
