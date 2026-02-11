@@ -5,6 +5,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { logger } = require('../utils/logger');
 const { normalizeAgentId } = require('../config/agentCatalog');
 const { assembleKnowledgeContext } = require('../services/knowledgeContextService');
+const { getAgentRuntime } = require('../services/agentRuntime');
 const {
     INTENT_TYPES,
     PHASES,
@@ -32,8 +33,24 @@ function buildOpenClawSessionId(userId, conversationId) {
 }
 
 // OpenClaw configuration
-const OPENCLAW_API_URL = process.env.OPENCLAW_API_URL || 'http://127.0.0.1:18790/v1';
-const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY || 'sk-openclaw-local';
+const agentRuntime = getAgentRuntime();
+const OPENCLAW_ENABLE_MODELWAY_TOOLS = process.env.OPENCLAW_ENABLE_MODELWAY_TOOLS !== 'false';
+const OPENCLAW_TOOLS_DEFAULT = [
+    'web_search',
+    'advanced_scrape',
+    'summarize_strategy',
+    'create_skill',
+    'implement_action',
+    'list_skills',
+    'search_skills',
+    'install_skill'
+];
+const OPENCLAW_TOOLS_BY_INTENT = {
+    [INTENT_TYPES.LEARN.id]: OPENCLAW_TOOLS_DEFAULT,
+    [INTENT_TYPES.SOLVE.id]: OPENCLAW_TOOLS_DEFAULT,
+    [INTENT_TYPES.DECIDE.id]: ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills'],
+    [INTENT_TYPES.WRITE.id]: ['web_search', 'advanced_scrape', 'summarize_strategy']
+};
 const MAX_ATTACHMENT_CONTEXT_BYTES = 200 * 1024;
 const MAX_ATTACHMENT_PREVIEW_CHARS = 4000;
 const DOCUMENT_LINK_REGEX = /\b(?:https?:\/\/[^\s)]+|\/api\/chat\/attachments\/[^\s)]+|\/media\/[^\s)]+)\b/gi;
@@ -41,6 +58,26 @@ const DOCUMENT_EXTENSION_REGEX = /\.(pdf|doc|docx|txt|md|rtf|csv|xlsx|xls|ppt|pp
 
 // In-memory conversation tracking (in production, use database)
 const conversations = new Map();
+
+function getModelWayToolsForIntent(intentId) {
+    if (!OPENCLAW_ENABLE_MODELWAY_TOOLS) return [];
+    return OPENCLAW_TOOLS_BY_INTENT[intentId] || [];
+}
+
+function buildModelWayInstructionBlock(intent, phase) {
+    const phaseName = phase.charAt(0).toUpperCase() + phase.slice(1);
+    const intentName = intent?.name || 'Assist';
+
+    return [
+        'Model-Way Runtime Instructions:',
+        `- Intent: ${intentName}`,
+        `- Phase: ${phaseName}`,
+        '- If the task requires external or current information, use web_search first.',
+        '- If results are thin or blocked, use advanced_scrape for direct extraction.',
+        '- For missing capability, use search_skills then install_skill before proposing custom implementation.',
+        '- Include direct source links for external facts.'
+    ].join('\n');
+}
 
 // Helper to structure metadata without injecting prompt logic
 function structureResponse(content, modelWayMetadata, originalResponse = {}) {
@@ -587,6 +624,10 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 ? `${contextSystemMessage}\n\n${attachmentContext}`
                 : attachmentContext;
         }
+        const modelWayInstructionBlock = buildModelWayInstructionBlock(intent, phase);
+        contextSystemMessage = contextSystemMessage
+            ? `${contextSystemMessage}\n\n${modelWayInstructionBlock}`
+            : modelWayInstructionBlock;
         const contextInjected = Boolean(contextSystemMessage);
         setKeepAliveFrames([
             `Synthesizing context for ${intent.name} (${phase})`,
@@ -617,7 +658,13 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 attachments: userAttachmentMetadata
             }
         };
+        const modelWayTools = getModelWayToolsForIntent(intent.id);
+        if (modelWayTools.length > 0) {
+            openClawPayload.tools = modelWayTools;
+            openClawPayload.toolChoice = 'auto';
+        }
 
+        const runtimeInfo = agentRuntime.getRuntimeInfo();
         logger.info('Chat proxy request', {
             userId,
             conversationId,
@@ -629,8 +676,10 @@ router.post('/chat', authenticateToken, async (req, res) => {
             openClawSessionId,
             injectedContext: contextInjected,
             attachmentCount: userAttachmentMetadata.length,
+            modelWayTools: modelWayTools.length > 0 ? modelWayTools : undefined,
             stream,
-            endpoint: `${OPENCLAW_API_URL}/chat/completions`
+            runtime: runtimeInfo.id,
+            endpoint: runtimeInfo.chatCompletionsUrl
         });
         if (stream) {
             writeSseEvent(
@@ -644,14 +693,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
         }
 
         // Call OpenClaw Chat Completions API
-        const openClawResponse = await fetch(`${OPENCLAW_API_URL}/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENCLAW_API_KEY}`,
-                'x-openclaw-agent-id': openClawAgentId
-            },
-            body: JSON.stringify(openClawPayload)
+        const openClawResponse = await agentRuntime.chatCompletions(openClawPayload, {
+            agentId: openClawAgentId
         });
 
         if (!openClawResponse.ok) {
@@ -901,19 +944,17 @@ router.post('/chat', authenticateToken, async (req, res) => {
  */
 router.get('/health', async (req, res) => {
     try {
-        const response = await fetch(`${OPENCLAW_API_URL.replace('/v1', '')}/health`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${OPENCLAW_API_KEY}`
-            },
-            signal: AbortSignal.timeout(5000)
-        });
+        const runtimeInfo = agentRuntime.getRuntimeInfo();
+        const capabilities = agentRuntime.getCapabilities();
+        const response = await agentRuntime.healthCheck({ timeoutMs: 5000 });
 
         if (response.ok) {
             return res.json({
                 success: true,
                 openclaw: 'connected',
-                url: OPENCLAW_API_URL,
+                runtime: runtimeInfo.id,
+                url: runtimeInfo.baseUrl,
+                capabilities,
                 modelWay: true,
                 intents: Object.values(INTENT_TYPES).map(i => ({ id: i.id, name: i.name, emoji: i.emoji })),
                 phases: Object.values(PHASES)
@@ -930,6 +971,45 @@ router.get('/health', async (req, res) => {
             success: false,
             openclaw: 'unreachable',
             error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/ai/runtime
+ * Inspect active agent runtime and capabilities
+ */
+router.get('/runtime', authenticateToken, async (req, res) => {
+    try {
+        const runtimeInfo = agentRuntime.getRuntimeInfo();
+        const capabilities = agentRuntime.getCapabilities();
+
+        let health = { ok: false, status: null, error: null };
+        try {
+            const healthResponse = await agentRuntime.healthCheck({ timeoutMs: 3000 });
+            health = {
+                ok: healthResponse.ok,
+                status: healthResponse.status,
+                error: null
+            };
+        } catch (error) {
+            health = {
+                ok: false,
+                status: null,
+                error: error.message
+            };
+        }
+
+        res.json({
+            success: true,
+            runtime: runtimeInfo,
+            capabilities,
+            health
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to inspect runtime'
         });
     }
 });
