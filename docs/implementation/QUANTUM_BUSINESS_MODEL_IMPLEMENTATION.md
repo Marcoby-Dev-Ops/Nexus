@@ -1,5 +1,8 @@
 # Quantum Business Model Implementation
 
+> [!WARNING]
+> **PENDING ARCHIVE**: This documentation describes a legacy architectural pattern (`quantum_business_profiles`) that is currently inactive and targeted for retirement. See [Database Retirement Plan](file:///home/vonj/.gemini/antigravity/brain/14fa50aa-bc8f-479e-87de-743a0f900a08/database_retirement_plan.md) for details.
+
 ## 🎯 Overview
 
 The **Quantum Business Model** is Nexus's universal schema for understanding any business, regardless of industry or size. Instead of generic modules, it identifies the **7 irreducible building blocks** ("atoms") that compose every business.

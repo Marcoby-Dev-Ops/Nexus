@@ -1,6 +1,9 @@
 # 🏢 Organization Consolidation
 
-**Status**: ✅ **COMPLETED**  
+> [!WARNING]
+> **PENDING ARCHIVE**: This documentation describes a legacy migration (`organizations` / `user_organizations`) that is currently inactive or being bypassed in favor of `user_profiles`. See [Database Retirement Plan](file:///home/vonj/.gemini/antigravity/brain/14fa50aa-bc8f-479e-87de-743a0f900a08/database_retirement_plan.md) for details.
+
+**Status**: ✅ **COMPLETED (LEGACY)**  
 **Date**: January 2025  
 **Version**: 1.0 - Single Entity Architecture
 

@@ -1,5 +1,8 @@
 # Foundation Fields Mapping
 
+> [!WARNING]
+> **PENDING ARCHIVE**: This documentation describes a mapping to the legacy `identities` table which is targeted for retirement. See [Database Retirement Plan](file:///home/vonj/.gemini/antigravity/brain/14fa50aa-bc8f-479e-87de-743a0f900a08/database_retirement_plan.md) for details.
+
 ## CompanyFoundation Interface → Identities Table
 
 | TypeScript Field | Database Column | Status | Notes |
