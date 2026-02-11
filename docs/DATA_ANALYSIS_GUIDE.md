@@ -475,10 +475,10 @@ const AccessibleAnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({ data }) => 
 - `src/domains/ai/` - AI-powered insights
 
 ### **Documentation**
-- [Microsoft 365 Integration Guide](./MICROSOFT_365_INTEGRATION.md)
+- [Microsoft 365 Service Discovery](./MICROSOFT_365_SERVICE_DISCOVERY.md)
 - [Developer Guide](./DEVELOPER_GUIDE.md)
-- [API Reference](./API_REFERENCE.md)
-- [UI Component Library](./UI_COMPONENTS.md)
+- [Service Layer Architecture](./SERVICE_LAYER_ARCHITECTURE.md)
+- [Design System](./architecture/DESIGN_SYSTEM.md)
 
 ### **Testing**
 ```bash

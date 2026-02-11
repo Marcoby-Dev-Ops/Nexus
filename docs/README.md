@@ -19,6 +19,7 @@ Empower users with a reasoning-driven assistant that can understand context, tak
 - [Quickstart Guide](https://docs.openclaw.ai/quickstart)
 - [Developer Setup](https://docs.openclaw.ai/developer-guide)
 - [Project Overview](./PROJECT_OVERVIEW.md)
+- [Engineering Status](./current/ENGINEERING_STATUS.md)
 
 ## Developer Docs
 
@@ -28,7 +29,9 @@ Empower users with a reasoning-driven assistant that can understand context, tak
 
 ## Legacy Docs
 
-Legacy database schema and field mapping docs are archived in [docs/legacy/](./legacy/).
+Legacy planning and database docs are archived in:
+- [Legacy Planning Archive](./archive/legacy-planning/README.md)
+- [Legacy Database Archive](./archive/legacy-database/README.md)
 
 ---
 

@@ -117,11 +117,12 @@ Nexus/
 
 ---
 
-## � Documentation
+## Documentation
 
 - **[ARCHITECTURE_AND_PHILOSOPHY.md](./docs/ARCHITECTURE_AND_PHILOSOPHY.md)** - The core "Model-Way" philosophy.
-- **[PROJECT_CONTEXT.md](./docs/current/PROJECT_CONTEXT.md)** - Vision and goals.
-- **[SECURITY.md](./SECURITY.md)** - Security policies.
+- **[PROJECT_CONTEXT.md](./docs/PROJECT_CONTEXT.md)** - Vision and goals.
+- **[ENGINEERING_STATUS.md](./docs/current/ENGINEERING_STATUS.md)** - Current development cycle status.
+- **[SECURITY_AUDIT_REPORT.md](./docs/compliance/SECURITY_AUDIT_REPORT.md)** - Security and compliance snapshot.
 
 ---
 

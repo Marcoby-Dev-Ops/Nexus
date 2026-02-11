@@ -25,6 +25,6 @@ Nexus and OpenClaw use environment variables for configuration and secrets.
 
 ---
 
-### [ENVIRONMENT_VARIABLES_MIGRATION.md](vscode-remote://wsl/home/vonj/dev/Nexus/docs/ENVIRONMENT_VARIABLES_MIGRATION.md)
+### ENVIRONMENT_VARIABLES_MIGRATION.md
 
 Update to clarify environment variable handling and migration.

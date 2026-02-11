@@ -228,9 +228,8 @@ logger.info('Company provisioned successfully, retrying business data fetch');
 
 ## 🔗 **Related Documents**
 
-- [Company Ownership System](./COMPANY_OWNERSHIP_SYSTEM.md)
-- [Authentication System](../authentication/AUTH_NOTIFICATIONS_SYSTEM.md)
-- [Service Layer Architecture](../services/SERVICE_LAYER_ARCHITECTURE.md)
+- [Authentication System](./AUTH_NOTIFICATIONS_SYSTEM.md)
+- [Service Layer Architecture](./SERVICE_LAYER_ARCHITECTURE.md)
 
 ---
 

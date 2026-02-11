@@ -320,7 +320,7 @@ if (containsKeywords(query, executiveKeywords)) {
 - [RAG System Implementation Guide](../implementation/RAG_SYSTEM_INTEGRATION.md)
 - [AI Capabilities Summary](../implementation/AI_CAPABILITIES_SUMMARY.md)
 - [Component Architecture](./COMPONENT_ARCHITECTURE.md)
-- [Nexus Complete Operating System](./NEXUS_COMPLETE_OPERATING_SYSTEM.md)
+- [Unified Architecture](./UNIFIED_ARCHITECTURE.md)
 
 ---
 

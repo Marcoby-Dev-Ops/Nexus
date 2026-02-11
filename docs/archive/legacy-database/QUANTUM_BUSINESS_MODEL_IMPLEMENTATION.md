@@ -1,7 +1,7 @@
 # Quantum Business Model Implementation
 
 > [!WARNING]
-> **PENDING ARCHIVE**: This documentation describes a legacy architectural pattern (`quantum_business_profiles`) that is currently inactive and targeted for retirement. See [Database Retirement Plan](file:///home/vonj/.gemini/antigravity/brain/14fa50aa-bc8f-479e-87de-743a0f900a08/database_retirement_plan.md) for details.
+> **ARCHIVED LEGACY DOC (2026-02-11)**: This architecture (`quantum_business_profiles`) is inactive and targeted for retirement. See [Database Retirement Plan](../../current/DATABASE_RETIREMENT_PLAN.md) for current status.
 
 ## 🎯 Overview
 

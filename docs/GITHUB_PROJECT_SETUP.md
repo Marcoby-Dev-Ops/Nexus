@@ -250,10 +250,10 @@ If you encounter any issues:
 
 ## 🔗 Related Documents
 
-- [Project Management System](../PROJECT_MANAGEMENT_SYSTEM.md)
-- [Development Workflow](../DEVELOPMENT_WORKFLOW.md)
-- [Issue Templates](../ISSUE_TEMPLATES.md)
-- [Automation Workflows](../AUTOMATION_WORKFLOWS.md)
+- [Docs Index](./index.md)
+- [PR Template](./PR_TEMPLATE.md)
+- [Cleanup Priority Roadmap](./development/CLEANUP_PRIORITY_ROADMAP.md)
+- [GitHub Workflows](../.github/workflows/)
 
 ---
 

@@ -261,10 +261,10 @@ The project includes ESLint rules to catch consistency issues:
 
 ## 📚 Resources
 
-- [Consistency Analysis Script](../scripts/analyze-consistency.cjs)
-- [Automated Fix Script](../scripts/fix-consistency.cjs)
-- [Component Library](../src/components/ui/)
-- [Design Patterns](../src/components/patterns/)
+- [Consistency Analysis Script](../../client/scripts/analyze-consistency.cjs)
+- [Automated Fix Script](../../client/scripts/fix-consistency.cjs)
+- [Component Library](../../client/src/shared/components/ui/)
+- [Design Patterns](../../client/src/shared/components/patterns/)
 
 ---
 

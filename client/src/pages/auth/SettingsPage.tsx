@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/index';
 import { useNavigate } from 'react-router-dom';
 import { performSignOut } from '@/shared/utils/signOut';
@@ -26,10 +26,12 @@ import {
 
 // Import auth onboarding components
 import { AuthOnboardingTrigger } from '@/components/auth/AuthOnboardingTrigger';
-
-export default function SettingsPage() {
+import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
+import { withPageTemplate } from '@/shared/patterns/components/PageTemplates';
+function SettingsPage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { setPageTitle, setPageIcon } = useHeaderContext();
   const [activeTab, setActiveTab] = useState('general');
 
   // Mock settings state
@@ -61,14 +63,24 @@ export default function SettingsPage() {
     }
   };
 
+  useEffect(() => {
+    setPageTitle?.('Settings');
+    setPageIcon?.(<Settings className="h-5 w-5" />);
+    return () => {
+      setPageTitle?.('');
+      setPageIcon?.(undefined);
+    };
+  }, [setPageTitle, setPageIcon]);
+  const darkCard = 'rounded-xl border border-slate-700 bg-slate-800/60';
+
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-                  <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-              <p className="text-muted-foreground">Manage your account preferences and security</p>
+              <h1 className="text-2xl font-semibold text-slate-100">Settings</h1>
+              <p className="text-sm text-slate-300">Manage your account preferences and security</p>
             </div>
             <div className="flex items-center gap-2">
               <AuthOnboardingTrigger
@@ -104,7 +116,7 @@ export default function SettingsPage() {
 
           {/* General Settings */}
           <TabsContent value="general" className="space-y-6">
-            <Card>
+            <Card className={darkCard}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="w-5 h-5" />
@@ -183,7 +195,7 @@ export default function SettingsPage() {
 
           {/* Profile Settings */}
           <TabsContent value="profile" className="space-y-6">
-            <Card>
+            <Card className={darkCard}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="w-5 h-5" />
@@ -268,7 +280,7 @@ export default function SettingsPage() {
 
           {/* Notifications Settings */}
           <TabsContent value="notifications" className="space-y-6">
-            <Card>
+            <Card className={darkCard}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Bell className="w-5 h-5" />
@@ -329,7 +341,7 @@ export default function SettingsPage() {
 
           {/* Security Settings */}
           <TabsContent value="security" className="space-y-6">
-            <Card>
+            <Card className={darkCard}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
@@ -393,7 +405,7 @@ export default function SettingsPage() {
 
           {/* Privacy Settings */}
           <TabsContent value="privacy" className="space-y-6">
-            <Card>
+            <Card className={darkCard}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Eye className="w-5 h-5" />
@@ -450,7 +462,7 @@ export default function SettingsPage() {
 
           {/* Data Settings */}
           <TabsContent value="data" className="space-y-6">
-            <Card>
+            <Card className={darkCard}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Download className="w-5 h-5" />
@@ -511,7 +523,7 @@ export default function SettingsPage() {
             </Card>
 
             {/* Sign Out Section */}
-            <Card>
+            <Card className={darkCard}>
               <CardHeader>
                 <CardTitle>Sign Out</CardTitle>
                 <CardDescription>
@@ -534,3 +546,5 @@ export default function SettingsPage() {
     </div>
   );
 } 
+
+export default withPageTemplate(SettingsPage, 'settings');

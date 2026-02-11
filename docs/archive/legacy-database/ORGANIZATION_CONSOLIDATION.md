@@ -1,7 +1,7 @@
 # 🏢 Organization Consolidation
 
 > [!WARNING]
-> **PENDING ARCHIVE**: This documentation describes a legacy migration (`organizations` / `user_organizations`) that is currently inactive or being bypassed in favor of `user_profiles`. See [Database Retirement Plan](file:///home/vonj/.gemini/antigravity/brain/14fa50aa-bc8f-479e-87de-743a0f900a08/database_retirement_plan.md) for details.
+> **ARCHIVED LEGACY DOC (2026-02-11)**: This migration (`organizations` / `user_organizations`) is inactive or bypassed in favor of `user_profiles`. See [Database Retirement Plan](../../current/DATABASE_RETIREMENT_PLAN.md) for current status.
 
 **Status**: ✅ **COMPLETED (LEGACY)**  
 **Date**: January 2025  

@@ -1,7 +1,7 @@
 # Foundation Fields Mapping
 
 > [!WARNING]
-> **PENDING ARCHIVE**: This documentation describes a mapping to the legacy `identities` table which is targeted for retirement. See [Database Retirement Plan](file:///home/vonj/.gemini/antigravity/brain/14fa50aa-bc8f-479e-87de-743a0f900a08/database_retirement_plan.md) for details.
+> **ARCHIVED LEGACY DOC (2026-02-11)**: This mapping targets the retired/retiring `identities` table. See [Database Retirement Plan](../../current/DATABASE_RETIREMENT_PLAN.md) for current status.
 
 ## CompanyFoundation Interface → Identities Table
 
@@ -73,5 +73,4 @@ description?: string
 ✅ **All core fields are present**  
 ⚠️ **3 enum mismatches need to be fixed**  
 ⚠️ **1 field (description) missing from TypeScript**
-
 

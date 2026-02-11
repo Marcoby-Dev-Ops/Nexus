@@ -16,7 +16,7 @@ Insight → Next Best Action → Execution → Journaled Learning → Sharper In
 dropped"    up emails"      execution    → +$15K"        next quarter"
 ```
 
-*See `/docs/current/IMPLEMENTATION_PHILOSOPHY.md` for technical mapping of these principles into the architecture.*
+*See `/docs/IMPLEMENTATION_PHILOSOPHY.md` for technical mapping of these principles into the architecture.*
 
 ### Key Principles:
 1. **Clarity First** - Every feature makes it obvious what to do next
@@ -266,7 +266,7 @@ Nexus is the spine unifying Marcoby's three pillars:
 ## 📚 Documentation
 
 - **Complete Documentation**: `/docs/` directory
-- **Implementation Philosophy**: `/docs/current/IMPLEMENTATION_PHILOSOPHY.md`
+- **Implementation Philosophy**: `/docs/IMPLEMENTATION_PHILOSOPHY.md`
 - **Architecture Overview**: `/docs/architecture/NEXUS_COMPLETE_OPERATING_SYSTEM.md`
 - **Development Guide**: `/docs/current/development/DEVELOPMENT.md`
 - **Security Policy**: `/SECURITY.md`
