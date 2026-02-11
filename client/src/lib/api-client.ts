@@ -465,7 +465,13 @@ export async function selectData<T = any>(
   const queryString = buildQueryString(params);
   const endpoint = queryString ? `/api/db/${table}?${queryString}` : `/api/db/${table}`;
 
-  return client.get<T[]>(endpoint);
+  const response = await client.get<T[]>(endpoint);
+
+  if (response.success && response.data && typeof response.data === 'object' && 'data' in (response.data as any)) {
+    response.data = (response.data as any).data;
+  }
+
+  return response;
 }
 
 export async function selectOne<T = any>(
@@ -523,7 +529,13 @@ export async function insertOne<T = any>(
   data: Record<string, unknown>
 ): Promise<ApiResponse<T>> {
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
-  return client.post<T>('/api/db/insert', { table, data });
+  const response = await client.post<T>('/api/db/insert', { table, data });
+
+  if (response.success && response.data && typeof response.data === 'object' && 'data' in (response.data as any)) {
+    response.data = (response.data as any).data;
+  }
+
+  return response;
 }
 
 export async function updateOne<T = any>(
@@ -532,7 +544,13 @@ export async function updateOne<T = any>(
   data: Record<string, unknown>
 ): Promise<ApiResponse<T>> {
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
-  return client.post<T>('/api/db/update', { table, filters, data });
+  const response = await client.post<T>('/api/db/update', { table, filters, data });
+
+  if (response.success && response.data && typeof response.data === 'object' && 'data' in (response.data as any)) {
+    response.data = (response.data as any).data;
+  }
+
+  return response;
 }
 
 export async function upsertOne<T = any>(
@@ -541,7 +559,13 @@ export async function upsertOne<T = any>(
   onConflict: string = 'id'
 ): Promise<ApiResponse<T>> {
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
-  return client.post<T>(`/api/db/${table}/upsert`, { data, onConflict });
+  const response = await client.post<T>(`/api/db/${table}/upsert`, { data, onConflict });
+
+  if (response.success && response.data && typeof response.data === 'object' && 'data' in (response.data as any)) {
+    response.data = (response.data as any).data;
+  }
+
+  return response;
 }
 
 export async function deleteOne<T = any>(
@@ -549,7 +573,13 @@ export async function deleteOne<T = any>(
   filters: Record<string, unknown>
 ): Promise<ApiResponse<T>> {
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
-  return client.post<T>('/api/db/delete', { table, filters });
+  const response = await client.post<T>('/api/db/delete', { table, filters });
+
+  if (response.success && response.data && typeof response.data === 'object' && 'data' in (response.data as any)) {
+    response.data = (response.data as any).data;
+  }
+
+  return response;
 }
 
 export interface SelectWithOptionsParams {
@@ -563,7 +593,13 @@ export async function selectWithOptions<T = any>(
   options: SelectWithOptionsParams = {}
 ): Promise<ApiResponse<T[]>> {
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
-  return client.post<T[]>(`/api/db/${table}/query`, options);
+  const response = await client.post<T[]>(`/api/db/${table}/query`, options);
+
+  if (response.success && response.data && typeof response.data === 'object' && 'data' in (response.data as any)) {
+    response.data = (response.data as any).data;
+  }
+
+  return response;
 }
 
 export async function callRPC<T = any>(

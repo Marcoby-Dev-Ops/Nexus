@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
 import { selectData, selectOne, insertOne, updateOne, deleteOne, callRPC } from '@/lib/database';
-import type { ApiResponse } from '@/lib/database';
+import type { ApiResponse } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 // ============================================================================
@@ -252,10 +252,17 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
    * Convert ApiResponse to ServiceResponse
    */
   private convertApiResponse<T>(apiResponse: ApiResponse<T>): ServiceResponse<T> {
-    const data = (apiResponse && 'data' in apiResponse ? apiResponse.data : null) as T | null;
+    let data = (apiResponse && 'data' in apiResponse ? apiResponse.data : null) as any;
+
+    // Handle nested response structure where the actual data is wrapped in another data property
+    // Example: { success: true, data: { success: true, data: {...} } }
+    if (data && typeof data === 'object' && 'data' in data && 'success' in data) {
+      data = data.data;
+    }
+
     const error = (apiResponse && 'error' in apiResponse ? apiResponse.error : undefined) ?? null;
     return {
-      data,
+      data: data as T | null,
       error,
       success: error === null,
     };
@@ -517,8 +524,14 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       try {
         const profileResult = await selectData<UserProfile>(this.config.tableName, '*', { user_id: userId });
 
-        if (profileResult.data && profileResult.data.length > 0) {
-          const rawData = profileResult.data[0];
+        // Handle nested response structure
+        let rows = profileResult.data as any;
+        if (rows && !Array.isArray(rows) && rows.data && Array.isArray(rows.data)) {
+          rows = rows.data;
+        }
+
+        if (rows && Array.isArray(rows) && rows.length > 0) {
+          const rawData = rows[0];
           const profileData = {
             ...this.normalizeProfileData(rawData),
             id: rawData.id ?? (rawData as any).user_id,
@@ -687,7 +700,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     return this.executeDbOperation(async () => {
       this.logMethodCall('getCompanyProfile', { companyId });
 
-      const result = await selectOne<Company>('companies', companyId);
+      const result = await selectOne<Company>('companies', { id: companyId });
       const serviceResponse = this.convertApiResponse<Company>(result);
 
       if (!serviceResponse.success) {
