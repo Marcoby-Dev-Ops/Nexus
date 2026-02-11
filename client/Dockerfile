@@ -9,7 +9,7 @@ RUN npm install -g pnpm
 WORKDIR /app
 
 # Copy package.json and install dependencies
-COPY package.json ./
+COPY package.json pnpm-lock.yaml ./
 RUN pnpm install
 
 # Copy source code
