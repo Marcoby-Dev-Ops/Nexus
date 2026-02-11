@@ -317,7 +317,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
 
     return {
       ...unwrapped,
-      id: unwrapped.id ?? unwrapped.user_id,
+      id: unwrapped.id ?? unwrapped.user_id ?? unwrapped.external_user_id,
       location: derivedLocation ?? unwrapped.location ?? null,
       avatar_url: this.sanitizeUrl(unwrapped.avatar_url, 'avatar_url'),
       linkedin_url: this.sanitizeUrl(unwrapped.linkedin_url, 'linkedin_url'),
@@ -636,6 +636,15 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
           id: normalizedData?.id ?? normalizedData?.user_id ?? userId,
           external_user_id: userId
         };
+
+        this.logger.info('upsertAuthProfile - Final data before validation:', {
+          id: updatedProfileData.id,
+          external_user_id: updatedProfileData.external_user_id,
+          hasNormalizedData: !!normalizedData,
+          normalizedId: normalizedData?.id,
+          normalizedUserId: normalizedData?.user_id,
+          passedUserId: userId
+        });
 
         const validatedData = this.config.schema.parse(updatedProfileData);
         return { data: validatedData, error: null, success: true };

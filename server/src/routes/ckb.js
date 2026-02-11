@@ -1,7 +1,7 @@
 const express = require('express');
-const { query } = require('../src/database/connection');
-const { authenticateToken } = require('../src/middleware/auth');
-const { logger } = require('../src/utils/logger');
+const { query } = require('../database/connection');
+const { authenticateToken } = require('../middleware/auth');
+const { logger } = require('../utils/logger');
 
 const router = express.Router();
 

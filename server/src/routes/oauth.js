@@ -3,8 +3,8 @@ const { z } = require('zod');
 const crypto = require('crypto');
 
 const router = express.Router();
-const { logger } = require('../src/utils/logger');
-const userProfileService = require('../src/services/UserProfileService');
+const { logger } = require('../utils/logger');
+const userProfileService = require('../services/UserProfileService');
 const { query } = require('../database/connection');
 
 
