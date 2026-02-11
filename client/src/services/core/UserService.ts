@@ -54,7 +54,7 @@ export const UserProfileSchema = z.object({
   company_id: z.string().uuid().optional().nullable(),
   created_at: z.string().optional().nullable(),
   updated_at: z.string().optional().nullable(),
-  
+
   // Business Profile Fields
   job_title: z.string().optional().nullable(),
   department: z.string().optional().nullable(),
@@ -182,7 +182,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   private profileCache = new Map<string, { data: any; timestamp: number }>();
   private readonly CACHE_TTL = 30000; // 30 seconds cache TTL
   protected config = userServiceConfig;
-  
+
   constructor() {
     super();
   }
@@ -193,28 +193,28 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   private async getCachedOrFetchProfile(userId: string): Promise<any> {
     const now = Date.now();
     const cached = this.profileCache.get(userId);
-    
+
     // Return cached data if still valid
     if (cached && (now - cached.timestamp) < this.CACHE_TTL) {
       this.logger.debug('Returning cached profile', { userId });
       return cached.data;
     }
-    
+
     // Fetch fresh data
     const rpcResult = await callRPC('ensure_user_profile', { external_user_id: userId });
-    
+
     if (!rpcResult.success) {
       throw new Error(`Failed to ensure user profile: ${rpcResult.error}`);
     }
-    
+
     // Debug logging to see the actual response structure
-    console.log('getCachedOrFetchProfile debug:', { 
-      userId, 
-      rpcResultData: rpcResult.data, 
+    console.log('getCachedOrFetchProfile debug:', {
+      userId,
+      rpcResultData: rpcResult.data,
       isArray: Array.isArray(rpcResult.data),
-      type: typeof rpcResult.data 
+      type: typeof rpcResult.data
     });
-    
+
     // Handle different response formats from RPC
     let profileData: any;
     if (rpcResult.data && Array.isArray(rpcResult.data)) {
@@ -232,12 +232,12 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     } else {
       throw new Error('Invalid user profile data returned from ensure_user_profile');
     }
-    
 
-    
+
+
     // Cache the result
     this.profileCache.set(userId, { data: profileData, timestamp: now });
-    
+
     return profileData;
   }
 
@@ -266,14 +266,14 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
    */
   private normalizeProfileData(rawData: any): any {
     if (!rawData) return rawData;
-    
+
     // Debug logging for raw data input
-    this.logger.info('normalizeProfileData - Input:', { 
+    this.logger.info('normalizeProfileData - Input:', {
       rawData: rawData,
       company_id: rawData.company_id,
       hasCompanyId: !!rawData.company_id
     });
-    
+
     // Derive a human-readable location from address JSON when location is missing
     let derivedLocation = rawData?.location;
     if ((!derivedLocation || (typeof derivedLocation === 'string' && derivedLocation.trim().length === 0)) && rawData?.address) {
@@ -300,23 +300,23 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       twitter_url: this.sanitizeUrl(rawData.twitter_url, 'twitter_url'),
       // Ensure skills is properly formatted as array
       skills: rawData.skills ? (
-        Array.isArray(rawData.skills) 
-          ? rawData.skills 
+        Array.isArray(rawData.skills)
+          ? rawData.skills
           : typeof rawData.skills === 'string'
             ? rawData.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
             : []
       ) : null,
       // Ensure other array fields are properly formatted
       certifications: rawData.certifications ? (
-        Array.isArray(rawData.certifications) 
-          ? rawData.certifications 
+        Array.isArray(rawData.certifications)
+          ? rawData.certifications
           : typeof rawData.certifications === 'string'
             ? rawData.certifications.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
             : []
       ) : null,
       direct_reports: rawData.direct_reports ? (
-        Array.isArray(rawData.direct_reports) 
-          ? rawData.direct_reports 
+        Array.isArray(rawData.direct_reports)
+          ? rawData.direct_reports
           : typeof rawData.direct_reports === 'string'
             ? rawData.direct_reports.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
             : []
@@ -399,18 +399,18 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async get(id: string): Promise<ServiceResponse<UserProfile>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('get', { id });
-      
+
       const result = await selectOne<UserProfile>(this.config.tableName, { id });
       const serviceResponse = this.convertApiResponse<UserProfile>(result);
-      
+
       if (!serviceResponse.success) {
         return serviceResponse;
       }
-      
+
       if (!serviceResponse.data) {
         return { data: null, error: 'User profile not found', success: false };
       }
-      
+
       const normalizedData = this.normalizeProfileData(serviceResponse.data);
       const validatedData = this.config.schema.parse(normalizedData);
       return { data: validatedData, error: null, success: true };
@@ -423,19 +423,19 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async create(data: Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>): Promise<ServiceResponse<UserProfile>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('create', { data });
-      
+
       const result = await insertOne<UserProfile>(this.config.tableName, {
         ...data,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
-      
+
       const serviceResponse = this.convertApiResponse<UserProfile>(result);
-      
+
       if (!serviceResponse.success) {
         return serviceResponse;
       }
-      
+
       const normalizedData = this.normalizeProfileData(serviceResponse.data);
       const validatedData = this.config.schema.parse(normalizedData);
       return { data: validatedData, error: null, success: true };
@@ -448,18 +448,18 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async update(id: string, data: Partial<UserProfile>): Promise<ServiceResponse<UserProfile>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('update', { id, data });
-      
-      const result = await updateOne<UserProfile>(this.config.tableName, id, {
+
+      const result = await updateOne<UserProfile>(this.config.tableName, { id }, {
         ...data,
         updated_at: new Date().toISOString()
       });
-      
+
       const serviceResponse = this.convertApiResponse<UserProfile>(result);
-      
+
       if (!serviceResponse.success) {
         return serviceResponse;
       }
-      
+
       const normalizedData = this.normalizeProfileData(serviceResponse.data);
       const validatedData = this.config.schema.parse(normalizedData);
       return { data: validatedData, error: null, success: true };
@@ -472,14 +472,14 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async delete(id: string): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('delete', { id });
-      
-      const result = await deleteOne<boolean>(this.config.tableName, id);
+
+      const result = await deleteOne<boolean>(this.config.tableName, { id });
       const serviceResponse = this.convertApiResponse<boolean>(result);
-      
+
       if (!serviceResponse.success) {
         return serviceResponse;
       }
-      
+
       return { data: true, error: null, success: true };
     }, `delete user profile ${id}`);
   }
@@ -490,14 +490,14 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async list(filters?: Record<string, any>): Promise<ServiceResponse<UserProfile[]>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('list', { filters });
-      
+
       const result = await selectData<UserProfile>(this.config.tableName, '*', filters);
       const serviceResponse = this.convertApiResponse<UserProfile[]>(result);
-      
+
       if (!serviceResponse.success) {
         return serviceResponse;
       }
-      
+
       const validatedData = (serviceResponse.data || []).map((item: any) => this.config.schema.parse(item));
       return { data: validatedData, error: null, success: true };
     }, `list user profiles`);
@@ -513,7 +513,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async getAuthProfile(userId: string): Promise<ServiceResponse<UserProfile>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getAuthProfile', { userId });
-      
+
       try {
         const profileResult = await selectData<UserProfile>(this.config.tableName, '*', { user_id: userId });
 
@@ -527,11 +527,11 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
           const validatedData = this.config.schema.parse(profileData);
           return { data: validatedData, error: null, success: true };
         }
-        
+
         // Fall back to RPC method if no profile in DB
         this.logger.info('No profile in database, using RPC fallback path');
         const rawData = await this.getCachedOrFetchProfile(userId);
-        
+
         const normalizedData = this.normalizeProfileData(rawData);
         const profileData = {
           ...normalizedData,
@@ -540,7 +540,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
         };
         const validatedData = this.config.schema.parse(profileData);
         return { data: validatedData, error: null, success: true };
-        
+
       } catch (error) {
         this.logger.error('Exception in getAuthProfile', { userId, error });
         return { data: null, error: error instanceof Error ? error.message : 'Unknown error', success: false };
@@ -554,10 +554,10 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async upsertAuthProfile(userId: string, profileData: Partial<UserProfile>): Promise<ServiceResponse<UserProfile>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('upsertAuthProfile', { userId, profileData });
-      
+
       try {
         const existingProfile = await this.getCachedOrFetchProfile(userId);
-        
+
         const sanitizedProfileData: Partial<UserProfile> = {
           ...profileData,
           avatar_url: this.sanitizeUrl((profileData as any)?.avatar_url, 'avatar_url'),
@@ -570,17 +570,22 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
           ...sanitizedProfileData,
           updated_at: new Date().toISOString()
         };
-        
-        const result = await updateOne<UserProfile>(this.config.tableName, existingProfile.user_id, updateData, 'user_id');
-        
+
+        // Fix: Use correct signature updateOne(table, filters, data)
+        const result = await updateOne<UserProfile>(
+          this.config.tableName,
+          { user_id: existingProfile.user_id },
+          updateData
+        );
+
         const serviceResponse = this.convertApiResponse<UserProfile>(result);
-        
+
         if (!serviceResponse.success) {
           return serviceResponse;
         }
-        
+
         this.clearUserCache(userId);
-        
+
         const rawData = serviceResponse.data as any;
         const normalizedData = this.normalizeProfileData(rawData);
         const updatedProfileData = {
@@ -588,7 +593,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
           id: normalizedData.id ?? normalizedData.user_id,
           external_user_id: userId
         };
-        
+
         const validatedData = this.config.schema.parse(updatedProfileData);
         return { data: validatedData, error: null, success: true };
       } catch (error) {
@@ -607,15 +612,15 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async getBusinessProfile(userId: string): Promise<ServiceResponse<UserBusinessData>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getBusinessProfile', { userId });
-      
+
       // Get user profile
       const userResult = await this.getAuthProfile(userId);
       if (!userResult.success || !userResult.data) {
         return { data: null, error: userResult.error || 'Failed to get user profile', success: false };
       }
-      
+
       let companyData: Company | undefined;
-      
+
       // Get company data if user has company_id
       if (userResult.data.company_id) {
         const companyResult = await this.getCompanyProfile(userResult.data.company_id);
@@ -623,22 +628,22 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
           companyData = companyResult.data;
         }
       }
-      
+
       // Get integrations data
       const integrationsResult = await this.getUserIntegrations(userId);
       const integrations = integrationsResult.success && integrationsResult.data ? integrationsResult.data : [];
-      
+
       // Get analytics data
       const analyticsResult = await this.getUserAnalytics(userId);
       const analytics = analyticsResult.success && analyticsResult.data ? analyticsResult.data : {};
-      
+
       const businessData: UserBusinessData = {
         user: userResult.data,
         company: companyData,
         integrations,
         analytics
       };
-      
+
       return { data: businessData, error: null, success: true };
     }, `get business profile for user ${userId}`);
   }
@@ -649,7 +654,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async updateBusinessProfile(userId: string, data: Partial<UserBusinessData>): Promise<ServiceResponse<UserBusinessData>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('updateBusinessProfile', { userId, data });
-      
+
       // Update user profile
       if (data.user) {
         const userResult = await this.upsertAuthProfile(userId, data.user);
@@ -657,7 +662,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
           return { data: null, error: userResult.error || 'Failed to update user profile', success: false };
         }
       }
-      
+
       // Update company profile if provided
       if (data.company) {
         const companyResult = await this.updateCompanyProfile(data.company.id, data.company);
@@ -665,7 +670,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
           return { data: null, error: companyResult.error || 'Failed to update company profile', success: false };
         }
       }
-      
+
       // Return updated business profile
       return await this.getBusinessProfile(userId);
     }, `update business profile for user ${userId}`);
@@ -681,18 +686,18 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async getCompanyProfile(companyId: string): Promise<ServiceResponse<Company>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getCompanyProfile', { companyId });
-      
+
       const result = await selectOne<Company>('companies', companyId);
       const serviceResponse = this.convertApiResponse<Company>(result);
-      
+
       if (!serviceResponse.success) {
         return serviceResponse;
       }
-      
+
       if (!serviceResponse.data) {
         return { data: null, error: 'Company not found', success: false };
       }
-      
+
       const validatedData = CompanySchema.parse(serviceResponse.data);
       return { data: validatedData, error: null, success: true };
     }, `get company profile ${companyId}`);
@@ -704,18 +709,18 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async updateCompanyProfile(companyId: string, data: Partial<Company>): Promise<ServiceResponse<Company>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('updateCompanyProfile', { companyId, data });
-      
-      const result = await updateOne<Company>('companies', companyId, {
+
+      const result = await updateOne<Company>('companies', { id: companyId }, {
         ...data,
         updated_at: new Date().toISOString()
       });
-      
+
       const serviceResponse = this.convertApiResponse<Company>(result);
-      
+
       if (!serviceResponse.success) {
         return serviceResponse;
       }
-      
+
       const validatedData = CompanySchema.parse(serviceResponse.data);
       return { data: validatedData, error: null, success: true };
     }, `update company profile ${companyId}`);
@@ -727,19 +732,19 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   async createCompanyProfile(data: Partial<Company>): Promise<ServiceResponse<Company>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('createCompanyProfile', { data });
-      
+
       const result = await insertOne<Company>('companies', {
         ...data,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
-      
+
       const serviceResponse = this.convertApiResponse<Company>(result);
-      
+
       if (!serviceResponse.success) {
         return serviceResponse;
       }
-      
+
       const validatedData = CompanySchema.parse(serviceResponse.data);
       return { data: validatedData, error: null, success: true };
     }, `create company profile`);
@@ -758,15 +763,15 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       const profileResult = await selectData<{ user_id: string }>(this.config.tableName, 'user_id', {
         external_user_id: userId
       });
-      
+
       let internalUserId = userId; // Default to the provided userId
-      
+
       if (!profileResult.error && profileResult.data && profileResult.data.length > 0) {
         internalUserId = (profileResult.data[0] as any).user_id;
       } else {
         // If no profile found, try to create one using the RPC function
         const rpcResult = await callRPC('ensure_user_profile', { user_id: userId });
-        
+
         if (rpcResult.success && rpcResult.data) {
           // Handle different response formats
           if (Array.isArray(rpcResult.data) && rpcResult.data.length > 0) {
@@ -776,15 +781,15 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
           }
         }
       }
-      
+
       // Now query user_integrations with the internal user ID
       const result = await selectData<any>('user_integrations', '*', { user_id: internalUserId });
       const serviceResponse = this.convertApiResponse<any[]>(result);
-      
-      return { 
-        data: serviceResponse.success ? (serviceResponse.data || []) : [], 
-        error: null, 
-        success: true 
+
+      return {
+        data: serviceResponse.success ? (serviceResponse.data || []) : [],
+        error: null,
+        success: true
       };
     } catch (error) {
       return { data: [], error: null, success: true }; // Return empty array on error
@@ -797,10 +802,10 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   private async getUserAnalytics(userId: string): Promise<ServiceResponse<any>> {
     try {
       const result = await callRPC('get_user_analytics', { user_uuid: userId });
-      return { 
-        data: result.success ? (result.data || {}) : {}, 
-        error: null, 
-        success: true 
+      return {
+        data: result.success ? (result.data || {}) : {},
+        error: null,
+        success: true
       };
     } catch (error) {
       return { data: {}, error: null, success: true }; // Return empty object on error
@@ -812,25 +817,25 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
    */
   calculateProfileCompletion(profile: UserProfile): number {
     const requiredFields = [
-      'first_name', 'last_name', 'email', 'job_title', 
+      'first_name', 'last_name', 'email', 'job_title',
       'department', 'work_phone', 'location'
     ];
-    
+
     const optionalFields = [
-      'bio', 'linkedin_url', 'avatar_url', 'skills', 
+      'bio', 'linkedin_url', 'avatar_url', 'skills',
       'certifications', 'emergency_contact'
     ];
-    
+
     const allFields = [...requiredFields, ...optionalFields];
     let completedFields = 0;
-    
+
     allFields.forEach(field => {
       const value = (profile as any)[field];
       if (value && (typeof value === 'string' ? value.trim() : true)) {
         completedFields++;
       }
     });
-    
+
     return Math.round((completedFields / allFields.length) * 100);
   }
 
@@ -843,17 +848,17 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       if (!profileResult.success || !profileResult.data) {
         return { data: null, error: profileResult.error || 'Failed to get user profile', success: false };
       }
-      
+
       const completionPercentage = this.calculateProfileCompletion(profileResult.data);
-      
+
       const updateResult = await this.update(profileResult.data.id, {
         profile_completion_percentage: completionPercentage
       });
-      
+
       if (!updateResult.success) {
         return { data: null, error: updateResult.error || 'Failed to update profile completion', success: false };
       }
-      
+
       return { data: completionPercentage, error: null, success: true };
     }, `update profile completion for user ${userId}`);
   }

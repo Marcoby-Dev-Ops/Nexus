@@ -15,6 +15,7 @@ export { SpeechService } from './SpeechService';
 export { MentalModelsService } from './MentalModelsService';
 export { NextBestActionService } from './NextBestActionService';
 export { expertKnowledgeService } from './ExpertKnowledgeService';
+export { continuousImprovementService } from './ContinuousImprovementService';
 
 // Legacy exports (deprecated - use ConsolidatedAIService instead)
 export { AIService } from './AIService';
@@ -40,9 +41,7 @@ export type {
   AIConversation,
   Agent,
   AIRecommendation,
-  AIInsight,
-  FormAssistanceRequest,
-  FormAssistanceResponse
+  FormAssistance
 } from './ConsolidatedAIService';
 
 // Export types from AIService

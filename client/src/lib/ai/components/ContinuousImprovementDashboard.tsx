@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Progress } from '@/shared/components/ui/Progress';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { TrendingUp, TrendingDown, Star, DollarSign, Activity, AlertTriangle, CheckCircle, Clock, Target, BarChart3, PieChart, LineChart } from 'lucide-react';
-import { AIService } from '@/services/ai';
+import { AIService, continuousImprovementService } from '@/services/ai';
 import { financialService } from '@/services/core';
 
 interface ImprovementDashboardProps {
@@ -31,7 +31,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       const [
         improvementData,
         billingData,
@@ -46,10 +46,10 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
       setBillingStatus(billingData);
       setRecommendations(recommendationData);
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error loading dashboard data: ', error);
+
+
+      // eslint-disable-next-line no-console
+      console.error('Error loading dashboard data: ', error);
     } finally {
       setLoading(false);
     }
@@ -67,14 +67,14 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
         modelUsed: 'current',
         provider: 'current'
       });
-      
+
       // Refresh dashboard data
       loadDashboardData();
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error submitting feedback: ', error);
+
+
+      // eslint-disable-next-line no-console
+      console.error('Error submitting feedback: ', error);
     }
   };
 
@@ -213,7 +213,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
                     </span>
                   </div>
                   <Progress value={(dashboardData?.responseQuality?.averageScore || 0.85) * 100} />
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Cost Efficiency</span>
                     <span className="text-sm font-medium">
@@ -221,7 +221,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
                     </span>
                   </div>
                   <Progress value={(dashboardData?.costEfficiency?.score || 0.78) * 100} />
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">User Satisfaction</span>
                     <span className="text-sm font-medium">
@@ -249,21 +249,21 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
                       {billingStatus?.usage?.tokensUsed?.toLocaleString() || '0'}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Tokens Remaining</span>
                     <span className="text-sm font-medium">
                       {billingStatus?.usage?.tokensRemaining?.toLocaleString() || '0'}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Projected Monthly Cost</span>
                     <span className="text-sm font-medium">
                       ${billingStatus?.costs?.projectedMonthlyCost?.toFixed(2) || '0.00'}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Budget Utilization</span>
                     <span className="text-sm font-medium">
@@ -295,8 +295,8 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
                           <div className="flex items-center gap-2 mb-2">
                             <Badge variant={
                               rec.priority === 'critical' ? 'destructive' :
-                              rec.priority === 'high' ? 'default' :
-                              rec.priority === 'medium' ? 'secondary' : 'outline'
+                                rec.priority === 'high' ? 'default' :
+                                  rec.priority === 'medium' ? 'secondary' : 'outline'
                             }>
                               {rec.priority}
                             </Badge>
@@ -304,20 +304,20 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
                           </div>
                           <h4 className="font-medium text-foreground mb-1">{rec.title}</h4>
                           <p className="text-sm text-muted-foreground mb-2">{rec.description}</p>
-                          
+
                           {rec.expectedImpact && (
                             <div className="text-sm text-success">
                               Expected: {rec.expectedImpact.improvementPercent}% improvement in {rec.expectedImpact.metric}
                             </div>
                           )}
-                          
+
                           {rec.potentialSavings && (
                             <div className="text-sm text-primary">
                               Potential savings: ${rec.potentialSavings.toFixed(2)}/month
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground mb-1">
                             Confidence: {Math.round(rec.confidence * 100)}%
@@ -355,21 +355,21 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
                     <span className="text-sm text-muted-foreground">Plan</span>
                     <span className="text-sm font-medium">{billingStatus?.plan?.name || 'Free'}</span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Base Fee</span>
                     <span className="text-sm font-medium">
                       ${billingStatus?.plan?.monthlyFee?.toFixed(2) || '0.00'}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Usage Charges</span>
                     <span className="text-sm font-medium">
                       ${(billingStatus?.costs?.currentPeriodCost - billingStatus?.plan?.monthlyFee || 0).toFixed(2)}
                     </span>
                   </div>
-                  
+
                   <div className="border-t pt-2">
                     <div className="flex justify-between items-center font-medium">
                       <span>Total Current Period</span>
@@ -398,14 +398,14 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
                     </div>
                     <Progress value={billingStatus?.usage?.utilizationPercent || 0} />
                   </div>
-                  
+
                   <div className="text-sm text-muted-foreground">
                     <div className="flex justify-between">
                       <span>Remaining</span>
                       <span>{billingStatus?.usage?.tokensRemaining?.toLocaleString() || '0'} tokens</span>
                     </div>
                   </div>
-                  
+
                   <div className="text-sm text-muted-foreground">
                     <div className="flex justify-between">
                       <span>Projected Monthly</span>
@@ -438,7 +438,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
                     <div className="text-lg font-bold text-success">+12%</div>
                     <div className="text-xs text-muted-foreground">vs last month</div>
                   </div>
-                  
+
                   <div className="text-center p-4 bg-primary/5 rounded-lg">
                     <div className="flex items-center justify-center mb-2">
                       <TrendingDown className="w-6 h-6 text-primary" />
@@ -447,7 +447,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
                     <div className="text-lg font-bold text-primary">-8%</div>
                     <div className="text-xs text-muted-foreground">vs last month</div>
                   </div>
-                  
+
                   <div className="text-center p-4 bg-secondary/5 rounded-lg">
                     <div className="flex items-center justify-center mb-2">
                       <TrendingUp className="w-6 h-6 text-secondary" />
@@ -457,7 +457,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
                     <div className="text-xs text-muted-foreground">vs last month</div>
                   </div>
                 </div>
-                
+
                 <div className="mt-6">
                   <h4 className="font-medium mb-3">Key Insights</h4>
                   <div className="space-y-2">
