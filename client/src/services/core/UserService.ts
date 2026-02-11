@@ -310,6 +310,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
 
     return {
       ...unwrapped,
+      id: unwrapped.id ?? unwrapped.user_id,
       location: derivedLocation ?? unwrapped.location ?? null,
       avatar_url: this.sanitizeUrl(unwrapped.avatar_url, 'avatar_url'),
       linkedin_url: this.sanitizeUrl(unwrapped.linkedin_url, 'linkedin_url'),
@@ -540,7 +541,6 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
           const normalizedData = this.normalizeProfileData(rawData);
           const profileData = {
             ...normalizedData,
-            id: normalizedData.id ?? normalizedData.user_id,
             external_user_id: userId,
           };
           const validatedData = this.config.schema.parse(profileData);
@@ -554,7 +554,6 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
         const normalizedData = this.normalizeProfileData(rawData);
         const profileData = {
           ...normalizedData,
-          id: normalizedData.id ?? normalizedData.user_id,
           external_user_id: userId,
         };
         const validatedData = this.config.schema.parse(profileData);
@@ -608,7 +607,6 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
         const normalizedData = this.normalizeProfileData(serviceResponse.data);
         const updatedProfileData = {
           ...normalizedData,
-          id: normalizedData.id ?? normalizedData.user_id,
           external_user_id: userId
         };
 
