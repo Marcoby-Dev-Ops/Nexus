@@ -42,7 +42,6 @@ export { default as BusinessLearningInterface } from './components/BusinessLearn
 export { default as BrainAnalysis } from './components/BrainAnalysis';
 
 // AI Demo Components
-export { default as AdvancedAICapabilitiesDemo } from './components/AdvancedAICapabilitiesDemo';
 export { default as CrossPlatformIntelligenceDemo } from './components/CrossPlatformIntelligenceDemo';
 export { default as ModelPerformanceMonitor } from './components/ModelPerformanceMonitor';
 export { default as ContinuousImprovementDashboard } from './components/ContinuousImprovementDashboard';

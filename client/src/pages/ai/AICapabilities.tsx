@@ -30,7 +30,6 @@ import {
   Cpu,
   Network
 } from 'lucide-react';
-import { AdvancedAICapabilitiesDemo } from '@/lib/ai/components/AdvancedAICapabilitiesDemo';
 import { CrossPlatformIntelligenceDemo } from '@/lib/ai/components/CrossPlatformIntelligenceDemo';
 import { ModelPerformanceMonitor } from '@/lib/ai/components/ModelPerformanceMonitor';
 import { LoadingStates } from '@/shared/components/patterns/LoadingStates';
@@ -414,7 +413,11 @@ export default function AICapabilitiesPage() {
           <div>
             <h2 className="text-xl font-semibold mb-4">Detailed Capabilities</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AdvancedAICapabilitiesDemo />
+              <div className="p-6 border rounded-lg bg-muted/50">
+                <p className="text-muted-foreground text-center">
+                  Advanced AI Capabilities demo has been archived as part of chat surface consolidation.
+                </p>
+              </div>
               <div className="p-6 border rounded-lg bg-muted/50">
                 <p className="text-muted-foreground text-center">
                   Contextual Data Completion demo has been removed as part of the cleanup.

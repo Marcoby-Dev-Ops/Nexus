@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/Card"
 import { Badge } from "@/shared/components/ui/Badge"
 import { Plus, X, Save, ArrowLeft, Sparkles } from "lucide-react"
-import { ChatAIAssistant } from "@/components/ai/chat-ai-assistant"
 import { ChatFormGrid } from "@/components/ai/chat-form-grid"
 import type { BusinessIdentity, IdentitySection } from '@/lib/identity/types'
 
@@ -20,7 +19,6 @@ interface IdentitySectionFormProps {
 
 export function IdentitySectionForm({ section, identity, onSave, onCancel }: IdentitySectionFormProps) {
   const [formData, setFormData] = useState<any>({})
-  const [showAIAssistant, setShowAIAssistant] = useState<string | null>(null)
   const [gridMode, setGridMode] = useState<string | null>(null)
 
   useEffect(() => {

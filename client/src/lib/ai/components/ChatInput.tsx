@@ -68,7 +68,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true;
-    input.accept = '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.xlsx,.csv';
+    input.accept = 'image/*,.pdf,.doc,.docx,.txt,.md,.rtf,.csv,.xls,.xlsx,.ppt,.pptx,.json,.yaml,.yml,.xml,.webp,.heic';
     input.onchange = (e) => {
       const files = Array.from((e.target as HTMLInputElement).files || []);
       if (files.length > 0) {

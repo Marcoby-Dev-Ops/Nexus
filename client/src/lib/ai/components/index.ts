@@ -5,7 +5,6 @@
  */
 
 // Core AI Components
-export { default as AdvancedAICapabilitiesDemo } from './AdvancedAICapabilitiesDemo';
 export { default as ContinuousImprovementDashboard } from './ContinuousImprovementDashboard';
 export { default as CrossPlatformIntelligenceDemo } from './CrossPlatformIntelligenceDemo';
 export { default as ModelPerformanceMonitor } from './ModelPerformanceMonitor';

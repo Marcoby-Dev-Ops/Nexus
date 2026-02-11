@@ -328,7 +328,7 @@ Let's explore: How do you want people to perceive your company? What tone do you
                 className="hidden"
                 id="file-upload"
                 onChange={handleFileUpload}
-                accept="image/*,.pdf,.doc,.docx,.txt"
+                accept="image/*,.pdf,.doc,.docx,.txt,.md,.rtf,.csv,.xls,.xlsx,.ppt,.pptx,.json,.yaml,.yml,.xml,.webp,.heic"
               />
               <Button
                 variant="ghost"

@@ -1,6 +1,30 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+let mammoth = null;
+try {
+    mammoth = require('mammoth');
+} catch (_error) {
+    // Optional dependency for DOCX extraction
+}
+let pdfParse = null;
+try {
+    pdfParse = require('pdf-parse');
+} catch (_error) {
+    // Optional dependency for PDF extraction
+}
+let xlsx = null;
+try {
+    xlsx = require('xlsx');
+} catch (_error) {
+    // Optional dependency for spreadsheet extraction
+}
+let JSZip = null;
+try {
+    JSZip = require('jszip');
+} catch (_error) {
+    // Optional dependency for PPTX extraction
+}
 const { authenticateToken } = require('../middleware/auth');
 const { logger } = require('../utils/logger');
 const { normalizeAgentId } = require('../config/agentCatalog');
@@ -52,6 +76,10 @@ const OPENCLAW_TOOLS_BY_INTENT = {
     [INTENT_TYPES.WRITE.id]: ['web_search', 'advanced_scrape', 'summarize_strategy']
 };
 const MAX_ATTACHMENT_CONTEXT_BYTES = 200 * 1024;
+const MAX_DOCX_CONTEXT_BYTES = 10 * 1024 * 1024;
+const MAX_PDF_CONTEXT_BYTES = 15 * 1024 * 1024;
+const MAX_SPREADSHEET_CONTEXT_BYTES = 10 * 1024 * 1024;
+const MAX_PPTX_CONTEXT_BYTES = 20 * 1024 * 1024;
 const MAX_ATTACHMENT_PREVIEW_CHARS = 4000;
 const DOCUMENT_LINK_REGEX = /\b(?:https?:\/\/[^\s)]+|\/api\/chat\/attachments\/[^\s)]+|\/media\/[^\s)]+)\b/gi;
 const DOCUMENT_EXTENSION_REGEX = /\.(pdf|doc|docx|txt|md|rtf|csv|xlsx|xls|ppt|pptx|json)(?:[?#].*)?$/i;
@@ -204,11 +232,168 @@ function isLikelyTextAttachment(attachmentRow) {
     return /\.(txt|md|markdown|json|csv|xml|yaml|yml)$/i.test(fileName);
 }
 
+function isDocxAttachment(attachmentRow) {
+    const type = String(attachmentRow.file_type || '').toLowerCase();
+    const fileName = String(attachmentRow.file_name || '').toLowerCase();
+
+    if (type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        return true;
+    }
+
+    return fileName.endsWith('.docx');
+}
+
+function isPdfAttachment(attachmentRow) {
+    const type = String(attachmentRow.file_type || '').toLowerCase();
+    const fileName = String(attachmentRow.file_name || '').toLowerCase();
+    return type === 'application/pdf' || fileName.endsWith('.pdf');
+}
+
+function isSpreadsheetAttachment(attachmentRow) {
+    const type = String(attachmentRow.file_type || '').toLowerCase();
+    const fileName = String(attachmentRow.file_name || '').toLowerCase();
+
+    if (
+        type.includes('spreadsheet')
+        || type.includes('excel')
+        || type.includes('csv')
+    ) {
+        return true;
+    }
+
+    return /\.(csv|xlsx|xls)$/i.test(fileName);
+}
+
+function isPptxAttachment(attachmentRow) {
+    const type = String(attachmentRow.file_type || '').toLowerCase();
+    const fileName = String(attachmentRow.file_name || '').toLowerCase();
+    return type.includes('presentationml') || fileName.endsWith('.pptx');
+}
+
+function decodeXmlEntities(raw) {
+    return String(raw || '')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+}
+
+function clipPreview(text) {
+    const normalized = String(text || '').replace(/\r/g, '').trim();
+    if (!normalized) return '';
+    if (normalized.length <= MAX_ATTACHMENT_PREVIEW_CHARS) return normalized;
+    return `${normalized.slice(0, MAX_ATTACHMENT_PREVIEW_CHARS)}\n...[truncated]`;
+}
+
+async function readDocxPreview(absolutePath) {
+    if (!mammoth) return '';
+
+    const result = await mammoth.extractRawText({ path: absolutePath });
+    return clipPreview(result?.value || '');
+}
+
+async function readPdfPreview(absolutePath) {
+    if (!pdfParse) return '';
+
+    const buffer = await fs.promises.readFile(absolutePath);
+    const result = await pdfParse(buffer);
+    return clipPreview(result?.text || '');
+}
+
+async function readSpreadsheetPreview(absolutePath) {
+    if (!xlsx) return '';
+
+    const workbook = xlsx.readFile(absolutePath, { dense: true });
+    const lines = [];
+    const sheetNames = (workbook.SheetNames || []).slice(0, 3);
+
+    for (const sheetName of sheetNames) {
+        const sheet = workbook.Sheets?.[sheetName];
+        if (!sheet) continue;
+
+        lines.push(`Sheet: ${sheetName}`);
+        const rows = xlsx.utils.sheet_to_json(sheet, {
+            header: 1,
+            raw: false,
+            defval: ''
+        });
+
+        const limitedRows = rows.slice(0, 50);
+        for (const row of limitedRows) {
+            if (!Array.isArray(row)) continue;
+            const cells = row.slice(0, 12).map((cell) => String(cell ?? '').trim());
+            if (cells.every((value) => !value)) continue;
+            lines.push(cells.join(' | '));
+        }
+    }
+
+    return clipPreview(lines.join('\n'));
+}
+
+function collectPptxSlideText(xmlContent) {
+    const matches = xmlContent.match(/<a:t[^>]*>([\s\S]*?)<\/a:t>/g) || [];
+    const parts = [];
+
+    for (const fragment of matches) {
+        const text = fragment
+            .replace(/^<a:t[^>]*>/, '')
+            .replace(/<\/a:t>$/, '');
+        const decoded = decodeXmlEntities(text).trim();
+        if (decoded) {
+            parts.push(decoded);
+        }
+    }
+
+    return parts.join(' ');
+}
+
+async function readPptxPreview(absolutePath) {
+    if (!JSZip) return '';
+
+    const buffer = await fs.promises.readFile(absolutePath);
+    const zip = await JSZip.loadAsync(buffer);
+    const slidePaths = Object.keys(zip.files)
+        .filter((name) => /^ppt\/slides\/slide\d+\.xml$/i.test(name))
+        .sort((a, b) => {
+            const aNum = Number((a.match(/slide(\d+)\.xml/i) || [])[1] || 0);
+            const bNum = Number((b.match(/slide(\d+)\.xml/i) || [])[1] || 0);
+            return aNum - bNum;
+        })
+        .slice(0, 20);
+
+    const lines = [];
+    for (const slidePath of slidePaths) {
+        const xmlContent = await zip.files[slidePath].async('string');
+        const slideText = collectPptxSlideText(xmlContent);
+        if (!slideText) continue;
+        const slideNumber = (slidePath.match(/slide(\d+)\.xml/i) || [])[1] || '?';
+        lines.push(`Slide ${slideNumber}: ${slideText}`);
+    }
+
+    return clipPreview(lines.join('\n'));
+}
+
 async function readAttachmentPreview(attachmentRow) {
     try {
-        if (!isLikelyTextAttachment(attachmentRow)) return '';
         const fileSize = Number(attachmentRow.file_size) || 0;
-        if (fileSize > MAX_ATTACHMENT_CONTEXT_BYTES) return '';
+        const isDocx = isDocxAttachment(attachmentRow);
+        const isPdf = isPdfAttachment(attachmentRow);
+        const isSpreadsheet = isSpreadsheetAttachment(attachmentRow);
+        const isPptx = isPptxAttachment(attachmentRow);
+        const maxBytes = isDocx
+            ? MAX_DOCX_CONTEXT_BYTES
+            : isPdf
+                ? MAX_PDF_CONTEXT_BYTES
+                : isSpreadsheet
+                    ? MAX_SPREADSHEET_CONTEXT_BYTES
+                    : isPptx
+                        ? MAX_PPTX_CONTEXT_BYTES
+                        : MAX_ATTACHMENT_CONTEXT_BYTES;
+        if (fileSize > maxBytes) return '';
+
+        const isTextAttachment = isLikelyTextAttachment(attachmentRow);
+        if (!isDocx && !isPdf && !isSpreadsheet && !isPptx && !isTextAttachment) return '';
 
         const absolutePath = path.isAbsolute(attachmentRow.storage_path)
             ? attachmentRow.storage_path
@@ -216,10 +401,21 @@ async function readAttachmentPreview(attachmentRow) {
 
         if (!fs.existsSync(absolutePath)) return '';
 
+        if (isDocx) {
+            return await readDocxPreview(absolutePath);
+        }
+        if (isPdf) {
+            return await readPdfPreview(absolutePath);
+        }
+        if (isSpreadsheet) {
+            return await readSpreadsheetPreview(absolutePath);
+        }
+        if (isPptx) {
+            return await readPptxPreview(absolutePath);
+        }
+
         const content = await fs.promises.readFile(absolutePath, 'utf8');
-        if (!content) return '';
-        if (content.length <= MAX_ATTACHMENT_PREVIEW_CHARS) return content;
-        return `${content.slice(0, MAX_ATTACHMENT_PREVIEW_CHARS)}\n...[truncated]`;
+        return clipPreview(content);
     } catch (error) {
         logger.warn('Failed to read attachment preview', {
             attachmentId: attachmentRow.id,

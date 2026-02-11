@@ -515,7 +515,7 @@ export const AdvancedAICapabilitiesDemo: React.FC = () => {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+        accept="image/*,.pdf,.doc,.docx,.txt,.md,.rtf,.csv,.xls,.xlsx,.ppt,.pptx,.json,.yaml,.yml,.xml,.webp,.heic"
         onChange={handleFileUpload}
         className="hidden"
       />
