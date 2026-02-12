@@ -55,6 +55,7 @@ curl -X POST "https://napi.marcoby.net/api/openclaw/tools/execute" \
 
 Available tool names:
 - `nexus_get_integration_status`
+- `nexus_search_emails`
 - `nexus_resolve_email_provider`
 - `nexus_start_email_connection`
 - `nexus_connect_imap`

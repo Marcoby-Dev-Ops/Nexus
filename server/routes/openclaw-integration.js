@@ -3,6 +3,8 @@ const { logger } = require('../src/utils/logger');
 const router = express.Router();
 const crypto = require('crypto');
 
+const SUPPORTED_EMAIL_OAUTH_SLUGS = ['microsoft', 'google-workspace', 'google_workspace', 'google'];
+
 // Middleware to authenticate OpenClaw requests
 const authenticateOpenClaw = (req, res, next) => {
   const apiKey = req.headers['x-openclaw-api-key'] || req.query.apiKey;
@@ -75,6 +77,293 @@ function getInternalApiBaseUrl(req) {
   const protocol = (req.headers['x-forwarded-proto'] || 'http').split(',')[0].trim();
   const host = req.get('host') || `127.0.0.1:${process.env.PORT || 3001}`;
   return `${protocol}://${host}`;
+}
+
+function toIsoOrNull(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
+}
+
+function normalizeEmailAddress(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function parseSenderFilters(fromValue) {
+  if (!fromValue) return [];
+  if (Array.isArray(fromValue)) {
+    return fromValue
+      .map((entry) => normalizeEmailAddress(entry))
+      .filter(Boolean);
+  }
+  return [normalizeEmailAddress(fromValue)].filter(Boolean);
+}
+
+function buildTimeWindow(args = {}) {
+  const preset = String(args.datePreset || '').trim().toLowerCase();
+  const now = new Date();
+  const start = new Date(now);
+  const end = new Date(now);
+
+  const setUtcStartOfDay = (date) => date.setUTCHours(0, 0, 0, 0);
+  const setUtcEndOfDay = (date) => date.setUTCHours(23, 59, 59, 999);
+
+  if (!preset || preset === 'today') {
+    setUtcStartOfDay(start);
+    setUtcEndOfDay(end);
+    return { startIso: start.toISOString(), endIso: end.toISOString(), preset: preset || 'today' };
+  }
+
+  if (preset === 'last_7_days') {
+    start.setUTCDate(start.getUTCDate() - 7);
+    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+  }
+
+  if (preset === 'last_30_days') {
+    start.setUTCDate(start.getUTCDate() - 30);
+    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+  }
+
+  if (preset === 'this_week') {
+    const day = now.getUTCDay();
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    start.setUTCDate(now.getUTCDate() - diffToMonday);
+    setUtcStartOfDay(start);
+    setUtcEndOfDay(end);
+    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+  }
+
+  if (preset === 'last_week') {
+    const day = now.getUTCDay();
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    start.setUTCDate(now.getUTCDate() - diffToMonday - 7);
+    setUtcStartOfDay(start);
+    end.setUTCDate(now.getUTCDate() - diffToMonday - 1);
+    setUtcEndOfDay(end);
+    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+  }
+
+  if (preset === 'this_month') {
+    start.setUTCDate(1);
+    setUtcStartOfDay(start);
+    setUtcEndOfDay(end);
+    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+  }
+
+  if (preset === 'last_month') {
+    start.setUTCDate(1);
+    start.setUTCMonth(start.getUTCMonth() - 1);
+    setUtcStartOfDay(start);
+    end.setUTCDate(0);
+    setUtcEndOfDay(end);
+    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+  }
+
+  if (preset === 'custom') {
+    const startIso = toIsoOrNull(args.startDate);
+    const endIso = toIsoOrNull(args.endDate);
+    return { startIso, endIso, preset };
+  }
+
+  const startIso = toIsoOrNull(args.startDate);
+  const endIso = toIsoOrNull(args.endDate);
+  return { startIso, endIso, preset: 'custom' };
+}
+
+function parseSearchLimit(limitValue, fallback = 20) {
+  const parsed = Number(limitValue || fallback);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(Math.trunc(parsed), 1), 50);
+}
+
+function normalizeProviderSlug(provider) {
+  const normalized = normalizeProvider(provider);
+  if (normalized === 'google') return 'google-workspace';
+  if (normalized === 'google_workspace') return 'google-workspace';
+  return normalized;
+}
+
+function resolveProviderPreference(provider) {
+  const normalized = normalizeProviderSlug(provider || 'auto');
+  if (!normalized || normalized === 'auto' || normalized === 'all') {
+    return ['microsoft', 'google-workspace', 'google_workspace', 'google'];
+  }
+  if (normalized === 'google-workspace') return ['google-workspace', 'google_workspace', 'google'];
+  return [normalized];
+}
+
+function buildGraphDateFilter(window) {
+  const clauses = [];
+  if (window.startIso) clauses.push(`receivedDateTime ge ${window.startIso}`);
+  if (window.endIso) clauses.push(`receivedDateTime le ${window.endIso}`);
+  if (!clauses.length) return '';
+  return clauses.join(' and ');
+}
+
+function applyLocalEmailFilters(emails = [], filters = {}) {
+  const senderFilters = parseSenderFilters(filters.from);
+  const queryText = String(filters.query || '').trim().toLowerCase();
+  const unreadOnly = Boolean(filters.unreadOnly);
+  const startMs = filters.startIso ? Date.parse(filters.startIso) : NaN;
+  const endMs = filters.endIso ? Date.parse(filters.endIso) : NaN;
+
+  return emails.filter((email) => {
+    const sender = normalizeEmailAddress(email.from?.email || email.from || '');
+    if (senderFilters.length && !senderFilters.includes(sender)) return false;
+    if (unreadOnly && email.isRead) return false;
+
+    if (queryText) {
+      const haystack = [
+        String(email.subject || ''),
+        String(email.preview || ''),
+        String(email.from?.name || ''),
+        String(email.from?.email || ''),
+      ].join('\n').toLowerCase();
+      if (!haystack.includes(queryText)) return false;
+    }
+
+    const receivedMs = Date.parse(String(email.receivedAt || ''));
+    if (Number.isFinite(startMs) && Number.isFinite(receivedMs) && receivedMs < startMs) return false;
+    if (Number.isFinite(endMs) && Number.isFinite(receivedMs) && receivedMs > endMs) return false;
+
+    return true;
+  });
+}
+
+async function fetchMicrosoftMessages(accessToken, filters = {}) {
+  const limit = parseSearchLimit(filters.limit, 20);
+  const candidateSize = Math.min(Math.max(limit * 4, 20), 100);
+  const graphParams = new URLSearchParams({
+    $top: String(candidateSize),
+    $orderby: 'receivedDateTime desc',
+    $select: 'id,subject,from,receivedDateTime,bodyPreview,hasAttachments,isRead,importance,webLink'
+  });
+  const dateFilter = buildGraphDateFilter(filters);
+  if (dateFilter) graphParams.set('$filter', dateFilter);
+
+  const response = await fetch(`https://graph.microsoft.com/v1.0/me/messages?${graphParams.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Prefer: 'outlook.body-content-type="text"'
+    }
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const details = payload?.error?.message || `HTTP ${response.status}`;
+    throw new Error(`Microsoft email query failed: ${details}`);
+  }
+
+  const rawMessages = Array.isArray(payload?.value) ? payload.value : [];
+  const mapped = rawMessages.map((item) => ({
+    provider: 'microsoft',
+    id: item.id,
+    subject: item.subject || '(No subject)',
+    preview: item.bodyPreview || '',
+    receivedAt: item.receivedDateTime || null,
+    from: {
+      name: item.from?.emailAddress?.name || null,
+      email: item.from?.emailAddress?.address || null,
+    },
+    isRead: Boolean(item.isRead),
+    hasAttachments: Boolean(item.hasAttachments),
+    importance: item.importance || 'normal',
+    webLink: item.webLink || null
+  }));
+
+  const filtered = applyLocalEmailFilters(mapped, filters);
+  return filtered.slice(0, limit);
+}
+
+function buildGmailQuery(filters = {}) {
+  const parts = [];
+  if (filters.query) parts.push(String(filters.query));
+  const senders = parseSenderFilters(filters.from);
+  if (senders.length === 1) {
+    parts.push(`from:${senders[0]}`);
+  } else if (senders.length > 1) {
+    parts.push(`(${senders.map((sender) => `from:${sender}`).join(' OR ')})`);
+  }
+  if (filters.startIso) parts.push(`after:${Math.floor(Date.parse(filters.startIso) / 1000)}`);
+  if (filters.endIso) parts.push(`before:${Math.floor(Date.parse(filters.endIso) / 1000)}`);
+  if (filters.unreadOnly) parts.push('is:unread');
+  return parts.join(' ').trim();
+}
+
+function extractHeader(headers = [], targetName = '') {
+  const found = headers.find((header) => String(header?.name || '').toLowerCase() === targetName.toLowerCase());
+  return found?.value || null;
+}
+
+function parseFromHeader(fromHeader) {
+  const raw = String(fromHeader || '');
+  if (!raw) return { name: null, email: null };
+  const match = raw.match(/^(.*)<([^>]+)>$/);
+  if (match) {
+    return {
+      name: match[1].replace(/(^"|"$)/g, '').trim() || null,
+      email: normalizeEmailAddress(match[2])
+    };
+  }
+  return { name: null, email: normalizeEmailAddress(raw) };
+}
+
+async function fetchGmailMessages(accessToken, filters = {}) {
+  const limit = parseSearchLimit(filters.limit, 20);
+  const candidateSize = Math.min(Math.max(limit * 4, 20), 100);
+  const query = buildGmailQuery(filters);
+  const listParams = new URLSearchParams({
+    maxResults: String(candidateSize)
+  });
+  if (query) listParams.set('q', query);
+
+  const listResponse = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?${listParams.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+  const listPayload = await listResponse.json().catch(() => ({}));
+  if (!listResponse.ok) {
+    const details = listPayload?.error?.message || `HTTP ${listResponse.status}`;
+    throw new Error(`Google Workspace email query failed: ${details}`);
+  }
+
+  const references = Array.isArray(listPayload?.messages) ? listPayload.messages : [];
+  if (!references.length) return [];
+
+  const detailResponses = await Promise.all(
+    references.slice(0, candidateSize).map(async (entry) => {
+      const detailResponse = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(entry.id)}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      const detailPayload = await detailResponse.json().catch(() => ({}));
+      if (!detailResponse.ok) return null;
+      const headers = detailPayload?.payload?.headers || [];
+      const from = parseFromHeader(extractHeader(headers, 'From'));
+      const subject = extractHeader(headers, 'Subject') || '(No subject)';
+      const receivedAt = detailPayload?.internalDate
+        ? new Date(Number(detailPayload.internalDate)).toISOString()
+        : null;
+
+      return {
+        provider: 'google-workspace',
+        id: detailPayload.id,
+        subject,
+        preview: detailPayload.snippet || '',
+        receivedAt,
+        from,
+        isRead: !Array.isArray(detailPayload.labelIds) || !detailPayload.labelIds.includes('UNREAD'),
+        hasAttachments: false,
+        importance: 'normal',
+        webLink: `https://mail.google.com/mail/u/0/#inbox/${detailPayload.id}`
+      };
+    })
+  );
+
+  const mapped = detailResponses.filter(Boolean);
+  const filtered = applyLocalEmailFilters(mapped, filters);
+  return filtered.slice(0, limit);
 }
 
 async function executeToolByName(req, toolName, args = {}) {
@@ -193,6 +482,92 @@ async function executeToolByName(req, toolName, args = {}) {
     return payload;
   }
 
+  if (safeName === 'nexus_search_emails') {
+    const limit = parseSearchLimit(args.limit, 20);
+    const providersToTry = resolveProviderPreference(args.provider);
+    const tokenResult = await query(
+      `SELECT integration_slug, access_token, expires_at, updated_at
+       FROM oauth_tokens
+       WHERE user_id = $1
+         AND integration_slug = ANY($2::text[])
+       ORDER BY updated_at DESC`,
+      [userId, providersToTry]
+    );
+    if (tokenResult.error) throw new Error(tokenResult.error);
+
+    const availableTokens = (tokenResult.data || [])
+      .filter((row) => row && row.access_token)
+      .map((row) => ({
+        provider: normalizeProviderSlug(row.integration_slug),
+        token: row.access_token,
+        expiresAt: row.expires_at ? new Date(row.expires_at).toISOString() : null
+      }));
+
+    if (!availableTokens.length) {
+      throw new Error('No connected email provider token found. Connect Microsoft 365 or Google Workspace first.');
+    }
+
+    const expiredProviders = availableTokens
+      .filter((entry) => entry.expiresAt && Date.parse(entry.expiresAt) <= Date.now())
+      .map((entry) => entry.provider);
+    const activeTokens = availableTokens.filter((entry) => !expiredProviders.includes(entry.provider));
+    if (!activeTokens.length) {
+      throw new Error(`Connected email token(s) are expired for: ${expiredProviders.join(', ')}. Reconnect required.`);
+    }
+
+    const timeWindow = buildTimeWindow(args);
+    const commonFilters = {
+      from: args.from,
+      query: args.query,
+      unreadOnly: Boolean(args.unreadOnly),
+      startIso: timeWindow.startIso,
+      endIso: timeWindow.endIso,
+      limit
+    };
+
+    const collected = [];
+    const errors = [];
+    for (const entry of activeTokens) {
+      try {
+        if (entry.provider === 'microsoft') {
+          const messages = await fetchMicrosoftMessages(entry.token, commonFilters);
+          for (const message of messages) collected.push(message);
+          continue;
+        }
+        if (entry.provider === 'google-workspace') {
+          const messages = await fetchGmailMessages(entry.token, commonFilters);
+          for (const message of messages) collected.push(message);
+          continue;
+        }
+        errors.push(`provider "${entry.provider}" is not supported for inbox search`);
+      } catch (error) {
+        errors.push(`${entry.provider}: ${error?.message || String(error)}`);
+      }
+    }
+
+    const sorted = collected
+      .filter(Boolean)
+      .sort((a, b) => Date.parse(String(b.receivedAt || 0)) - Date.parse(String(a.receivedAt || 0)))
+      .slice(0, limit);
+
+    return {
+      userId,
+      providersQueried: activeTokens.map((entry) => entry.provider),
+      emails: sorted,
+      total: sorted.length,
+      appliedFilters: {
+        datePreset: timeWindow.preset,
+        startDate: timeWindow.startIso,
+        endDate: timeWindow.endIso,
+        from: parseSenderFilters(args.from),
+        query: String(args.query || '').trim() || null,
+        unreadOnly: Boolean(args.unreadOnly),
+        limit
+      },
+      warnings: errors
+    };
+  }
+
   if (safeName === 'nexus_disconnect_integration') {
     const providerRaw = String(args.provider || '').trim();
     let integrationId = String(args.integrationId || '').trim();
@@ -283,6 +658,29 @@ const NEXUS_TOOL_CATALOG = [
       type: 'object',
       required: ['provider'],
       properties: { provider: { type: 'string' } },
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'nexus_search_emails',
+    description: 'Search connected inbox emails by date range, sender(s), and free-text query.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        provider: { type: 'string', enum: ['auto', 'all', 'microsoft', 'google_workspace', 'google-workspace'] },
+        datePreset: { type: 'string', enum: ['today', 'last_7_days', 'last_30_days', 'this_week', 'last_week', 'this_month', 'last_month', 'custom'] },
+        startDate: { type: 'string' },
+        endDate: { type: 'string' },
+        from: {
+          oneOf: [
+            { type: 'string' },
+            { type: 'array', items: { type: 'string' } }
+          ]
+        },
+        query: { type: 'string' },
+        unreadOnly: { type: 'boolean' },
+        limit: { type: 'number' }
+      },
       additionalProperties: false
     }
   },

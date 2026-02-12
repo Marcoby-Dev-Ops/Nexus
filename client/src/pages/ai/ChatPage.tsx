@@ -12,7 +12,7 @@ import { useUserProfile } from '@/shared/contexts/UserContext';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { Sparkles, X } from 'lucide-react';
 import { useAIChatStore } from '@/shared/stores/useAIChatStore';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { StreamRuntimeMetadata, StreamRuntimeStatus } from '@/services/ai/ConversationalAIService';
 import type { FileAttachment } from '@/shared/types/chat';
 import { chatAttachmentService } from '@/lib/ai/services/chatAttachmentService';
@@ -107,6 +107,7 @@ export const ChatPage: React.FC = () => {
   const { toast } = useToast();
   const { setHeaderContent } = useHeaderContext();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const requestedAgentId = searchParams.get('agent') || 'nexus-assistant';
 
   const AGENT_LABELS: Record<string, string> = {
@@ -381,6 +382,36 @@ export const ChatPage: React.FC = () => {
     return entries;
   };
 
+  const parseInboxDatePreset = (message: string): string | null => {
+    const text = message.toLowerCase();
+    if (text.includes('today')) return 'today';
+    if (text.includes('last week')) return 'last_week';
+    if (text.includes('last month')) return 'last_month';
+    if (text.includes('this week')) return 'this_week';
+    if (text.includes('this month')) return 'this_month';
+    if (text.includes('last 7 days')) return 'last_7_days';
+    if (text.includes('last 30 days')) return 'last_30_days';
+    return null;
+  };
+
+  const parseInboxOpenIntent = (message: string, explicitEmail: string) => {
+    const normalized = message.toLowerCase();
+    const wantsInbox =
+      normalized.includes('open inbox') ||
+      normalized.includes('show inbox') ||
+      normalized.includes('open mailbox') ||
+      normalized.includes('show mailbox') ||
+      normalized.includes('show emails') ||
+      normalized.includes('emails from');
+    if (!wantsInbox) return null;
+
+    return {
+      datePreset: parseInboxDatePreset(message),
+      from: explicitEmail || null,
+      unreadOnly: normalized.includes('unread')
+    };
+  };
+
   const getLiveIntegrationStatusMessage = useCallback(async (): Promise<string> => {
     if (!user?.id) {
       return 'I cannot check integration status because your session is not available. Please sign in again.';
@@ -546,6 +577,25 @@ export const ChatPage: React.FC = () => {
       normalizedMessage.includes('is 365 connected');
     const explicitEmailMatch = trimmedMessage.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
     const explicitEmail = explicitEmailMatch?.[0] || '';
+    const inboxOpenIntent = parseInboxOpenIntent(trimmedMessage, explicitEmail);
+
+    if (inboxOpenIntent) {
+      const flowConversationId = await ensureConversationForLocalFlow(trimmedMessage);
+      if (flowConversationId) {
+        await sendMessage(trimmedMessage, flowConversationId, [], { persist: false });
+        await postLocalAssistantMessage(
+          flowConversationId,
+          'Opening your mailbox view with the requested filters.'
+        );
+      }
+      const params = new URLSearchParams();
+      if (inboxOpenIntent.datePreset) params.set('datePreset', inboxOpenIntent.datePreset);
+      if (inboxOpenIntent.from) params.set('from', inboxOpenIntent.from);
+      if (inboxOpenIntent.unreadOnly) params.set('unreadOnly', 'true');
+      const suffix = params.toString();
+      navigate(`/tasks/workspace/inbox${suffix ? `?${suffix}` : ''}`);
+      return;
+    }
 
     // Step 3 of flow: user provides IMAP credentials after provider detection fallback
     if (pendingImapConnection) {

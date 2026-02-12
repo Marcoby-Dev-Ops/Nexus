@@ -19,6 +19,7 @@ import { emailService } from '@/services/email/EmailService';
 import { thoughtsService } from '@/lib/services/thoughtsService';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { useAuth } from '@/hooks/index';
+import { useSearchParams } from 'react-router-dom';
 
 type InboxItem = EmailItem;
 
@@ -80,11 +81,75 @@ const FIRE_PHASES = [
   { id: 'execute', label: 'Execute', description: 'Taking action and implementing', icon: Play }
 ];
 
+function resolveDatePresetToRange(preset?: string | null): { date_from?: string; date_to?: string } {
+  const value = String(preset || '').trim().toLowerCase();
+  if (!value) return {};
+  const now = new Date();
+  const start = new Date(now);
+  const end = new Date(now);
+
+  const setStartOfDay = (date: Date) => date.setHours(0, 0, 0, 0);
+  const setEndOfDay = (date: Date) => date.setHours(23, 59, 59, 999);
+
+  if (value === 'today') {
+    setStartOfDay(start);
+    setEndOfDay(end);
+    return { date_from: start.toISOString(), date_to: end.toISOString() };
+  }
+
+  if (value === 'last_7_days') {
+    start.setDate(start.getDate() - 7);
+    return { date_from: start.toISOString(), date_to: end.toISOString() };
+  }
+
+  if (value === 'last_30_days') {
+    start.setDate(start.getDate() - 30);
+    return { date_from: start.toISOString(), date_to: end.toISOString() };
+  }
+
+  if (value === 'this_week') {
+    const day = now.getDay();
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    start.setDate(now.getDate() - diffToMonday);
+    setStartOfDay(start);
+    setEndOfDay(end);
+    return { date_from: start.toISOString(), date_to: end.toISOString() };
+  }
+
+  if (value === 'last_week') {
+    const day = now.getDay();
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    start.setDate(now.getDate() - diffToMonday - 7);
+    setStartOfDay(start);
+    end.setDate(now.getDate() - diffToMonday - 1);
+    setEndOfDay(end);
+    return { date_from: start.toISOString(), date_to: end.toISOString() };
+  }
+
+  if (value === 'this_month') {
+    start.setDate(1);
+    setStartOfDay(start);
+    setEndOfDay(end);
+    return { date_from: start.toISOString(), date_to: end.toISOString() };
+  }
+
+  if (value === 'last_month') {
+    start.setMonth(start.getMonth() - 1, 1);
+    setStartOfDay(start);
+    end.setMonth(now.getMonth(), 0);
+    setEndOfDay(end);
+    return { date_from: start.toISOString(), date_to: end.toISOString() };
+  }
+
+  return {};
+}
+
 // Use the imported email service
 
 const UnifiedInbox: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState<EmailFilters>({});
   const [connectedProviders, setConnectedProviders] = useState<string[]>([]);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
@@ -122,6 +187,44 @@ const UnifiedInbox: React.FC = () => {
     };
     fetchProviders();
   }, []);
+
+  useEffect(() => {
+    const datePreset = searchParams.get('datePreset');
+    const fromParam = searchParams.get('from');
+    const queryParam = searchParams.get('query');
+    const unreadOnly = searchParams.get('unreadOnly');
+    const tab = searchParams.get('tab');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
+    const mergedSearch = [queryParam, fromParam].filter(Boolean).join(' ').trim();
+    const presetRange = resolveDatePresetToRange(datePreset);
+    const nextFilters: EmailFilters = {
+      ...presetRange
+    };
+
+    if (mergedSearch) {
+      nextFilters.search = mergedSearch;
+      setSearchQuery(mergedSearch);
+    }
+    if (startDate) {
+      nextFilters.date_from = startDate;
+    }
+    if (endDate) {
+      nextFilters.date_to = endDate;
+    }
+    if (unreadOnly === 'true') {
+      nextFilters.is_read = false;
+    }
+
+    if (Object.keys(nextFilters).length > 0) {
+      setFilters(nextFilters);
+    }
+
+    if (tab && ['inbox', 'starred', 'sent', 'archive', 'trash'].includes(tab)) {
+      setActiveTab(tab as 'inbox' | 'starred' | 'sent' | 'archive' | 'trash');
+    }
+  }, [searchParams]);
 
   // Use the data service hook instead of OWA service
   const { items: emails, total, error, refetch, isLoading } = useUnifiedInbox({ filters, limit: 50, offset: 0, folder: activeTab });

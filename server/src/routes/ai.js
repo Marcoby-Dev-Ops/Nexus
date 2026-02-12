@@ -72,6 +72,7 @@ const OPENCLAW_TOOLS_BASE = [
 ];
 const OPENCLAW_TOOLS_NEXUS_INTEGRATIONS = [
     'nexus_get_integration_status',
+    'nexus_search_emails',
     'nexus_resolve_email_provider',
     'nexus_start_email_connection',
     'nexus_connect_imap',
@@ -85,7 +86,7 @@ const OPENCLAW_TOOLS_BY_INTENT = {
     [INTENT_TYPES.LEARN.id]: OPENCLAW_TOOLS_DEFAULT,
     [INTENT_TYPES.SOLVE.id]: OPENCLAW_TOOLS_DEFAULT,
     [INTENT_TYPES.DECIDE.id]: OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS
-        ? ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills', 'nexus_get_integration_status', 'nexus_test_integration_connection']
+        ? ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills', 'nexus_get_integration_status', 'nexus_search_emails', 'nexus_test_integration_connection']
         : ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills'],
     [INTENT_TYPES.WRITE.id]: ['web_search', 'advanced_scrape', 'summarize_strategy']
 };
@@ -123,8 +124,9 @@ function buildModelWayInstructionBlock(intent, phase) {
         '- If the task requires external or current information, use web_search first.',
         '- If results are thin or blocked, use advanced_scrape for direct extraction.',
         '- For missing capability, use search_skills then install_skill before proposing custom implementation.',
-        '- For integration connect/status workflows, prefer Nexus tools: nexus_get_integration_status, nexus_resolve_email_provider, nexus_start_email_connection, nexus_connect_imap, nexus_test_integration_connection, nexus_disconnect_integration.',
+        '- For integration connect/status workflows, prefer Nexus tools: nexus_get_integration_status, nexus_search_emails, nexus_resolve_email_provider, nexus_start_email_connection, nexus_connect_imap, nexus_test_integration_connection, nexus_disconnect_integration.',
         '- For email connection requests: confirm the target email first, then run nexus_resolve_email_provider before proposing any provider-specific flow.',
+        '- For inbox requests (today, last week, last month, specific sender), use nexus_search_emails with the appropriate datePreset/from/query filters.',
         '- Prefer OAuth for Microsoft 365 and Google Workspace; fallback to nexus_connect_imap for custom/non-exchange providers.',
         '- Never claim direct visibility into OAuth tokens. Report live state using tool results only.',
         '- Include direct source links for external facts.'

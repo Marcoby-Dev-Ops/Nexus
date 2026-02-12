@@ -32,6 +32,8 @@ import ChatPage from '@/pages/chat/ChatPage';
 import AuditPage from '@/pages/audit/AuditPage';
 import CoolifyOpsPage from '@/pages/operations/CoolifyOpsPage';
 import AtomModelPage from '@/pages/AtomModelPage';
+import UnifiedInboxPage from '@/pages/email/UnifiedInboxPage';
+import EmailIntelligencePage from '@/pages/email/EmailIntelligencePage';
 
 // Integrations pages
 import IntegrationMarketplacePage from '@/pages/integrations/IntegrationMarketplacePage';
@@ -224,6 +226,24 @@ function AppRoutes() {
             <OAuthCallbackPage />
           </ProtectedRoute>
         } 
+      />
+
+      {/* Email workspace routes */}
+      <Route
+        path="/tasks/workspace/inbox"
+        element={
+          <ProtectedRoute>
+            <UnifiedInboxPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/email-intelligence"
+        element={
+          <ProtectedRoute>
+            <EmailIntelligencePage />
+          </ProtectedRoute>
+        }
       />
       
       {/* Redirect all other routes to chat */}
