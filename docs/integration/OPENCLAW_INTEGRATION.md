@@ -23,8 +23,13 @@ To enable the integration, configure the following environment variables in `Nex
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `OPENCLAW_API_URL` | URL of the OpenClaw gateway. | `http://localhost:18789/v1` |
+| `OPENCLAW_API_URL` | URL of the OpenClaw gateway. | `http://localhost:18790/v1` |
 | `OPENCLAW_API_KEY` | API key for the OpenClaw gateway. | `sk-openclaw-local` |
+| `OPENCLAW_ENABLE_MODELWAY_TOOLS` | Enables intent-based OpenClaw tool routing from Nexus. | `true` |
+| `OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS` | Enables Nexus integration tools in OpenClaw toolset. | `true` |
+| `OPENCLAW_MODELWAY_PROFILE` | Instruction profile (`lean` or `full`). Use `lean` for less orchestration overhead. | `lean` |
+| `OPENCLAW_STRICT_GROUNDED_MODE` | Forces evidence-backed claims (no "done" without tool output). | `true` |
+| `OPENCLAW_HIDE_INTERNAL_PROCESS` | Suppresses internal process narration in user-visible responses. | `true` |
 | `BRAVE_API_KEY` | (Optional) API key for web search capabilities (Brave Search). | |
 | `PERPLEXITY_API_KEY` | (Optional) API key for Perplexity search. | |
 

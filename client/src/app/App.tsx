@@ -48,11 +48,21 @@ const LoadingSpinner = () => (
 );
 
 function AppRoutes() {
-  
+  const isLandingOnly = import.meta.env.VITE_LANDING_ONLY === 'true';
+  const enableMarketingRoutes = isLandingOnly || import.meta.env.VITE_ENABLE_MARKETING_ROUTES === 'true';
+  const fallbackPath = isLandingOnly ? '/' : '/chat';
+  const rootRouteElement = enableMarketingRoutes
+    ? <LandingPage />
+    : <Navigate to="/chat" replace />;
+  const pricingRouteElement = enableMarketingRoutes
+    ? <Navigate to="/#pricing" replace />
+    : <Navigate to="/chat" replace />;
+
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={rootRouteElement} />
+      <Route path="/pricing" element={pricingRouteElement} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route 
@@ -249,7 +259,7 @@ function AppRoutes() {
       {/* Redirect all other routes to chat */}
       <Route 
         path="*" 
-        element={<Navigate to="/chat" replace />}
+        element={<Navigate to={fallbackPath} replace />}
       />
     </Routes>
   );

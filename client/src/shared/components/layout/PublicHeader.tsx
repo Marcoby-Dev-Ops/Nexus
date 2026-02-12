@@ -6,6 +6,8 @@ import { Sun, Moon } from 'lucide-react';
 
 export function PublicHeader() {
   const { theme, setTheme } = useTheme();
+  const appPortalBase = String(import.meta.env.VITE_APP_PORTAL_URL || '').trim().replace(/\/+$/, '');
+  const toPortalHref = (path: string) => (appPortalBase ? `${appPortalBase}${path}` : path);
 
   return (
     <header className="sticky top-0 z-30 bg-background/95 border-b border-border shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -53,18 +55,18 @@ export function PublicHeader() {
           </button>
 
           {/* Login button */}
-          <Link to="/login">
+          <a href={toPortalHref('/login')}>
             <Button variant="ghost" className="font-medium">
               Log In
             </Button>
-          </Link>
+          </a>
 
           {/* Sign up button */}
-          <Link to="/signup">
+          <a href={toPortalHref('/signup')}>
             <Button className="font-medium">
               Get Started
             </Button>
-          </Link>
+          </a>
         </div>
       </div>
     </header>

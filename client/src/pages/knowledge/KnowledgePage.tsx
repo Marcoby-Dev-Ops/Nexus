@@ -9,8 +9,10 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, Brain, Database, RefreshCw, Shield, User, TrendingUp } from 'lucide-react';
+import { Bot, Brain, Database, RefreshCw, Shield, User, TrendingUp, Sparkles, Save, X } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/shared/components/ui/Dialog';
+import { Textarea } from '@/shared/components/ui/Textarea';
 import { useAuthenticatedApi } from '@/hooks/useAuthenticatedApi';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { useToast } from '@/shared/components/ui/use-toast';
@@ -30,6 +32,12 @@ interface KnowledgeFact {
   source: string;
   confidence: ConfidenceLevel;
   updatedAt: string;
+}
+
+interface AgentTool {
+  id: string;
+  name: string;
+  description: string;
 }
 
 interface KnowledgeContextBlock {
@@ -65,6 +73,7 @@ interface AssistantCore {
     role: string;
   }>;
   facts: KnowledgeFact[];
+  tools?: AgentTool[];
 }
 
 interface UserSnapshot {
@@ -175,6 +184,18 @@ export default function KnowledgePage() {
   const [selectedAgentId, setSelectedAgentId] = useState(urlAgentId);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isSoulModalOpen, setIsSoulModalOpen] = useState(false);
+  const [soulContent, setSoulContent] = useState('');
+  const [isSavingSoul, setIsSavingSoul] = useState(false);
+  const [isLoadingSoul, setIsLoadingSoul] = useState(false);
+
+  const isAdmin = useMemo(() => {
+    if (!user) return false;
+    const roles = user.groups || [];
+    return roles.some(role =>
+      ['owner', 'admin', 'Nexus Owners', 'Nexus Admins'].map(r => r.toLowerCase()).includes(role.toLowerCase())
+    );
+  }, [user]);
 
   const [data, setData] = useState<KnowledgeState>({
     user: {
@@ -189,7 +210,8 @@ export default function KnowledgePage() {
       agentName: 'Unknown',
       agentRole: 'Unknown',
       availableAgents: [],
-      facts: []
+      facts: [],
+      tools: []
     },
     context: {
       contextBlocks: [],
@@ -332,6 +354,46 @@ export default function KnowledgePage() {
     }
   }, [fetchWithAuth, selectedAgentId, toast]);
 
+  const handleOpenSoulEditor = async () => {
+    setIsSoulModalOpen(true);
+    setIsLoadingSoul(true);
+    try {
+      const res = await fetchWithAuth('/api/admin/soul');
+      if (res.ok) {
+        const data = await res.json();
+        setSoulContent(data.content || '');
+      } else {
+        toast({ title: 'Failed to load soul', description: 'Could not retrieve agent personality.', variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to connect to admin API.', variant: 'destructive' });
+    } finally {
+      setIsLoadingSoul(false);
+    }
+  };
+
+  const handleSaveSoul = async () => {
+    setIsSavingSoul(true);
+    try {
+      const res = await fetchWithAuth('/api/admin/soul', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: soulContent })
+      });
+
+      if (res.ok) {
+        toast({ title: 'Soul updated', description: 'Agent personality has been updated successfully.' });
+        setIsSoulModalOpen(false);
+      } else {
+        toast({ title: 'Update failed', description: 'Only owners or admins can update the soul.', variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to save soul changes.', variant: 'destructive' });
+    } finally {
+      setIsSavingSoul(false);
+    }
+  };
+
   useEffect(() => {
     loadKnowledge();
   }, [loadKnowledge]);
@@ -433,13 +495,46 @@ export default function KnowledgePage() {
         </section>
 
         <section className="rounded-xl border border-slate-700 bg-slate-800/60 p-5 space-y-4">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-indigo-300" />
-            <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">Agent Knowledge</h2>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-indigo-300" />
+              <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">Agent Knowledge</h2>
+            </div>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenSoulEditor}
+                className="h-8 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10"
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-2" />
+                Customize Soul
+              </Button>
+            )}
           </div>
           <p className="text-sm text-slate-400">
             Assistant core identity and memory blocks used to keep agent behavior consistent.
           </p>
+
+          {data.assistantCore.tools && data.assistantCore.tools.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-slate-700/50">
+              <div className="flex items-center gap-2 mb-4">
+                <Brain className="h-4 w-4 text-emerald-400" />
+                <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Agent Capabilities (Tools)</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {data.assistantCore.tools.map((tool) => (
+                  <div key={tool.id} className="group p-3 rounded-lg bg-slate-900/40 border border-slate-700/50 hover:border-emerald-500/30 transition-colors">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-slate-200 group-hover:text-emerald-300 transition-colors">{tool.name}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">{tool.id}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 leading-relaxed">{tool.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <label htmlFor="knowledge-agent" className="text-xs text-slate-400 uppercase tracking-wide">
@@ -564,6 +659,65 @@ export default function KnowledgePage() {
         <Bot className="h-4 w-4 text-indigo-300" />
         Future enhancement path: editable memory curation, shared/platform knowledge card, and multi-agent comparative view.
       </section>
+
+      {/* Soul Editor Modal */}
+      <Dialog open={isSoulModalOpen} onOpenChange={setIsSoulModalOpen}>
+        <DialogContent className="sm:max-w-[700px] bg-slate-900 border-slate-700 text-slate-100">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Sparkles className="h-5 w-5 text-indigo-400" />
+              Customize Agent Soul
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Define the identity, philosophy, and proactive behaviors of Nexus. Changes take effect immediately.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            {isLoadingSoul ? (
+              <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                <RefreshCw className="h-8 w-8 text-indigo-500 animate-spin" />
+                <p className="text-slate-400">Summoning agent personality...</p>
+              </div>
+            ) : (
+              <Textarea
+                value={soulContent}
+                onChange={(e) => setSoulContent(e.target.value)}
+                placeholder="# Core Philosophy..."
+                className="min-h-[400px] font-mono text-sm bg-slate-950 border-slate-800 text-slate-200 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsSoulModalOpen(false)}
+              className="border-slate-700 text-slate-300 hover:bg-slate-800"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveSoul}
+              disabled={isSavingSoul || isLoadingSoul}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {isSavingSoul ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

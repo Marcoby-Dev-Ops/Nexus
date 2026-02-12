@@ -109,6 +109,8 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
     ? streamStatus.label.replace(/^Agent is\s+/i, `${statusActor} is `)
     : thinkingLabel;
   const statusDetail = streamStatus?.detail || (ragEnabled ? 'Business context is attached from backend memory.' : null);
+  const timelineEvents = statusEvents.length ? [...statusEvents].reverse() : [];
+  const shouldShowActivityTimeline = timelineEvents.length > 1;
   const stageProgressMap: Record<string, number> = {
     accepted: 8,
     context_loading: 20,
@@ -331,27 +333,25 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                           />
                         </div>
 
-                        <div className="mt-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
-                          <button
-                            onClick={() => setIsActivityExpanded(!isActivityExpanded)}
-                            className="flex w-full items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            <span>Activity Timeline</span>
-                            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
-                              {statusEvents.length || 1}
-                            </span>
-                            {isActivityExpanded ? (
-                              <ChevronDown className="w-3 h-3 ml-auto opacity-50" />
-                            ) : (
-                              <ChevronRight className="w-3 h-3 ml-auto opacity-50" />
-                            )}
-                          </button>
-                          {isActivityExpanded && (
-                            <div className="mt-2 space-y-1.5">
-                              {(statusEvents.length
-                                ? [...statusEvents].reverse()
-                                : [{ stage: 'thinking', label: statusLabel, detail: statusDetail, timestamp: new Date().toISOString() }])
-                                .map((event, idx) => (
+                        {shouldShowActivityTimeline && (
+                          <div className="mt-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                            <button
+                              onClick={() => setIsActivityExpanded(!isActivityExpanded)}
+                              className="flex w-full items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <span>Activity Timeline</span>
+                              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
+                                {timelineEvents.length}
+                              </span>
+                              {isActivityExpanded ? (
+                                <ChevronDown className="w-3 h-3 ml-auto opacity-50" />
+                              ) : (
+                                <ChevronRight className="w-3 h-3 ml-auto opacity-50" />
+                              )}
+                            </button>
+                            {isActivityExpanded && (
+                              <div className="mt-2 space-y-1.5">
+                                {timelineEvents.map((event, idx) => (
                                   <div
                                     key={`${event.timestamp}-${event.stage}-${idx}`}
                                     className="rounded-md border border-border/50 bg-background/60 px-2 py-1.5 text-xs"
@@ -367,9 +367,10 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                                     )}
                                   </div>
                                 ))}
-                            </div>
-                          )}
-                        </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {thinkingContent && (
                           <div className="mt-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">

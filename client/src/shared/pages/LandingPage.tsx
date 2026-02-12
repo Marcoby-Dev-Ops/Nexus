@@ -7,14 +7,17 @@ import {
   BarChart3,
   Brain,
   Check,
+  CheckCircle2,
   Clock3,
   Database,
+  Globe,
   Layers,
   Network,
   Shield,
   Sparkles,
   User,
   Workflow,
+  Zap,
   Bot
 } from 'lucide-react';
 
@@ -64,12 +67,86 @@ const trustSignals = [
   'Built for assistant-first workflows with multi-agent expansion'
 ];
 
+const platformIntegrations = [
+  {
+    name: 'Salesforce',
+    description: 'Sync leads, update opportunities, and log interactions automatically.',
+    icon: Database
+  },
+  {
+    name: 'HubSpot',
+    description: 'Manage contacts and trigger marketing workflows from chat.',
+    icon: Network
+  },
+  {
+    name: 'Jira',
+    description: 'Create tickets, update status, and track project progress seamlessly.',
+    icon: Layers
+  },
+  {
+    name: 'Slack',
+    description: 'Orchestrate team communication and summarize channels instantly.',
+    icon: Globe
+  }
+];
+
+const pricingTiers = [
+  {
+    name: 'Startup',
+    price: '$49',
+    period: '/month',
+    description: 'Perfect for small teams getting started with AI operations.',
+    features: [
+      '5 Team Members',
+      'Basic AI Context Memory',
+      'Standard Integrations',
+      'Community Support'
+    ],
+    cta: 'Start Free Trial',
+    highlight: false
+  },
+  {
+    name: 'Growth',
+    price: '$149',
+    period: '/month',
+    description: 'For growing businesses needing advanced automation and scale.',
+    features: [
+      '20 Team Members',
+      'Advanced Knowledge Graph',
+      'Premium Integrations (Salesforce, etc.)',
+      'Priority Email Support',
+      'Custom workflows'
+    ],
+    cta: 'Upgrade to Growth',
+    highlight: true
+  },
+  {
+    name: 'Enterprise',
+    price: 'Custom',
+    period: '',
+    description: 'Tailored solutions for large organizations with complex needs.',
+    features: [
+      'Unlimited Team Members',
+      'Dedicated Infrastructure',
+      'SSO & Advanced Security',
+      '24/7 Dedicated Support',
+      'Custom AI Model Tuning'
+    ],
+    cta: 'Contact Sales',
+    highlight: false
+  }
+];
+
 export const LandingPage: React.FC = () => {
+  const appPortalBase = String(import.meta.env.VITE_APP_PORTAL_URL || '').trim().replace(/\/+$/, '');
+  const toPortalHref = (path: string) => (appPortalBase ? `${appPortalBase}${path}` : path);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <PublicHeader />
 
       <main>
+        {/* Hero Section */}
         <section className="relative overflow-hidden border-b border-border/60">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -top-24 left-[10%] h-[340px] w-[340px] rounded-full bg-primary/18 blur-3xl" />
@@ -84,33 +161,44 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <h1 className="text-balance text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
-                Business intelligence that understands your world before it answers.
+                Ignite Growth: AI-Powered Operations with Seamless Integrations.
               </h1>
 
               <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
-                Nexus combines conversation, structured knowledge, and agent orchestration into one operating system so you can
-                decide faster, act with confidence, and keep context intact.
+                Nexus utilizes intelligent conversation, structured knowledge, and deep integrations to automate workflows across your entire tech stack.
               </p>
 
               <div className="mt-9 flex flex-col gap-4 sm:flex-row">
                 <Button size="lg" className="h-12 px-8 text-base">
-                  <Link to="/signup" className="inline-flex items-center gap-2">
-                    Start with Nexus
+                  <a href={toPortalHref('/signup')} className="inline-flex items-center gap-2">
+                    Start Your Free Trial
                     <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  </a>
                 </Button>
                 <Button variant="outline" size="lg" className="h-12 px-8 text-base">
-                  <Link to="/login" className="inline-flex items-center gap-2">
-                    Open Workspace
-                  </Link>
+                  <a href="#pricing" className="inline-flex items-center gap-2">
+                    View Pricing
+                  </a>
                 </Button>
               </div>
 
               <div className="mt-8 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-                <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2">Knowledge graph with user + agent context</div>
-                <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2">Short, medium, and long memory horizons</div>
-                <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2">Business-aware responses from backend context</div>
-                <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2">Ready for multi-agent coordination</div>
+                <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2 flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  Instant CRM Sync
+                </div>
+                <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2 flex items-center gap-2">
+                  <Database className="h-4 w-4 text-primary" />
+                  Unified Data Context
+                </div>
+                <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2 flex items-center gap-2">
+                  <Bot className="h-4 w-4 text-primary" />
+                  Intelligent Automation
+                </div>
+                <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2 flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-primary" />
+                  Enterprise Security
+                </div>
               </div>
             </div>
 
@@ -130,19 +218,19 @@ export const LandingPage: React.FC = () => {
                       <Bot className="h-4 w-4" />
                       Marcoby is thinking
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">Reviewing identity, memory, and active priorities before response.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Analyzing integration points with Salesforce and Slack...</p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-lg border border-border/70 bg-background/70 p-3">
                       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         <Database className="h-3.5 w-3.5" />
-                        Top Active Projects
+                        CRM Updates
                       </div>
                       <ul className="mt-2 space-y-1.5 text-sm">
-                        <li>1. Knowledge foundation</li>
-                        <li>2. Context enforcement tests</li>
-                        <li>3. Assistant UX polish</li>
+                        <li>1. Lead created: Acme Corp</li>
+                        <li>2. Opportunity moved to Closed-Won</li>
+                        <li>3. Contact updated: Jane Doe</li>
                       </ul>
                     </div>
 
@@ -151,8 +239,8 @@ export const LandingPage: React.FC = () => {
                         <User className="h-3.5 w-3.5" />
                         Identity Signal
                       </div>
-                      <p className="mt-2 text-sm">Voice: thoughtful, practical, proactive</p>
-                      <p className="mt-1 text-sm text-muted-foreground">Domain: AI operating system</p>
+                      <p className="mt-2 text-sm">Voice: strategic, accurate</p>
+                      <p className="mt-1 text-sm text-muted-foreground">Role: Growth Consultant</p>
                     </div>
                   </div>
 
@@ -162,7 +250,7 @@ export const LandingPage: React.FC = () => {
                       Execution Loop
                     </div>
                     <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                      {['Discover', 'Synthesize', 'Decide', 'Execute'].map((phase) => (
+                      {['Analyze', 'Connect', 'Sync', 'Report'].map((phase) => (
                         <div key={phase} className="rounded-md bg-muted/60 px-2 py-1.5">
                           {phase}
                         </div>
@@ -175,6 +263,7 @@ export const LandingPage: React.FC = () => {
           </div>
         </section>
 
+        {/* Pillars Section */}
         <section id="platform" className="mx-auto w-full max-w-7xl px-6 py-20 lg:px-8">
           <div className="mb-10 max-w-3xl">
             <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">Why Nexus feels different</h2>
@@ -196,6 +285,7 @@ export const LandingPage: React.FC = () => {
           </div>
         </section>
 
+        {/* Knowledge Section */}
         <section id="knowledge" className="border-y border-border/60 bg-muted/25">
           <div className="mx-auto w-full max-w-7xl px-6 py-20 lg:px-8">
             <div className="mb-10 max-w-3xl">
@@ -234,6 +324,7 @@ export const LandingPage: React.FC = () => {
           </div>
         </section>
 
+        {/* Trust Section */}
         <section id="trust" className="mx-auto w-full max-w-7xl px-6 py-20 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
@@ -270,26 +361,108 @@ export const LandingPage: React.FC = () => {
           </div>
         </section>
 
+        {/* Integrations Section */}
+        <section id="integrations" className="border-t border-border/60 bg-muted/20">
+          <div className="mx-auto w-full max-w-7xl px-6 py-20 lg:px-8">
+            <div className="mb-12 max-w-3xl">
+              <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">Nexus Integrations: Your Business, Connected</h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Connect your entire business ecosystem. Unify your tools, eliminate data silos, and automate cross-platform workflows.
+              </p>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {platformIntegrations.map((integration) => (
+                <div key={integration.name} className="flex flex-col rounded-xl border border-border/70 bg-background/60 p-6 transition-all hover:bg-background/80 hover:shadow-md">
+                  <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-primary/10 p-3 text-primary">
+                    <integration.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-lg font-semibold">{integration.name}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {integration.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-12 flex justify-center">
+              <Button variant="outline" className="gap-2">
+                <Link to="/#integrations">Explore Integrations</Link>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="mx-auto w-full max-w-7xl px-6 py-20 lg:px-8">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">Simple, Transparent Pricing</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Choose the plan that fits your business stage. No hidden fees.
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            {pricingTiers.map((tier) => (
+              <div
+                key={tier.name}
+                className={`relative flex flex-col rounded-2xl border ${tier.highlight ? 'border-primary/50 bg-primary/5 shadow-lg' : 'border-border/70 bg-card/40'} p-8`}
+              >
+                {tier.highlight && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+                    Most Popular
+                  </div>
+                )}
+                <h3 className="text-xl font-semibold">{tier.name}</h3>
+                <div className="my-4 flex items-baseline">
+                  <span className="text-4xl font-bold">{tier.price}</span>
+                  <span className="text-muted-foreground">{tier.period}</span>
+                </div>
+                <p className="mb-6 text-sm text-muted-foreground">{tier.description}</p>
+
+                <ul className="mb-8 flex-1 space-y-3">
+                  {tier.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2 text-sm">
+                      <CheckCircle2 className={`h-4 w-4 shrink-0 ${tier.highlight ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button variant={tier.highlight ? 'default' : 'outline'} className="w-full">
+                  <a href={toPortalHref('/signup')}>{tier.cta}</a>
+                </Button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA Section */}
         <section className="border-t border-border/60 bg-muted/20">
           <div className="mx-auto w-full max-w-7xl px-6 py-20 text-center lg:px-8">
-            <h2 className="text-3xl font-semibold tracking-tight md:text-5xl">Nexus is your foundation for AI-native operations.</h2>
+            <h2 className="text-3xl font-semibold tracking-tight md:text-5xl">Ready to Transform Your Business with AI?</h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
-              Start with one assistant, scale to coordinated agents, and keep your business knowledge coherent as you grow.
+              Join thousands of leaders who accelerate growth and automate operations with Nexus.
             </p>
 
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button size="lg" className="h-12 px-8 text-base">
-                <Link to="/signup" className="inline-flex items-center gap-2">
-                  Create your workspace
+                <a href={toPortalHref('/signup')} className="inline-flex items-center gap-2">
+                  Start Your Growth Now
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </a>
               </Button>
               <Button variant="outline" size="lg" className="h-12 px-8 text-base">
-                <Link to="/login" className="inline-flex items-center gap-2">
-                  Sign in
-                </Link>
+                <a href={toPortalHref('/signup')} className="inline-flex items-center gap-2">
+                  Request a Strategic Demo
+                </a>
               </Button>
             </div>
+
+            <p className="mt-6 text-sm text-muted-foreground">
+              Need help getting setup? <a href="/docs/client-onboarding-guide.md" className="text-primary hover:underline">View our Self-Serve Onboarding Guide</a>
+            </p>
 
             <p className="mt-8 text-sm text-muted-foreground">
               Built by Marcoby for teams that want AI-native operations with human accountability.
@@ -319,12 +492,13 @@ export const LandingPage: React.FC = () => {
 
           <div className="flex items-center gap-5">
             <a href="/#platform" className="transition-colors hover:text-foreground">Platform</a>
-            <a href="/#knowledge" className="transition-colors hover:text-foreground">Knowledge</a>
+            <a href="/#integrations" className="transition-colors hover:text-foreground">Integrations</a>
+            <a href="/#pricing" className="transition-colors hover:text-foreground">Pricing</a>
             <a href="/#trust" className="transition-colors hover:text-foreground">Trust</a>
             <Link to="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
             <Link to="/terms" className="transition-colors hover:text-foreground">Terms</Link>
             <a href="https://marcoby.com" target="_blank" rel="noreferrer" className="transition-colors hover:text-foreground">Marcoby</a>
-            <Link to="/login" className="transition-colors hover:text-foreground">Log In</Link>
+            <a href={toPortalHref('/login')} className="transition-colors hover:text-foreground">Log In</a>
           </div>
         </div>
       </footer>

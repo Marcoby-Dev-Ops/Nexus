@@ -12,8 +12,13 @@ services:
     environment:
       AGENT_RUNTIME: ${AGENT_RUNTIME:-openclaw}
       # OpenClaw Configuration (override via Coolify env vars)
-      OPENCLAW_API_URL: ${OPENCLAW_API_URL:-http://localhost:18789/v1}
+      OPENCLAW_API_URL: ${OPENCLAW_API_URL:-http://localhost:18790/v1}
       OPENCLAW_API_KEY: ${OPENCLAW_API_KEY:-sk-openclaw-local}
+      OPENCLAW_ENABLE_MODELWAY_TOOLS: ${OPENCLAW_ENABLE_MODELWAY_TOOLS:-true}
+      OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS: ${OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS:-true}
+      OPENCLAW_MODELWAY_PROFILE: ${OPENCLAW_MODELWAY_PROFILE:-lean}
+      OPENCLAW_STRICT_GROUNDED_MODE: ${OPENCLAW_STRICT_GROUNDED_MODE:-true}
+      OPENCLAW_HIDE_INTERNAL_PROCESS: ${OPENCLAW_HIDE_INTERNAL_PROCESS:-true}
       # Container-to-container connectivity overrides
       DATABASE_URL: postgresql://nexus:postgres@postgres:5432/nexus_db
       REDIS_URL: redis://redis:6379

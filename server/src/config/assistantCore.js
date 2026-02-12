@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { getAgentConfig, listAgents, normalizeAgentId } = require('./agentCatalog');
+const { DEFAULT_TOOLS } = require('./agentTools');
 
 const ASSISTANT_CORE_VERSION = process.env.ASSISTANT_CORE_VERSION || '2026.02.10';
 const ASSISTANT_CORE_UPDATED_AT = process.env.ASSISTANT_CORE_UPDATED_AT || '2026-02-10T00:00:00.000Z';
@@ -67,6 +68,7 @@ function buildAssistantCoreSnapshot(agentId) {
     agentRole: agent.role,
     digest,
     facts,
+    tools: DEFAULT_TOOLS,
     availableAgents: listAgents()
   };
 }

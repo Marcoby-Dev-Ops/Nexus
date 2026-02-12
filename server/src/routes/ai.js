@@ -58,30 +58,22 @@ function buildOpenClawSessionId(userId, conversationId) {
 
 // OpenClaw configuration
 const agentRuntime = getAgentRuntime();
+const {
+    TOOLS_BASE,
+    TOOLS_NEXUS_INTEGRATIONS,
+    DEFAULT_TOOLS,
+    ENABLE_NEXUS_INTEGRATION_TOOLS
+} = require('../config/agentTools');
+
 const OPENCLAW_ENABLE_MODELWAY_TOOLS = process.env.OPENCLAW_ENABLE_MODELWAY_TOOLS !== 'false';
-const OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS = process.env.OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS !== 'false';
-const OPENCLAW_TOOLS_BASE = [
-    'web_search',
-    'advanced_scrape',
-    'summarize_strategy',
-    'create_skill',
-    'implement_action',
-    'list_skills',
-    'search_skills',
-    'install_skill'
-];
-const OPENCLAW_TOOLS_NEXUS_INTEGRATIONS = [
-    'nexus_get_integration_status',
-    'nexus_search_emails',
-    'nexus_resolve_email_provider',
-    'nexus_start_email_connection',
-    'nexus_connect_imap',
-    'nexus_test_integration_connection',
-    'nexus_disconnect_integration'
-];
-const OPENCLAW_TOOLS_DEFAULT = OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS
-    ? [...OPENCLAW_TOOLS_BASE, ...OPENCLAW_TOOLS_NEXUS_INTEGRATIONS]
-    : OPENCLAW_TOOLS_BASE;
+const OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS = ENABLE_NEXUS_INTEGRATION_TOOLS;
+const OPENCLAW_MODELWAY_PROFILE = String(process.env.OPENCLAW_MODELWAY_PROFILE || 'lean').trim().toLowerCase();
+const OPENCLAW_STRICT_GROUNDED_MODE = process.env.OPENCLAW_STRICT_GROUNDED_MODE !== 'false';
+const OPENCLAW_HIDE_INTERNAL_PROCESS = process.env.OPENCLAW_HIDE_INTERNAL_PROCESS !== 'false';
+
+const OPENCLAW_TOOLS_BASE = TOOLS_BASE.map(t => t.id);
+const OPENCLAW_TOOLS_NEXUS_INTEGRATIONS = TOOLS_NEXUS_INTEGRATIONS.map(t => t.id);
+const OPENCLAW_TOOLS_DEFAULT = DEFAULT_TOOLS.map(t => t.id);
 const OPENCLAW_TOOLS_BY_INTENT = {
     [INTENT_TYPES.LEARN.id]: OPENCLAW_TOOLS_DEFAULT,
     [INTENT_TYPES.SOLVE.id]: OPENCLAW_TOOLS_DEFAULT,
@@ -116,14 +108,12 @@ function getModelWayToolsForIntent(intentId) {
 function buildModelWayInstructionBlock(intent, phase) {
     const phaseName = phase.charAt(0).toUpperCase() + phase.slice(1);
     const intentName = intent?.name || 'Assist';
-
-    return [
+    const instructions = [
         'Model-Way Runtime Instructions:',
         `- Intent: ${intentName}`,
         `- Phase: ${phaseName}`,
         '- If the task requires external or current information, use web_search first.',
         '- If results are thin or blocked, use advanced_scrape for direct extraction.',
-        '- For missing capability, use search_skills then install_skill before proposing custom implementation.',
         '- For integration connect/status workflows, prefer Nexus tools: nexus_get_integration_status, nexus_search_emails, nexus_resolve_email_provider, nexus_start_email_connection, nexus_connect_imap, nexus_test_integration_connection, nexus_disconnect_integration.',
         '- For email connection requests: confirm the target email first, then run nexus_resolve_email_provider before proposing any provider-specific flow.',
         '- For inbox requests (today, last week, last month, specific sender), use nexus_search_emails with the appropriate datePreset/from/query filters.',
@@ -134,7 +124,24 @@ function buildModelWayInstructionBlock(intent, phase) {
         '- Use inline code for short technical tokens such as package names, file paths, and URLs.',
         '- Keep responses concise and direct. Avoid repetitive confirmations, apologies, or filler.',
         '- Include direct source links for external facts.'
-    ].join('\n');
+    ];
+
+    if (OPENCLAW_MODELWAY_PROFILE === 'full') {
+        instructions.push('- For missing capability, use search_skills then install_skill before proposing custom implementation.');
+    }
+
+    if (OPENCLAW_STRICT_GROUNDED_MODE) {
+        instructions.push('- Do not claim actions are completed unless tool output confirms completion.');
+        instructions.push('- For repo/activity/date claims, run git commands first and include concrete commit IDs or ISO dates.');
+        instructions.push('- If not yet verified, state that explicitly and ask for permission before claiming completion.');
+    }
+
+    if (OPENCLAW_HIDE_INTERNAL_PROCESS) {
+        instructions.push('- Do not narrate internal thought process or speculative steps as completed work.');
+        instructions.push('- Report only completed results and the immediate next action.');
+    }
+
+    return instructions.join('\n');
 }
 
 function buildSoulContext() {
