@@ -291,7 +291,10 @@ function buildEmailProviderGuardInstruction(guardState) {
         `- Domain: ${domain}`,
         `- MX-resolved provider: ${recommendation.displayName} (${recommendation.provider})`,
         '- Do not ask the user to confirm provider type.',
-        '- Immediately proceed with provider-specific OAuth flow via nexus_start_email_connection.'
+        '- First run nexus_get_integration_status and inspect this provider for connected/expired state.',
+        '- If already connected, run nexus_test_integration_connection for this provider.',
+        '- If nexus_test_integration_connection returns connected=true, do not re-run OAuth; acknowledge existing connection and continue with the requested task.',
+        '- Only run nexus_start_email_connection if provider is missing, disconnected, expired, or the saved-token test fails.'
     ].join('\n');
 }
 
@@ -307,7 +310,7 @@ function enforceResolvedProviderResponse(content, guardState) {
     return [
         `I resolved \`${guardState.email}\` via MX lookup to **${recommendation.displayName}**.`,
         'No provider confirmation is needed.',
-        `Proceeding with the ${recommendation.displayName} OAuth connection flow now.`
+        `I will verify whether ${recommendation.displayName} is already connected and only start OAuth if reconnection is required.`
     ].join('\n\n');
 }
 
