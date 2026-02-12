@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/hooks/index';
+import { useAuth, useCurrentUser } from '@/hooks/index';
 import { useAuthStore } from '@/core/auth/authStore';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
 import { resolveCanonicalUserId } from '@/core/auth/userIdentity';
@@ -103,6 +103,7 @@ function appendGeneratedAttachmentSummary(content: string, attachments: Generate
 
 export const ChatPage: React.FC = () => {
   const { user } = useAuth();
+  const { currentUser } = useCurrentUser();
   const { profile } = useUserProfile();
   const { toast } = useToast();
   const { setHeaderContent } = useHeaderContext();
@@ -709,7 +710,7 @@ export const ChatPage: React.FC = () => {
         await sendMessage(trimmedMessage, flowConversationId, [], { persist: false });
       }
 
-      const candidateEmail = explicitEmail || profile?.email || user?.email || '';
+      const candidateEmail = explicitEmail || currentUser.email || profile?.email || user?.email || '';
       if (!candidateEmail) {
         await postLocalAssistantMessage(
           flowConversationId,
@@ -936,9 +937,6 @@ export const ChatPage: React.FC = () => {
     );
   }
 
-  // Determine the best display name for the user
-  const displayName = profile?.display_name || profile?.full_name || profile?.first_name || user?.name || "User";
-
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">
       {/* Chat Interface */}
@@ -977,9 +975,9 @@ export const ChatPage: React.FC = () => {
             placeholder="Ask anything — general questions or ask about your business."
             showTypingIndicator={isStreaming}
             className="h-full"
-            userName={displayName}
-            userEmail={profile?.email || user?.email}
-            userAvatarUrl={profile?.avatar_url}
+            userName={currentUser.name}
+            userEmail={currentUser.email}
+            userAvatarUrl={currentUser.avatarUrl}
             agentId={requestedAgentId}
             agentName={selectedAgentName}
             ragEnabled={ragEnabled}

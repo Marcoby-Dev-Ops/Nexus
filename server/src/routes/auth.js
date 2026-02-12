@@ -121,6 +121,105 @@ router.post('/sync/twitter', authenticateToken, async (req, res) => {
   }
 });
 
+// PUT /api/auth/avatar - set canonical avatar URL and sync to Authentik attributes
+router.put('/avatar', authenticateToken, async (req, res) => {
+  try {
+    const userId = String(req.user.id);
+    const jwtPayload = req.user.jwtPayload || { sub: userId };
+    const rawAvatarUrl = typeof req.body?.avatar_url === 'string'
+      ? req.body.avatar_url
+      : (typeof req.body?.avatarUrl === 'string' ? req.body.avatarUrl : '');
+    const avatarUrl = rawAvatarUrl.trim();
+
+    if (avatarUrl) {
+      try {
+        const parsed = new URL(avatarUrl);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return res.status(400).json({ success: false, error: 'Avatar URL must use http or https' });
+        }
+      } catch (_e) {
+        return res.status(400).json({ success: false, error: 'Invalid avatar URL' });
+      }
+    }
+
+    const avatarValue = avatarUrl || null;
+
+    // Always persist in local profile so Nexus remains source-of-truth friendly.
+    const profileSync = await userProfileService.updateProfileData(userId, { avatar_url: avatarValue }, jwtPayload);
+    if (!profileSync.success) {
+      return res.status(500).json({ success: false, error: profileSync.error || 'Failed to update local profile avatar' });
+    }
+
+    // Best-effort Authentik sync (cross-app propagation).
+    if (!AUTHENTIK_BASE_URL || !AUTHENTIK_API_TOKEN) {
+      logger.warn('Authentik not configured; avatar synced locally only', { userId });
+      return res.json({
+        success: true,
+        avatar_url: avatarValue,
+        synced_to_authentik: false
+      });
+    }
+
+    const userResp = await fetch(`${AUTHENTIK_BASE_URL.replace(/\/+$/, '')}/api/v3/core/users/${encodeURIComponent(userId)}/`, {
+      headers: {
+        Authorization: `Bearer ${AUTHENTIK_API_TOKEN}`,
+        Accept: 'application/json'
+      }
+    });
+
+    if (!userResp.ok) {
+      const txt = await userResp.text().catch(() => '');
+      logger.error('Failed to fetch Authentik user before avatar sync', { userId, status: userResp.status, details: txt });
+      return res.status(502).json({
+        success: false,
+        error: 'Failed to sync avatar to Authentik'
+      });
+    }
+
+    const akUser = await userResp.json();
+    const existingAttributes = akUser.attributes || {};
+
+    const patchPayload = {
+      attributes: {
+        ...existingAttributes,
+        avatar_url: avatarValue,
+        profile_picture: avatarValue
+      }
+    };
+
+    const patchResp = await fetch(`${AUTHENTIK_BASE_URL.replace(/\/+$/, '')}/api/v3/core/users/${encodeURIComponent(userId)}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${AUTHENTIK_API_TOKEN}`
+      },
+      body: JSON.stringify(patchPayload)
+    });
+
+    if (!patchResp.ok) {
+      const txt = await patchResp.text().catch(() => '');
+      logger.error('Failed to patch Authentik avatar attributes', {
+        userId,
+        status: patchResp.status,
+        details: txt
+      });
+      return res.status(502).json({
+        success: false,
+        error: 'Failed to sync avatar to Authentik'
+      });
+    }
+
+    return res.json({
+      success: true,
+      avatar_url: avatarValue,
+      synced_to_authentik: true
+    });
+  } catch (error) {
+    logger.error('Avatar sync failed', { error: error.message });
+    return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+  }
+});
+
 // DELETE /api/auth/unlink/twitter - remove Twitter attributes from Authentik user and clear Nexus social_links
 router.delete('/unlink/twitter', authenticateToken, async (req, res) => {
   try {

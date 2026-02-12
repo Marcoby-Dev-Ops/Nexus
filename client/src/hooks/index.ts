@@ -12,6 +12,7 @@ export { useAuthentikAuth as useAuth } from '@/shared/contexts/AuthentikAuthCont
 export { useUser } from '@/shared/hooks/useUser';
 export { useRedirectManager } from '@/shared/hooks/useRedirectManager';
 export { useAuthenticatedApi } from './useAuthenticatedApi';
+export { useCurrentUser } from './useCurrentUser';
 
 // Re-export additional hooks that might be needed
 export { useUserProfile } from '@/shared/contexts/UserContext';

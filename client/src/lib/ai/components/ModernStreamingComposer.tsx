@@ -14,7 +14,7 @@ import SourceDrawer from './SourceDrawer';
 import type { SourceMeta } from './SourceDrawer';
 import { callEdgeFunction } from '@/lib/database';
 import { contextualRAG } from '@/lib/ai/core/contextualRAG';
-import { useAuth } from '@/hooks/index';
+import { useAuth, useCurrentUser } from '@/hooks/index';
 import { useSimpleDashboard } from '@/hooks/dashboard/useSimpleDashboard';
 import { useNextBestActions } from '@/hooks/useNextBestActions';
 import { useLiveBusinessHealth } from '@/hooks/dashboard/useLiveBusinessHealth';
@@ -92,6 +92,7 @@ export default function ModernStreamingComposer({
   const [currentMessageId, setCurrentMessageId] = useState<string | null>(null);
   
   const { user } = useAuth();
+  const { currentUser } = useCurrentUser();
   const { toast } = useToast();
   const { data: dashboardData } = useSimpleDashboard();
   const { actions: nextBestActions } = useNextBestActions();
@@ -343,7 +344,9 @@ export default function ModernStreamingComposer({
           placeholder="Ask me anything about your business..."
           showTypingIndicator={isStreaming}
           className={className}
-          userName={user?.firstName || "User"}
+          userName={currentUser.name}
+          userEmail={currentUser.email}
+          userAvatarUrl={currentUser.avatarUrl}
         />
       </div>
 

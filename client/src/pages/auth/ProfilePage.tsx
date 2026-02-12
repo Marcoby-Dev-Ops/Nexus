@@ -35,6 +35,7 @@ export default function ProfilePage() {
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
     email: user?.email || '',
+    avatarUrl: '',
     company: '',
     jobTitle: '',
     phone: '',
@@ -60,6 +61,7 @@ export default function ProfilePage() {
               firstName: result.data.first_name || '',
               lastName: result.data.last_name || '',
               email: result.data.email || '',
+              avatarUrl: result.data.avatar_url || '',
               company: result.data.company_name || '',
               jobTitle: result.data.job_title || '',
               phone: result.data.phone || '',
@@ -108,6 +110,7 @@ export default function ProfilePage() {
            first_name: formData.firstName,
            last_name: formData.lastName,
            email: formData.email,
+           avatar_url: formData.avatarUrl || null,
            company_name: formData.company,
            job_title: formData.jobTitle,
            phone: formData.phone,
@@ -175,6 +178,22 @@ export default function ProfilePage() {
                const result = profileResult;
 
       if (result.success) {
+        // Sync avatar into Authentik attributes so other Marcoby apps can consume one canonical picture
+        if (formData.avatarUrl !== undefined) {
+          try {
+            await fetch('/api/auth/avatar', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.session.accessToken}`,
+              },
+              body: JSON.stringify({ avatar_url: formData.avatarUrl || null }),
+            });
+          } catch (syncError) {
+            console.warn('Avatar sync to Authentik failed (profile still saved locally):', syncError);
+          }
+        }
+
         console.log('Profile updated successfully');
         setIsEditing(false);
         
@@ -186,6 +205,7 @@ export default function ProfilePage() {
              firstName: result.data.first_name,
              lastName: result.data.last_name,
              email: result.data.email,
+             avatarUrl: result.data.avatar_url || formData.avatarUrl || undefined,
              company: result.data.company_name,
              jobTitle: result.data.job_title,
              phone: result.data.phone,
@@ -258,7 +278,7 @@ export default function ProfilePage() {
           {/* Avatar Section */}
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={user.avatarUrl} />
+              <AvatarImage src={formData.avatarUrl} />
               <AvatarFallback className="text-lg">
                 {/* Defensive: fallback to email if names are missing */}
                 {user.firstName?.[0] || user.email?.[0]?.toUpperCase() || '?'}
@@ -337,6 +357,17 @@ export default function ProfilePage() {
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 disabled={!isEditing}
+              />
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="avatarUrl">Profile Photo URL</Label>
+              <Input
+                id="avatarUrl"
+                value={formData.avatarUrl}
+                onChange={(e) => handleInputChange('avatarUrl', e.target.value)}
+                disabled={!isEditing}
+                placeholder="https://..."
               />
             </div>
 

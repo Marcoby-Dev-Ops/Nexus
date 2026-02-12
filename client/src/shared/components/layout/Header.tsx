@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { useAuth, useUserProfile } from '@/hooks';
+import { useAuth, useCurrentUser } from '@/hooks';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { Settings, LogOut, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react';
@@ -15,8 +15,8 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
-  const { user, signOut } = useAuth();
-  const { profile } = useUserProfile();
+  const { signOut } = useAuth();
+  const { currentUser } = useCurrentUser();
   const { pageTitle, pageSubtitle } = useHeaderContext();
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,16 +54,10 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const resolvedFirstName = profile?.first_name || user?.firstName || '';
-  const resolvedLastName = profile?.last_name || user?.lastName || '';
-  const resolvedName = profile?.display_name
-    || profile?.full_name
-    || [resolvedFirstName, resolvedLastName].filter(Boolean).join(' ').trim()
-    || user?.name
-    || 'User';
-  const resolvedEmail = profile?.email || user?.email || '';
-  const resolvedAvatarUrl = profile?.avatar_url || undefined;
-  const resolvedInitials = `${resolvedFirstName?.[0] || ''}${resolvedLastName?.[0] || ''}` || resolvedName?.[0] || 'U';
+  const resolvedName = currentUser.name;
+  const resolvedEmail = currentUser.email;
+  const resolvedAvatarUrl = currentUser.avatarUrl;
+  const resolvedInitials = currentUser.initials;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -177,7 +171,10 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
               <div className="absolute right-0 mt-2 w-56 rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 z-50">
                 <div className="p-2 border-b">
                   <p className="text-sm font-medium">{resolvedName}</p>
-                  <p className="text-xs text-muted-foreground truncate">{resolvedEmail}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {currentUser.handle ? `@${currentUser.handle}` : resolvedEmail}
+                  </p>
+                  <p className="text-xs font-medium text-primary mt-1">{currentUser.planName}</p>
                 </div>
                 <div className="p-1">
                   <button

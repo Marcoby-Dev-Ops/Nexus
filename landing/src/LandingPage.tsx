@@ -243,9 +243,6 @@ export const LandingPage: React.FC = () => {
                           <User className="h-3.5 w-3.5" />
                           Identity Signal
                         </div>
-                        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-500">
-                          Coming Soon
-                        </span>
                       </div>
                       <p className="mt-2 text-sm">Voice: strategic, accurate</p>
                       <p className="mt-1 text-sm text-muted-foreground">Role: Growth Consultant</p>
@@ -262,7 +259,7 @@ export const LandingPage: React.FC = () => {
                         { phase: 'Analyze', status: 'Live' },
                         { phase: 'Connect', status: 'Live' },
                         { phase: 'Sync', status: 'Live' },
-                        { phase: 'Report', status: 'Soon' }
+                        { phase: 'Report', status: 'Live' }
                       ].map((item) => (
                         <div key={item.phase} className="rounded-md bg-muted/60 px-2 py-1.5 text-center">
                           <div>{item.phase}</div>
@@ -271,10 +268,6 @@ export const LandingPage: React.FC = () => {
                       ))}
                     </div>
                   </div>
-
-                  <p className="text-[11px] text-muted-foreground">
-                    Preview reflects the current Nexus app shell and active capabilities. Features marked "Coming Soon" are on the roadmap.
-                  </p>
                 </div>
               </div>
             </div>
