@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -64,6 +64,7 @@ interface MarketplaceIntegration {
 const IntegrationMarketplacePage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   // Initialize services
   // Using consolidated integration service
@@ -425,6 +426,7 @@ const IntegrationMarketplacePage: React.FC = () => {
         sessionStorage.setItem('oauth_state', startData.state);
         sessionStorage.setItem('oauth_provider', 'microsoft');
         sessionStorage.setItem('oauth_user_id', canonicalUserId);
+        sessionStorage.setItem('oauth_return_to', '/integrations');
 
         window.location.href = startData.authUrl;
       } catch (error) {
@@ -801,6 +803,19 @@ const IntegrationMarketplacePage: React.FC = () => {
 
     return mockCredentials[adapterName] || { apiKey: 'mock-api-key' };
   };
+
+  useEffect(() => {
+    const query = searchParams.get('q');
+    const category = searchParams.get('category');
+
+    if (query && query.trim().length > 0) {
+      setSearchTerm(query.trim());
+    }
+
+    if (category && categories.includes(category)) {
+      setSelectedCategory(category);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user?.id) {

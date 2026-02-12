@@ -34,7 +34,7 @@ import CoolifyOpsPage from '@/pages/operations/CoolifyOpsPage';
 import AtomModelPage from '@/pages/AtomModelPage';
 
 // Integrations pages
-import { IntegrationsDashboard } from '../integrations/pages/IntegrationsDashboard';
+import IntegrationMarketplacePage from '@/pages/integrations/IntegrationMarketplacePage';
 import TestOAuthPage from '../pages/integrations/TestOAuthPage';
 import { OAuthCallbackPage } from '../pages/integrations/OAuthCallbackPage';
 
@@ -169,7 +169,23 @@ function AppRoutes() {
         path="/integrations" 
         element={
           <ProtectedRoute>
-            <IntegrationsDashboard />
+            <IntegrationMarketplacePage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route
+        path="/integrations/manage"
+        element={
+          <ProtectedRoute>
+            <IntegrationMarketplacePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/integrations/marketplace"
+        element={
+          <ProtectedRoute>
+            <IntegrationMarketplacePage />
           </ProtectedRoute>
         } 
       />

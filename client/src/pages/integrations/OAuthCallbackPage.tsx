@@ -19,6 +19,7 @@ export const OAuthCallbackPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const returnTo = sessionStorage.getItem('oauth_return_to') || '/integrations';
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -76,10 +77,16 @@ export const OAuthCallbackPage: React.FC = () => {
             setStatus('success');
             setMessage(result.message || 'Integration connected successfully!');
 
+            const target = sessionStorage.getItem('oauth_return_to') || '/integrations';
+            setTimeout(() => {
+              navigate(target);
+            }, 900);
+
             // Clean up session storage
             sessionStorage.removeItem('oauth_state');
             sessionStorage.removeItem('oauth_provider');
             sessionStorage.removeItem('oauth_user_id');
+            sessionStorage.removeItem('oauth_return_to');
           } else {
             setStatus('error');
             setError(result.message || 'Failed to complete OAuth flow');
@@ -107,7 +114,7 @@ export const OAuthCallbackPage: React.FC = () => {
   }, [searchParams, user?.id]);
 
   const handleGoToIntegrations = () => {
-    navigate('/integrations');
+    navigate(returnTo);
   };
 
   const handleRetry = () => {
@@ -115,7 +122,8 @@ export const OAuthCallbackPage: React.FC = () => {
     sessionStorage.removeItem('oauth_state');
     sessionStorage.removeItem('oauth_provider');
     sessionStorage.removeItem('oauth_user_id');
-    navigate('/integrations');
+    sessionStorage.removeItem('oauth_return_to');
+    navigate(returnTo);
   };
 
   const getProviderName = (provider: OAuthProvider) => {

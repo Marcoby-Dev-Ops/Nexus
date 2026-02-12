@@ -57,6 +57,8 @@ export const ROUTELABELS: Record<string, string> = {
   '/assessment': 'Assessment',
   '/marketplace': 'Marketplace',
   '/integrations': 'Integrations',
+  '/integrations/manage': 'Integrations',
+  '/integrations/marketplace': 'Integration Marketplace',
   '/integrations/hubspot': 'HubSpot Integration',
   '/integrations/client-intelligence': 'Client Intelligence',
   '/integrations/hubspot/test': 'HubSpot Test',

@@ -1,6 +1,9 @@
 const express = require('express');
 const { z } = require('zod');
 const crypto = require('crypto');
+const dns = require('dns').promises;
+const net = require('net');
+const tls = require('tls');
 
 const router = express.Router();
 const { logger } = require('../utils/logger');
@@ -34,6 +37,136 @@ function resolveTokenRedirectUri(provider, requestedRedirectUri) {
     return getMicrosoftBrokerCallbackUrl();
   }
   return requestedRedirectUri;
+}
+
+function inferEmailProviderFromMx(mxRecords = []) {
+  const hosts = mxRecords
+    .map((record) => (record?.exchange || '').toLowerCase())
+    .filter(Boolean);
+
+  const hasHost = (fragments = []) =>
+    hosts.some((host) => fragments.some((fragment) => host.includes(fragment)));
+
+  if (hasHost(['protection.outlook.com', 'outlook.com', 'office365.com'])) {
+    return {
+      provider: 'microsoft',
+      displayName: 'Microsoft 365',
+      workflow: 'oauth',
+      confidence: 'high',
+    };
+  }
+
+  if (hasHost(['google.com', 'googlemail.com'])) {
+    return {
+      provider: 'google_workspace',
+      displayName: 'Google Workspace',
+      workflow: 'oauth',
+      confidence: 'high',
+    };
+  }
+
+  if (hasHost(['zoho.com'])) {
+    return {
+      provider: 'zoho',
+      displayName: 'Zoho Mail',
+      workflow: 'imap_manual',
+      confidence: 'medium',
+      imap: { host: 'imap.zoho.com', port: 993, useSSL: true },
+    };
+  }
+
+  if (hasHost(['yahoodns.net', 'yahoo.com'])) {
+    return {
+      provider: 'yahoo',
+      displayName: 'Yahoo Mail',
+      workflow: 'imap_manual',
+      confidence: 'medium',
+      imap: { host: 'imap.mail.yahoo.com', port: 993, useSSL: true },
+    };
+  }
+
+  if (hasHost(['icloud.com', 'me.com'])) {
+    return {
+      provider: 'icloud',
+      displayName: 'iCloud Mail',
+      workflow: 'imap_manual',
+      confidence: 'medium',
+      imap: { host: 'imap.mail.me.com', port: 993, useSSL: true },
+    };
+  }
+
+  return {
+    provider: 'custom_imap',
+    displayName: 'Custom Email Provider',
+    workflow: 'imap_manual',
+    confidence: hosts.length ? 'medium' : 'low',
+    imap: null,
+  };
+}
+
+function escapeImapQuoted(value = '') {
+  return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function testImapLogin({ host, port, username, password, useSSL = true, timeoutMs = 15000 }) {
+  return new Promise((resolve) => {
+    let settled = false;
+    let buffer = '';
+    let sentLogin = false;
+    const loginTag = 'A1';
+
+    const settle = (result) => {
+      if (settled) return;
+      settled = true;
+      try { socket.destroy(); } catch (_e) { /* ignore */ }
+      resolve(result);
+    };
+
+    const onData = (chunk) => {
+      buffer += chunk.toString('utf8');
+
+      if (!sentLogin) {
+        // Most servers greet with "* OK", but we send login after first server line regardless.
+        if (/\r?\n/.test(buffer)) {
+          const command = `${loginTag} LOGIN "${escapeImapQuoted(username)}" "${escapeImapQuoted(password)}"\r\n`;
+          socket.write(command);
+          sentLogin = true;
+        }
+        return;
+      }
+
+      const okRegex = new RegExp(`^${loginTag}\\s+OK\\b`, 'mi');
+      const failRegex = new RegExp(`^${loginTag}\\s+(NO|BAD)\\b`, 'mi');
+      if (okRegex.test(buffer)) {
+        settle({ ok: true });
+      } else if (failRegex.test(buffer)) {
+        settle({ ok: false, error: 'Authentication failed' });
+      }
+    };
+
+    const onError = (error) => {
+      settle({ ok: false, error: error?.message || 'Connection failed' });
+    };
+
+    const socket = useSSL
+      ? tls.connect({
+          host,
+          port,
+          servername: host,
+          rejectUnauthorized: false,
+        })
+      : net.connect({ host, port });
+
+    socket.setEncoding('utf8');
+    socket.setTimeout(timeoutMs, () => {
+      settle({ ok: false, error: 'IMAP connection timed out' });
+    });
+    socket.on('data', onData);
+    socket.on('error', onError);
+    socket.on('close', () => {
+      if (!settled) settle({ ok: false, error: 'Connection closed before authentication completed' });
+    });
+  });
 }
 
 
@@ -181,6 +314,185 @@ router.get('/config/:provider', (req, res) => {
   }
 
   res.json(publicConfig);
+});
+
+/**
+ * Resolve email provider from MX records and return recommended workflow.
+ */
+router.post('/email-provider/resolve', optionalAuth, async (req, res) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
+    }
+
+    const emailMatch = email.match(/^[^\s@]+@([^\s@]+\.[^\s@]+)$/);
+    if (!emailMatch) {
+      return res.status(400).json({ error: 'invalid email address' });
+    }
+
+    const domain = emailMatch[1];
+    let mxRecords = [];
+
+    try {
+      mxRecords = await dns.resolveMx(domain);
+      mxRecords.sort((a, b) => Number(a.priority || 0) - Number(b.priority || 0));
+    } catch (lookupError) {
+      logger.warn('MX lookup failed for email provider resolution', {
+        domain,
+        error: lookupError?.message || String(lookupError),
+      });
+    }
+
+    const recommendation = inferEmailProviderFromMx(mxRecords);
+    const defaultImapHost = recommendation.imap?.host || `imap.${domain}`;
+    const defaultImapPort = recommendation.imap?.port || 993;
+    const defaultUseSSL = recommendation.imap?.useSSL ?? true;
+
+    return res.json({
+      email,
+      domain,
+      mxRecords: mxRecords.map((mx) => ({
+        exchange: mx.exchange,
+        priority: mx.priority,
+      })),
+      recommendation,
+      suggestedImap: {
+        host: defaultImapHost,
+        port: defaultImapPort,
+        useSSL: defaultUseSSL,
+        username: email,
+      },
+      connectorOptions: [
+        {
+          provider: 'microsoft',
+          displayName: 'Microsoft 365',
+          workflow: 'oauth',
+          supported: true,
+        },
+        {
+          provider: 'google_workspace',
+          displayName: 'Google Workspace',
+          workflow: 'oauth',
+          supported: true,
+        },
+        {
+          provider: 'custom_imap',
+          displayName: 'Custom IMAP/SMTP',
+          workflow: 'imap_manual',
+          supported: false,
+        },
+      ],
+    });
+  } catch (error) {
+    logger.error('Failed to resolve email provider', {
+      error: error?.message || String(error),
+    });
+    return res.status(500).json({ error: 'Failed to resolve email provider' });
+  }
+});
+
+/**
+ * Connect a non-OAuth IMAP account and persist integration credentials.
+ */
+router.post('/imap/connect', optionalAuth, async (req, res) => {
+  try {
+    const {
+      userId: requestedUserId,
+      email,
+      host,
+      port,
+      username,
+      password,
+      useSSL = true,
+      providerHint = 'custom_imap',
+    } = req.body || {};
+
+    const effectiveUserId = req.user?.id || requestedUserId;
+    if (!effectiveUserId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    if (req.user?.id && requestedUserId && req.user.id !== requestedUserId) {
+      return res.status(403).json({ error: 'userId does not match authenticated user' });
+    }
+
+    if (!email || !host || !username || !password) {
+      return res.status(400).json({ error: 'email, host, username, and password are required' });
+    }
+
+    const resolvedPort = Number(port || 993);
+    if (!Number.isFinite(resolvedPort) || resolvedPort <= 0 || resolvedPort > 65535) {
+      return res.status(400).json({ error: 'port must be a valid number between 1 and 65535' });
+    }
+
+    const loginResult = await testImapLogin({
+      host: String(host).trim(),
+      port: resolvedPort,
+      username: String(username).trim(),
+      password: String(password),
+      useSSL: Boolean(useSSL),
+    });
+
+    if (!loginResult.ok) {
+      return res.status(400).json({
+        error: 'IMAP authentication failed',
+        details: loginResult.error || 'Unable to authenticate IMAP credentials',
+      });
+    }
+
+    const integrationSlug = 'custom_imap';
+    const integrationLookup = await query(
+      'SELECT id FROM integrations WHERE slug = $1 LIMIT 1',
+      [integrationSlug]
+    );
+    const integrationId = integrationLookup?.data?.[0]?.id || null;
+
+    const credentials = {
+      host: String(host).trim(),
+      port: resolvedPort,
+      username: String(username).trim(),
+      password: String(password),
+      use_ssl: Boolean(useSSL),
+    };
+
+    const settings = {
+      provider: providerHint || integrationSlug,
+      email: String(email).trim(),
+      host: String(host).trim(),
+      port: resolvedPort,
+      username: String(username).trim(),
+      use_ssl: Boolean(useSSL),
+      auth_type: 'imap_password',
+      workflow: 'imap_manual',
+    };
+
+    const integrationUpsert = await query(
+      `INSERT INTO user_integrations (
+          user_id, integration_name, integration_id, credentials, settings, status, last_sync_at
+        )
+        VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, 'active', NOW())
+        ON CONFLICT (user_id, integration_name)
+        DO UPDATE SET
+          integration_id = EXCLUDED.integration_id,
+          credentials = EXCLUDED.credentials,
+          settings = EXCLUDED.settings,
+          status = 'active',
+          updated_at = NOW()
+        RETURNING id`,
+      [effectiveUserId, integrationSlug, integrationId, JSON.stringify(credentials), JSON.stringify(settings)]
+    );
+
+    return res.json({
+      success: true,
+      message: 'Successfully connected IMAP email account',
+      provider: integrationSlug,
+      integrationId: integrationUpsert?.data?.[0]?.id,
+      status: 'connected',
+    });
+  } catch (error) {
+    logger.error('Failed to connect IMAP account', { error: error?.message || String(error) });
+    return res.status(500).json({ error: 'Failed to connect IMAP account' });
+  }
 });
 
 // In-memory OAuth state storage (for development)

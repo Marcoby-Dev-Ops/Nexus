@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/index';
 import { useAuthStore } from '@/core/auth/authStore';
+import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
+import { resolveCanonicalUserId } from '@/core/auth/userIdentity';
 import { Button } from '@/shared/components/ui/Button';
 import ModernChatInterface from '@/lib/ai/components/ModernChatInterface';
 import { ConversationalAIService } from '@/services/ai/ConversationalAIService';
@@ -129,6 +131,15 @@ export const ChatPage: React.FC = () => {
   const [streamStatus, setStreamStatus] = useState<StreamRuntimeStatus | null>(null);
   const [thinkingContent, setThinkingContent] = useState('');
   const [contextChips, setContextChips] = useState<string[]>([]);
+  const [pendingEmailConnection, setPendingEmailConnection] = useState<{ email: string } | null>(null);
+  const [pendingImapConnection, setPendingImapConnection] = useState<{
+    email: string;
+    provider: string;
+    host: string;
+    port: number;
+    useSSL: boolean;
+    username: string;
+  } | null>(null);
 
   // Knowledge context state
   const ragEnabled = contextInjectedForStream;
@@ -167,6 +178,172 @@ export const ChatPage: React.FC = () => {
     const storeState = useAuthStore.getState();
     const session = storeState.session;
     return session?.session?.accessToken || session?.accessToken || '';
+  };
+
+  const startEmailOAuthProviderConnection = useCallback(async (provider: 'microsoft' | 'google_workspace') => {
+    if (!user?.id) {
+      toast({
+        title: 'Session missing',
+        description: 'Please sign in again before connecting your email.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      const sessionResult = await authentikAuthService.getSession();
+      const session = sessionResult.data;
+      const canonicalUserId = resolveCanonicalUserId(user.id, session);
+      const accessToken = session?.session?.accessToken || session?.accessToken;
+
+      if (!canonicalUserId) {
+        throw new Error('Unable to resolve authenticated user identity');
+      }
+
+      const redirectUri = `${window.location.origin}/integrations/oauth/callback`;
+      const providerPath = provider === 'google_workspace' ? 'google-workspace' : provider;
+      const startUrl = `/api/oauth/${providerPath}/start?userId=${encodeURIComponent(canonicalUserId)}&redirectUri=${encodeURIComponent(redirectUri)}`;
+      const startResponse = await fetch(startUrl, {
+        credentials: 'include',
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined
+      });
+
+      if (!startResponse.ok) {
+        const details = await startResponse.text();
+        throw new Error(`Failed to start ${provider} OAuth (${startResponse.status}): ${details}`);
+      }
+
+      const startData = await startResponse.json();
+      if (!startData?.authUrl || !startData?.state) {
+        throw new Error(`${provider} OAuth start response is missing authUrl/state`);
+      }
+
+      sessionStorage.setItem('oauth_state', startData.state);
+      sessionStorage.setItem('oauth_provider', provider);
+      sessionStorage.setItem('oauth_user_id', canonicalUserId);
+      sessionStorage.setItem('oauth_return_to', '/chat');
+
+      window.location.href = startData.authUrl;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : `Failed to start ${provider} OAuth`;
+      logger.error('Chat-triggered email connection failed', { provider, error: message });
+      toast({
+        title: 'Connection failed',
+        description: message,
+        variant: 'destructive'
+      });
+    }
+  }, [user?.id, toast]);
+
+  const isAffirmative = (text: string) =>
+    /^(yes|yep|yeah|confirm|correct|use that|that one|go ahead|proceed|do it)\b/.test(text.trim());
+
+  const isNegative = (text: string) =>
+    /^(no|nope|different|not that|another)\b/.test(text.trim());
+
+  const ensureConversationForLocalFlow = useCallback(async (seed: string): Promise<string | null> => {
+    if (conversationId) return conversationId;
+    if (!createConversation || !user?.id) return null;
+    return createConversation(generateTitle(seed), 'gpt-4', undefined, user.id);
+  }, [conversationId, createConversation, user?.id]);
+
+  const postLocalAssistantMessage = useCallback(async (conversationIdValue: string | null, content: string) => {
+    if (!conversationIdValue || !saveAIResponse) return;
+    await saveAIResponse(content, conversationIdValue, { persist: false });
+  }, [saveAIResponse]);
+
+  const resolveEmailAndConnect = useCallback(async (email: string, flowConversationId: string | null) => {
+    try {
+      const token = getAccessToken();
+      const resolveResponse = await fetch('/api/oauth/email-provider/resolve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ email })
+      });
+
+      if (!resolveResponse.ok) {
+        const details = await resolveResponse.text();
+        throw new Error(`Provider resolution failed (${resolveResponse.status}): ${details}`);
+      }
+
+      const resolution = await resolveResponse.json();
+      const provider = resolution?.recommendation?.provider;
+      const workflow = resolution?.recommendation?.workflow;
+      const displayName = resolution?.recommendation?.displayName || 'Email Provider';
+
+      if (workflow === 'oauth' && provider === 'microsoft') {
+        await postLocalAssistantMessage(
+          flowConversationId,
+          `Detected **${displayName}** for \`${email}\`. Starting Microsoft 365 connection now.`
+        );
+        await startEmailOAuthProviderConnection('microsoft');
+        return;
+      }
+
+      if (workflow === 'oauth' && provider === 'google_workspace') {
+        await postLocalAssistantMessage(
+          flowConversationId,
+          `Detected **${displayName}** for \`${email}\`. Starting Google Workspace connection now.`
+        );
+        await startEmailOAuthProviderConnection('google_workspace');
+        return;
+      }
+
+      await postLocalAssistantMessage(
+        flowConversationId,
+        `Detected **${displayName}** for \`${email}\`, which currently needs manual IMAP/SMTP setup. OAuth is not available yet for this provider.`
+      );
+      const suggested = resolution?.suggestedImap || {};
+      const suggestedHost = suggested.host || `imap.${email.split('@')[1] || ''}`;
+      const suggestedPort = Number(suggested.port || 993);
+      const suggestedUseSSL = suggested.useSSL !== false;
+      const suggestedUsername = suggested.username || email;
+
+      setPendingImapConnection({
+        email,
+        provider: provider || 'custom_imap',
+        host: suggestedHost,
+        port: suggestedPort,
+        useSSL: suggestedUseSSL,
+        username: suggestedUsername,
+      });
+
+      await postLocalAssistantMessage(
+        flowConversationId,
+        `To connect via IMAP, reply with:\n\`password=YOUR_APP_PASSWORD\`\nYou can optionally override defaults:\n\`host=${suggestedHost} port=${suggestedPort} username=${suggestedUsername} ssl=${suggestedUseSSL}\``
+      );
+      toast({
+        title: `${displayName} detected`,
+        description: 'OAuth is not available yet. Send your IMAP app password in chat to complete setup.',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to resolve email provider';
+      logger.error('Email provider resolution failed', { error: message, email });
+      await postLocalAssistantMessage(
+        flowConversationId,
+        `I could not resolve the email provider for \`${email}\`. Please try again or provide a different address.`
+      );
+      toast({
+        title: 'Provider detection failed',
+        description: message,
+        variant: 'destructive'
+      });
+    }
+  }, [postLocalAssistantMessage, startEmailOAuthProviderConnection, toast]);
+
+  const parseImapKeyValues = (input: string): Record<string, string> => {
+    const entries: Record<string, string> = {};
+    const regex = /([a-zA-Z_]+)=("([^"]+)"|'([^']+)'|[^\s]+)/g;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(input)) !== null) {
+      const key = (match[1] || '').toLowerCase();
+      const value = (match[3] || match[4] || match[2] || '').replace(/^['"]|['"]$/g, '');
+      if (key) entries[key] = value;
+    }
+    return entries;
   };
 
   const loadContextChips = useCallback(async () => {
@@ -210,6 +387,144 @@ export const ChatPage: React.FC = () => {
     const trimmedMessage = message.trim();
     const hasAttachments = attachments.length > 0;
     if (!trimmedMessage && !hasAttachments) return;
+
+    const normalizedMessage = trimmedMessage.toLowerCase();
+    const wantsEmailConnection =
+      normalizedMessage.includes('connect my email') ||
+      normalizedMessage.includes('connect email') ||
+      normalizedMessage.includes('connect outlook') ||
+      normalizedMessage.includes('connect 365') ||
+      normalizedMessage.includes('connect microsoft 365');
+    const explicitEmailMatch = trimmedMessage.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    const explicitEmail = explicitEmailMatch?.[0] || '';
+
+    // Step 3 of flow: user provides IMAP credentials after provider detection fallback
+    if (pendingImapConnection) {
+      const flowConversationId = await ensureConversationForLocalFlow(trimmedMessage);
+      if (flowConversationId) {
+        await sendMessage(trimmedMessage, flowConversationId, [], { persist: false });
+      }
+
+      const kv = parseImapKeyValues(trimmedMessage);
+      const password = kv.password || (trimmedMessage.includes('=') ? '' : trimmedMessage.trim());
+      if (!password) {
+        await postLocalAssistantMessage(
+          flowConversationId,
+          'I need an IMAP app password. Reply with `password=YOUR_APP_PASSWORD`.'
+        );
+        return;
+      }
+
+      const host = kv.host || pendingImapConnection.host;
+      const port = Number(kv.port || pendingImapConnection.port || 993);
+      const username = kv.username || kv.user || pendingImapConnection.username;
+      const sslRaw = (kv.ssl || kv.tls || `${pendingImapConnection.useSSL}`).toLowerCase();
+      const useSSL = !(sslRaw === 'false' || sslRaw === '0' || sslRaw === 'no');
+
+      try {
+        const token = getAccessToken();
+        const response = await fetch('/api/oauth/imap/connect', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            email: pendingImapConnection.email,
+            providerHint: pendingImapConnection.provider,
+            host,
+            port,
+            username,
+            password,
+            useSSL,
+          }),
+        });
+
+        if (!response.ok) {
+          const details = await response.text();
+          throw new Error(`IMAP connect failed (${response.status}): ${details}`);
+        }
+
+        setPendingImapConnection(null);
+        await postLocalAssistantMessage(
+          flowConversationId,
+          `IMAP connected successfully for \`${pendingImapConnection.email}\`. Nexus can now access your email through this connector.`
+        );
+        toast({
+          title: 'Email connected',
+          description: `IMAP connection established for ${pendingImapConnection.email}.`,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to connect IMAP account';
+        logger.error('Chat-triggered IMAP connect failed', { error: message });
+        await postLocalAssistantMessage(
+          flowConversationId,
+          `IMAP connection failed. Please verify host/username/app-password and try again.\nError: ${message}`
+        );
+        toast({
+          title: 'IMAP connection failed',
+          description: message,
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
+
+    // Step 2 of flow: user confirms or adjusts email after prompt
+    if (pendingEmailConnection) {
+      const flowConversationId = await ensureConversationForLocalFlow(trimmedMessage);
+      if (flowConversationId) {
+        await sendMessage(trimmedMessage, flowConversationId, [], { persist: false });
+      }
+
+      if (explicitEmail && explicitEmail.toLowerCase() !== pendingEmailConnection.email.toLowerCase()) {
+        setPendingEmailConnection({ email: explicitEmail });
+        await postLocalAssistantMessage(
+          flowConversationId,
+          `Got it. Use \`${explicitEmail}\` to connect your email? Reply **yes** to continue.`
+        );
+        return;
+      }
+
+      if (isAffirmative(normalizedMessage)) {
+        const email = pendingEmailConnection.email;
+        setPendingEmailConnection(null);
+        await resolveEmailAndConnect(email, flowConversationId);
+        return;
+      }
+
+      if (isNegative(normalizedMessage)) {
+        setPendingEmailConnection(null);
+        await postLocalAssistantMessage(
+          flowConversationId,
+          'Please share the email address you want to connect (example: `you@company.com`).'
+        );
+        return;
+      }
+    }
+
+    if (wantsEmailConnection) {
+      const flowConversationId = await ensureConversationForLocalFlow(trimmedMessage);
+      if (flowConversationId) {
+        await sendMessage(trimmedMessage, flowConversationId, [], { persist: false });
+      }
+
+      const candidateEmail = explicitEmail || profile?.email || user?.email || '';
+      if (!candidateEmail) {
+        await postLocalAssistantMessage(
+          flowConversationId,
+          'Sure. Which email address should I connect? (example: `you@company.com`)'
+        );
+        return;
+      }
+
+      setPendingEmailConnection({ email: candidateEmail });
+      await postLocalAssistantMessage(
+        flowConversationId,
+        `Sure. Are you referring to \`${candidateEmail}\` or a different email address? Reply **yes** to confirm, or send a different email.`
+      );
+      return;
+    }
 
     try {
       // Check if this is an explicit switching command to avoid creating dummy "New Chat" threads

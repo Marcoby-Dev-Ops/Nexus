@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, User, Settings, Building2 } from 'lucide-react';
+import { MessageSquare, User, Settings, Building2, Plug } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 export interface NavItem {
@@ -26,6 +26,13 @@ export const navItems: NavItem[] = [
     path: '/knowledge',
     icon: <Building2 className="h-5 w-5" />,
     description: 'Business Identity & Knowledge',
+    category: 'overview'
+  },
+  {
+    name: 'Integrations',
+    path: '/integrations',
+    icon: <Plug className="h-5 w-5" />,
+    description: 'Connect and manage external services',
     category: 'overview'
   },
   {
