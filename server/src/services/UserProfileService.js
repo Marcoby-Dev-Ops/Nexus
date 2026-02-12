@@ -49,13 +49,16 @@ class UserProfileService {
             const currentProfile = existingResult.data[0];
             const safeUpdateData = {};
 
-            // "Fill-only" strategy: Only update fields that are missing/empty in DB
+            // "Fill-only" strategy for most fields, but allow selected fields
+            // (like avatar) to refresh when Authentik changes.
+            const forceSyncFields = new Set(['avatar_url']);
             Object.entries(authentikData.profileData).forEach(([key, paramValue]) => {
               const dbValue = currentProfile[key];
               // Check if DB value is effectively empty
               const isDbValueEmpty = !dbValue || dbValue === '' || dbValue === 'User';
 
-              if (isDbValueEmpty && paramValue) {
+              const shouldForceSync = forceSyncFields.has(key) && paramValue && dbValue !== paramValue;
+              if ((isDbValueEmpty && paramValue) || shouldForceSync) {
                 safeUpdateData[key] = paramValue;
               }
             });
@@ -187,13 +190,13 @@ class UserProfileService {
       // Create the initial profile with Authentik data
       const result = await query(
         `INSERT INTO user_profiles (
-          user_id, email, display_name, first_name, last_name, phone, 
+          user_id, email, display_name, first_name, last_name, phone, avatar_url,
           company_name, role, status, 
           onboarding_completed, profile_completion_percentage, 
           subscription_tier, signup_completed, business_profile_completed,
           last_active_at, created_at, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW(), NOW()
         ) RETURNING *`,
         [
           userId,
@@ -202,6 +205,7 @@ class UserProfileService {
           authentikData.profileData.first_name || null,
           authentikData.profileData.last_name || null,
           authentikData.profileData.phone || null,
+          authentikData.profileData.avatar_url || null,
           authentikData.profileData.company_name || null,
           'user',
           'active',
@@ -613,6 +617,13 @@ class UserProfileService {
     if (attrs.first_name) profileData.first_name = attrs.first_name;
     if (attrs.last_name) profileData.last_name = attrs.last_name;
     if (attrs.phone) profileData.phone = attrs.phone;
+    const avatarUrl =
+      jwtPayload.picture ||
+      attrs.avatar_url ||
+      attrs.profile_picture ||
+      attrs.avatar ||
+      null;
+    if (avatarUrl) profileData.avatar_url = avatarUrl;
 
     // Professional information
     if (attrs.business_name) profileData.company_name = attrs.business_name;

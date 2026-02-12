@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks';
+import { useAuth, useUserProfile } from '@/hooks';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { Settings, LogOut, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react';
 import { ThemeToggle } from '@/shared/components/ui/theme-toggle';
-import { useHeaderContext, HeaderProvider } from '@/shared/hooks/useHeaderContext';
+import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { GlobalSearch } from './GlobalSearch';
 import { navItems } from './navConfig';
 
@@ -16,6 +16,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
   const { user, signOut } = useAuth();
+  const { profile } = useUserProfile();
   const { pageTitle, pageSubtitle } = useHeaderContext();
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,6 +54,16 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const resolvedFirstName = profile?.first_name || user?.firstName || '';
+  const resolvedLastName = profile?.last_name || user?.lastName || '';
+  const resolvedName = profile?.display_name
+    || profile?.full_name
+    || [resolvedFirstName, resolvedLastName].filter(Boolean).join(' ').trim()
+    || user?.name
+    || 'User';
+  const resolvedEmail = profile?.email || user?.email || '';
+  const resolvedAvatarUrl = profile?.avatar_url || undefined;
+  const resolvedInitials = `${resolvedFirstName?.[0] || ''}${resolvedLastName?.[0] || ''}` || resolvedName?.[0] || 'U';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -155,9 +166,9 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
               className="flex items-center gap-2 outline-none p-1 rounded-full hover:bg-muted transition-colors"
             >
               <Avatar className="h-7 w-7 md:h-8 md:w-8 border border-border">
-                <AvatarImage src={/* user?.avatar_url || */ undefined} />
+                <AvatarImage src={resolvedAvatarUrl} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  {resolvedInitials}
                 </AvatarFallback>
               </Avatar>
             </button>
@@ -165,8 +176,8 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-56 rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 z-50">
                 <div className="p-2 border-b">
-                  <p className="text-sm font-medium">{user?.name || 'User'}</p>
-                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  <p className="text-sm font-medium">{resolvedName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{resolvedEmail}</p>
                 </div>
                 <div className="p-1">
                   <button

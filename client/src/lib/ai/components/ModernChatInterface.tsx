@@ -110,7 +110,22 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
     : thinkingLabel;
   const statusDetail = streamStatus?.detail || (ragEnabled ? 'Business context is attached from backend memory.' : null);
   const timelineEvents = statusEvents.length ? [...statusEvents].reverse() : [];
-  const shouldShowActivityTimeline = timelineEvents.length > 1;
+  const currentStatusEvent = streamStatus
+    ? {
+        stage: streamStatus.stage || 'processing',
+        label: streamStatus.label || 'Agent is working',
+        detail: streamStatus.detail || null
+      }
+    : null;
+  const timelineDisplayEvents = timelineEvents.filter((event, index) => {
+    if (!currentStatusEvent || index !== 0) return true;
+    return !(
+      event.stage === currentStatusEvent.stage
+      && event.label === currentStatusEvent.label
+      && (event.detail || '') === (currentStatusEvent.detail || '')
+    );
+  });
+  const shouldShowActivityTimeline = timelineDisplayEvents.length > 0;
   const stageProgressMap: Record<string, number> = {
     accepted: 8,
     context_loading: 20,
@@ -341,7 +356,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                             >
                               <span>Activity Timeline</span>
                               <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
-                                {timelineEvents.length}
+                                {timelineDisplayEvents.length}
                               </span>
                               {isActivityExpanded ? (
                                 <ChevronDown className="w-3 h-3 ml-auto opacity-50" />
@@ -351,7 +366,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                             </button>
                             {isActivityExpanded && (
                               <div className="mt-2 space-y-1.5">
-                                {timelineEvents.map((event, idx) => (
+                                {timelineDisplayEvents.map((event, idx) => (
                                   <div
                                     key={`${event.timestamp}-${event.stage}-${idx}`}
                                     className="rounded-md border border-border/50 bg-background/60 px-2 py-1.5 text-xs"
