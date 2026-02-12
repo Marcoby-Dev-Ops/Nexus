@@ -203,7 +203,8 @@ export class ConversationalAIService extends BaseService {
     conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [],
     runtime: ChatRuntimeOptions = {},
     onMetadata?: (metadata: StreamRuntimeMetadata) => void,
-    onStatus?: (status: StreamRuntimeStatus) => void
+    onStatus?: (status: StreamRuntimeStatus) => void,
+    onThought?: (thought: string) => void
   ): Promise<void> {
 
     // Build messages array with history (last 10 exchanges max to stay within context limits)
@@ -264,6 +265,9 @@ export class ConversationalAIService extends BaseService {
               }
               if (data?.status && onStatus) {
                 onStatus(data.status as StreamRuntimeStatus);
+              }
+              if (data?.thought && onThought) {
+                onThought(data.thought);
               }
               if (data.error) {
                 onToken(`\n[Error: ${data.error}]`);

@@ -1066,6 +1066,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         const decoder = new TextDecoder();
         let buffer = '';
         let fullAssistantContent = ''; // Accumulate for audit
+        let fullReasoningContent = ''; // Accumulate reasoning
         let generatedAttachmentCandidates = [];
 
         try {
@@ -1074,7 +1075,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
                 if (done) {
                     // Audit: Save collected assistant response
-                    if (fullAssistantContent) {
+                    if (fullAssistantContent || fullReasoningContent) {
                         const generatedAttachments = mergeUniqueAttachments(
                             generatedAttachmentCandidates,
                             extractGeneratedAttachmentsFromText(fullAssistantContent)
@@ -1082,9 +1083,10 @@ router.post('/chat', authenticateToken, async (req, res) => {
                         const assistantMetadata = {
                             model: 'openclaw:stream',
                             modelWay: modelWayMetadata,
-                            attachments: generatedAttachments
+                            attachments: generatedAttachments,
+                            reasoning: fullReasoningContent || undefined
                         };
-                        await saveMessage(conversationId, 'assistant', fullAssistantContent, assistantMetadata);
+                        await saveMessage(conversationId, 'assistant', fullAssistantContent || (fullReasoningContent ? '' : '...'), assistantMetadata);
                         if (generatedAttachments.length) {
                             writeSseEvent(res, { metadata: { generatedAttachments } });
                         }
@@ -1108,7 +1110,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
                         if (dataStr === '[DONE]') {
                             // Audit: Save collected assistant response on upstream done
-                            if (fullAssistantContent) {
+                            if (fullAssistantContent || fullReasoningContent) {
                                 const generatedAttachments = mergeUniqueAttachments(
                                     generatedAttachmentCandidates,
                                     extractGeneratedAttachmentsFromText(fullAssistantContent)
@@ -1116,13 +1118,15 @@ router.post('/chat', authenticateToken, async (req, res) => {
                                 const assistantMetadata = {
                                     model: 'openclaw:stream',
                                     modelWay: modelWayMetadata,
-                                    attachments: generatedAttachments
+                                    attachments: generatedAttachments,
+                                    reasoning: fullReasoningContent || undefined
                                 };
-                                await saveMessage(conversationId, 'assistant', fullAssistantContent, assistantMetadata);
+                                await saveMessage(conversationId, 'assistant', fullAssistantContent || (fullReasoningContent ? '' : '...'), assistantMetadata);
                                 if (generatedAttachments.length) {
                                     writeSseEvent(res, { metadata: { generatedAttachments } });
                                 }
                                 fullAssistantContent = ''; // Prevent double save if loop continues
+                                fullReasoningContent = '';
                             }
                             writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
                             res.write('data: [DONE]\n\n');
@@ -1137,6 +1141,13 @@ router.post('/chat', authenticateToken, async (req, res) => {
                                 generatedAttachmentCandidates = mergeUniqueAttachments(generatedAttachmentCandidates, chunkAttachments);
                             }
                             const content = chunk.choices?.[0]?.delta?.content;
+                            const reasoning = chunk.choices?.[0]?.delta?.reasoning_content;
+
+                            if (reasoning) {
+                                fullReasoningContent += reasoning;
+                                // Forward reasoning as "thought" event
+                                writeSseEvent(res, { thought: reasoning });
+                            }
 
                             if (content) {
                                 fullAssistantContent += content;
@@ -1153,7 +1164,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         } catch (streamErr) {
             logger.error('Stream reading error', { error: streamErr.message });
             // Attempt to save partial content if error occurs
-            if (fullAssistantContent) {
+            if (fullAssistantContent || fullReasoningContent) {
                 const generatedAttachments = mergeUniqueAttachments(
                     generatedAttachmentCandidates,
                     extractGeneratedAttachmentsFromText(fullAssistantContent)
@@ -1161,7 +1172,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 saveMessage(conversationId, 'assistant', fullAssistantContent, {
                     model: 'openclaw:stream-partial',
                     modelWay: modelWayMetadata,
-                    attachments: generatedAttachments
+                    attachments: generatedAttachments,
+                    reasoning: fullReasoningContent || undefined
                 }).catch(e => logger.error('Failed to save partial message', e));
                 if (generatedAttachments.length) {
                     writeSseEvent(res, { metadata: { generatedAttachments } });

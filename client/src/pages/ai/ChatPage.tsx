@@ -127,6 +127,7 @@ export const ChatPage: React.FC = () => {
   const [streamingContent, setStreamingContent] = useState('');
   const [contextInjectedForStream, setContextInjectedForStream] = useState(false);
   const [streamStatus, setStreamStatus] = useState<StreamRuntimeStatus | null>(null);
+  const [thinkingContent, setThinkingContent] = useState('');
   const [contextChips, setContextChips] = useState<string[]>([]);
 
   // Knowledge context state
@@ -154,6 +155,7 @@ export const ChatPage: React.FC = () => {
   useEffect(() => {
     setIsStreaming(false);
     setStreamingContent('');
+    setThinkingContent('');
     setLocalIsLoading(false);
     setContextInjectedForStream(false);
     setStreamStatus(null);
@@ -276,6 +278,7 @@ export const ChatPage: React.FC = () => {
       let accumulatedResponse = '';
       let generatedAttachmentsFromStream: GeneratedAttachment[] = [];
       setStreamingContent('');
+      setThinkingContent('');
 
       // Get auth token from Zustand auth store
       const token = getAccessToken();
@@ -320,6 +323,9 @@ export const ChatPage: React.FC = () => {
         },
         (status: StreamRuntimeStatus) => {
           setStreamStatus(status);
+        },
+        (thought: string) => {
+          setThinkingContent(prev => prev + thought);
         }
       );
 
@@ -433,6 +439,7 @@ export const ChatPage: React.FC = () => {
             businessContext={businessContextData}
             suggestions={contextChips}
             streamStatus={streamStatus}
+            thinkingContent={thinkingContent}
           />
         </React.Suspense>
       </div>

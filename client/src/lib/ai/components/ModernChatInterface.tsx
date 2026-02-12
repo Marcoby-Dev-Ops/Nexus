@@ -8,7 +8,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Avatar, AvatarFallback } from '@/shared/components/ui/Avatar';
 import { useToast } from '@/shared/ui/components/Toast';
 import { Button } from '@/shared/components/ui/Button';
-import { Bot, Brain, Database } from 'lucide-react';
+import { Bot, Brain, Database, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { ChatMessage as ChatMessageType, FileAttachment } from '@/shared/types/chat';
 import { logger } from '@/shared/utils/logger';
@@ -42,6 +42,7 @@ interface ModernChatInterfaceProps {
     detail?: string | null;
     timestamp?: string;
   } | null;
+  thinkingContent?: string;
 }
 
 const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
@@ -64,12 +65,14 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   ragRecommendations,
   businessContext,
   suggestions,
-  streamStatus
+  streamStatus,
+  thinkingContent
 }) => {
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [streamingElapsedSeconds, setStreamingElapsedSeconds] = useState(0);
+  const [isThinkingExpanded, setIsThinkingExpanded] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
@@ -249,8 +252,34 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                     )}>
                       <Bot className="h-5 w-5 text-white" />
                     </div>
-                    <div className="space-y-2 overflow-hidden">
+                    <div className="space-y-2 overflow-hidden w-full max-w-2xl">
                       <div className="min-h-[20px] p-4 rounded-xl bg-card/90 border border-border/70 shadow-sm text-sm">
+
+                        {/* Thinking Process Section */}
+                        {thinkingContent && (
+                          <div className="mb-3 border-b border-border/50 pb-3">
+                            <button
+                              onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
+                              className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full"
+                            >
+                              <Brain className="w-3 h-3" />
+                              <span>Thinking Process</span>
+                              {isThinkingExpanded ? (
+                                <ChevronDown className="w-3 h-3 ml-auto opacity-50" />
+                              ) : (
+                                <ChevronRight className="w-3 h-3 ml-auto opacity-50" />
+                              )}
+                            </button>
+
+                            {isThinkingExpanded && (
+                              <div className="mt-2 text-xs text-muted-foreground/80 font-mono bg-muted/30 p-2 rounded-md whitespace-pre-wrap animate-in fade-in slide-in-from-top-1">
+                                {thinkingContent}
+                                <span className="inline-block w-1.5 h-3 ml-1 bg-primary/50 animate-pulse align-middle" />
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <div className="flex items-center space-x-2">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
