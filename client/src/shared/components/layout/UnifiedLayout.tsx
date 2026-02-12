@@ -1,22 +1,45 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/index';
 import { useRedirectManager } from '@/shared/hooks/useRedirectManager';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { HeaderProvider } from '@/shared/hooks/useHeaderContext';
+import { useUserPreferences } from '@/shared/hooks/useUserPreferences';
+import { useIsMobile } from '@/lib/hooks/use-mobile';
 
 interface UnifiedLayoutProps {
   children: React.ReactNode;
 }
 
 export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
-  // Changed to false by default for utility panel behavior
+  const isMobile = useIsMobile();
+  const { preferences, loading: preferencesLoading, updatePreferences } = useUserPreferences();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const { loading, initialized } = useAuth();
   const { isPublicRoute, redirectInProgress } = useRedirectManager();
   const isChatRoute = location.pathname === '/chat';
+
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+      return;
+    }
+
+    if (preferencesLoading) return;
+    setSidebarOpen(!(preferences?.sidebar_collapsed ?? false));
+  }, [isMobile, preferencesLoading, preferences?.sidebar_collapsed]);
+
+  const handleSidebarToggle = () => {
+    setSidebarOpen((previous) => {
+      const next = !previous;
+      if (!isMobile) {
+        void updatePreferences({ sidebar_collapsed: !next });
+      }
+      return next;
+    });
+  };
 
   // For public routes, render children without auth context
   if (isPublicRoute()) {
@@ -50,7 +73,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
 
         {/* Header - Sticky Top */}
         <Header
-          onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+          onSidebarToggle={handleSidebarToggle}
           isSidebarOpen={sidebarOpen}
         />
 

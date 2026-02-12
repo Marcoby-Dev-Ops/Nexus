@@ -7,7 +7,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useToast } from '@/shared/ui/components/Toast';
 import { Button } from '@/shared/components/ui/Button';
-import { Bot, Brain, Database, ChevronDown, ChevronRight, User, BarChart3 } from 'lucide-react';
+import { Bot, Brain, Database, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { ChatMessage as ChatMessageType, FileAttachment } from '@/shared/types/chat';
 import ChatMessage from './ChatMessage';
@@ -250,13 +250,6 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
     handleSendMessage(input, attachments);
   };
   const isEmptyState = messages.length === 0;
-  const workflowItems = [
-    { phase: 'Analyze', status: 'Live' },
-    { phase: 'Connect', status: 'Live' },
-    { phase: 'Sync', status: 'Live' },
-    { phase: 'Report', status: 'Live' },
-  ];
-
   return (
     <div className={cn("relative flex flex-col h-full bg-background", className)}>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsla(var(--primary),0.12),transparent_46%)] dark:bg-[radial-gradient(ellipse_at_top,hsla(var(--primary),0.18),transparent_52%)]" />
@@ -267,67 +260,6 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
         className="relative flex-1 overflow-y-auto min-h-0 px-3 py-4 sm:px-5 sm:py-5 lg:px-8 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-gray-700"
       >
         <div className="mx-auto min-h-full max-w-5xl space-y-4">
-          {isEmptyState && (
-            <div className="mx-auto w-full max-w-3xl rounded-2xl border border-border/70 bg-card/70 backdrop-blur">
-              <div className="space-y-4 p-4">
-                <div className="rounded-xl border border-primary/25 bg-primary/10 p-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                    <Bot className="h-4 w-4" />
-                    {thinkingLabel}
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Analyzing connected integrations and preparing next actions...
-                  </p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-                    <div className="flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Database className="h-3.5 w-3.5" />
-                        Connected Data
-                      </div>
-                      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-500">
-                        Live
-                      </span>
-                    </div>
-                    <ul className="mt-2 space-y-1.5 text-sm">
-                      <li>1. Salesforce lead activity</li>
-                      <li>2. Inbox triage and follow-up</li>
-                      <li>3. Calendar + task context</li>
-                    </ul>
-                  </div>
-
-                  <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      <User className="h-3.5 w-3.5" />
-                      Identity Signal
-                    </div>
-                    <p className="mt-2 text-sm">Voice: strategic, accurate</p>
-                    <p className="mt-1 text-sm text-muted-foreground">Role: Growth Consultant</p>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-border/70 bg-background/70 p-3 text-sm">
-                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    <BarChart3 className="h-3.5 w-3.5" />
-                    Workflow Status
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                    {workflowItems.map((item) => (
-                      <div key={item.phase} className="rounded-md bg-muted/60 px-2 py-1.5 text-center">
-                        <div>{item.phase}</div>
-                        <div className={item.status === 'Live' ? 'text-emerald-500' : 'text-amber-500'}>
-                          {item.status}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {isEmptyState ? (
             <div className="mx-auto flex min-h-full w-full items-center justify-center py-4">
               <div className="w-full max-w-3xl">
