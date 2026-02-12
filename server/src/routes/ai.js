@@ -905,6 +905,115 @@ function mergeUniqueAttachments(...attachmentSets) {
     return merged;
 }
 
+function extractToolArgKeys(rawArgs) {
+    if (typeof rawArgs !== 'string' || !rawArgs.trim()) return [];
+    try {
+        const parsed = JSON.parse(rawArgs);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return [];
+        return Object.keys(parsed).slice(0, 20);
+    } catch (_error) {
+        return [];
+    }
+}
+
+function normalizeToolCallCandidate(candidate, index = 0) {
+    if (!candidate || typeof candidate !== 'object') return null;
+    const fn = candidate.function && typeof candidate.function === 'object' ? candidate.function : null;
+    const nameRaw = typeof fn?.name === 'string'
+        ? fn.name
+        : (typeof candidate.name === 'string'
+            ? candidate.name
+            : (typeof candidate.tool === 'string'
+                ? candidate.tool
+                : (typeof candidate.tool_name === 'string' ? candidate.tool_name : '')));
+    const name = String(nameRaw || '').trim();
+    if (!name) return null;
+
+    const rawArgs = typeof fn?.arguments === 'string'
+        ? fn.arguments
+        : (typeof candidate.arguments === 'string' ? candidate.arguments : '');
+    const argKeys = extractToolArgKeys(rawArgs);
+
+    return {
+        id: typeof candidate.id === 'string' ? candidate.id : null,
+        index: Number.isFinite(candidate.index) ? Number(candidate.index) : index,
+        type: typeof candidate.type === 'string' ? candidate.type : 'function',
+        name,
+        argKeys
+    };
+}
+
+function extractToolCallsFromPayload(payload) {
+    if (!payload || typeof payload !== 'object') return [];
+
+    const choice0 = Array.isArray(payload?.choices) ? payload.choices[0] : null;
+    const message = choice0?.message || {};
+    const delta = choice0?.delta || {};
+    const candidates = [];
+
+    const buckets = [
+        payload.tool_calls,
+        payload?.metadata?.tool_calls,
+        message.tool_calls,
+        delta.tool_calls
+    ];
+    for (const bucket of buckets) {
+        if (!Array.isArray(bucket)) continue;
+        for (const entry of bucket) {
+            candidates.push(entry);
+        }
+    }
+
+    // OpenAI-compatible legacy function_call support.
+    if (message?.function_call && typeof message.function_call === 'object') {
+        candidates.push({ type: 'function', function: message.function_call });
+    }
+    if (delta?.function_call && typeof delta.function_call === 'object') {
+        candidates.push({ type: 'function', function: delta.function_call });
+    }
+
+    return candidates
+        .map((candidate, index) => normalizeToolCallCandidate(candidate, index))
+        .filter(Boolean);
+}
+
+function mergeObservedToolCalls(existing = [], incoming = []) {
+    const byKey = new Map();
+
+    for (const call of existing) {
+        if (!call || !call.name) continue;
+        const key = call.id || `${call.name}::${call.index}`;
+        byKey.set(key, { ...call });
+    }
+
+    for (const call of incoming) {
+        if (!call || !call.name) continue;
+        const key = call.id || `${call.name}::${call.index}`;
+        const previous = byKey.get(key);
+        if (!previous) {
+            byKey.set(key, { ...call });
+            continue;
+        }
+        const mergedArgKeys = [...new Set([...(previous.argKeys || []), ...(call.argKeys || [])])];
+        byKey.set(key, {
+            ...previous,
+            ...call,
+            argKeys: mergedArgKeys
+        });
+    }
+
+    return [...byKey.values()];
+}
+
+function summarizeToolUsage(toolCalls = []) {
+    const toolNames = [...new Set(toolCalls.map((call) => call?.name).filter(Boolean))];
+    return {
+        used: toolNames.length > 0,
+        tools: toolNames,
+        callCount: toolCalls.length
+    };
+}
+
 function extractReasoningText(payload) {
     if (!payload || typeof payload !== 'object') return '';
 
@@ -1473,6 +1582,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
             const responseId = extractResponseIdFromPayload(data);
             const provider = extractProviderFromPayload(data);
             const systemFingerprint = typeof data?.system_fingerprint === 'string' ? data.system_fingerprint : null;
+            const observedToolCalls = extractToolCallsFromPayload(data);
+            const toolUsage = summarizeToolUsage(observedToolCalls);
             const generatedAttachments = mergeUniqueAttachments(
                 extractGeneratedAttachmentsFromPayload(data),
                 extractGeneratedAttachmentsFromText(content)
@@ -1484,6 +1595,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     model: resolvedModel,
                     usage,
                     modelWay: modelWayMetadata,
+                    toolCalls: observedToolCalls,
+                    toolUsage,
                     attachments: generatedAttachments,
                     modelTrace: {
                         ...baseModelTrace,
@@ -1508,12 +1621,34 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     responseId,
                     provider
                 });
+                if (toolUsage.used) {
+                    logger.info('OpenClaw tool usage observed', {
+                        userId,
+                        conversationId,
+                        stream: Boolean(stream),
+                        tools: toolUsage.tools,
+                        callCount: toolUsage.callCount
+                    });
+                }
+            }
+            if (toolUsage.used && !(content || generatedAttachments.length)) {
+                logger.info('OpenClaw tool usage observed', {
+                    userId,
+                    conversationId,
+                    stream: Boolean(stream),
+                    tools: toolUsage.tools,
+                    callCount: toolUsage.callCount
+                });
             }
 
             // If client wanted stream, emit it as an SSE event sequence
             if (stream) {
                 writeSseEvent(res, buildStreamStatus('thinking', 'Agent is thinking', 'Preparing response with orchestration metadata.'));
                 writeSseEvent(res, buildStreamStatus('responding', 'Agent is responding', 'Streaming response started.'));
+                if (toolUsage.used) {
+                    writeSseEvent(res, buildStreamStatus('tool_invocation', 'Tool invocation', `Used: ${toolUsage.tools.join(', ')}`));
+                    writeSseEvent(res, { metadata: { toolUsage, toolCalls: observedToolCalls } });
+                }
 
                 // 2. Content event
                 if (content) {
@@ -1536,7 +1671,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     content,
                     model: resolvedModel,
                     usage,
-                    attachments: generatedAttachments
+                    attachments: generatedAttachments,
+                    metadata: {
+                        toolUsage,
+                        toolCalls: observedToolCalls
+                    }
                 }
                 );
                 return res.json(response);
@@ -1553,6 +1692,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
             const responseId = extractResponseIdFromPayload(data);
             const provider = extractProviderFromPayload(data);
             const systemFingerprint = typeof data?.system_fingerprint === 'string' ? data.system_fingerprint : null;
+            const observedToolCalls = extractToolCallsFromPayload(data);
+            const toolUsage = summarizeToolUsage(observedToolCalls);
             const generatedAttachments = mergeUniqueAttachments(
                 extractGeneratedAttachmentsFromPayload(data),
                 extractGeneratedAttachmentsFromText(content)
@@ -1564,6 +1705,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     model: resolvedModel,
                     usage,
                     modelWay: modelWayMetadata,
+                    toolCalls: observedToolCalls,
+                    toolUsage,
                     attachments: generatedAttachments,
                     modelTrace: {
                         ...baseModelTrace,
@@ -1588,6 +1731,24 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     responseId,
                     provider
                 });
+                if (toolUsage.used) {
+                    logger.info('OpenClaw tool usage observed', {
+                        userId,
+                        conversationId,
+                        stream: false,
+                        tools: toolUsage.tools,
+                        callCount: toolUsage.callCount
+                    });
+                }
+            }
+            if (toolUsage.used && !(content || generatedAttachments.length)) {
+                logger.info('OpenClaw tool usage observed', {
+                    userId,
+                    conversationId,
+                    stream: false,
+                    tools: toolUsage.tools,
+                    callCount: toolUsage.callCount
+                });
             }
 
             const response = structureResponse(content, modelWayMetadata, {
@@ -1595,7 +1756,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 content,
                 model: resolvedModel,
                 usage,
-                attachments: generatedAttachments
+                attachments: generatedAttachments,
+                metadata: {
+                    toolUsage,
+                    toolCalls: observedToolCalls
+                }
             }
             );
 
@@ -1618,6 +1783,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
         let streamResponseId = null;
         let streamProvider = null;
         let streamSystemFingerprint = null;
+        let observedToolCalls = [];
+        const emittedToolNames = new Set();
         const holdAssistantChunksForProviderGuard = Boolean(emailProviderGuard?.recommendation && ['microsoft', 'google_workspace'].includes(emailProviderGuard.recommendation.provider));
         const responseHeaderModel = openClawResponse.headers.get('x-model') || openClawResponse.headers.get('openai-model');
         if (typeof responseHeaderModel === 'string' && responseHeaderModel.trim()) {
@@ -1625,22 +1792,27 @@ router.post('/chat', authenticateToken, async (req, res) => {
             observedStreamModels.add(streamResolvedModel);
         }
 
-        const buildStreamingAssistantMetadata = (generatedAttachments, partial = false) => ({
-            model: streamResolvedModel || openClawPayload.model || (partial ? 'openclaw:stream-partial' : 'openclaw:stream'),
-            usage: streamUsage || null,
-            modelWay: modelWayMetadata,
-            attachments: generatedAttachments,
-            reasoning: fullReasoningContent || undefined,
-            modelTrace: {
-                ...baseModelTrace,
-                responseId: streamResponseId,
-                provider: streamProvider,
-                systemFingerprint: streamSystemFingerprint,
-                resolvedModel: streamResolvedModel || null,
-                observedModels: Array.from(observedStreamModels),
-                partial
-            }
-        });
+        const buildStreamingAssistantMetadata = (generatedAttachments, partial = false) => {
+            const toolUsage = summarizeToolUsage(observedToolCalls);
+            return {
+                model: streamResolvedModel || openClawPayload.model || (partial ? 'openclaw:stream-partial' : 'openclaw:stream'),
+                usage: streamUsage || null,
+                modelWay: modelWayMetadata,
+                toolCalls: observedToolCalls,
+                toolUsage,
+                attachments: generatedAttachments,
+                reasoning: fullReasoningContent || undefined,
+                modelTrace: {
+                    ...baseModelTrace,
+                    responseId: streamResponseId,
+                    provider: streamProvider,
+                    systemFingerprint: streamSystemFingerprint,
+                    resolvedModel: streamResolvedModel || null,
+                    observedModels: Array.from(observedStreamModels),
+                    partial
+                }
+            };
+        };
 
         try {
             while (true) {
@@ -1674,8 +1846,25 @@ router.post('/chat', authenticateToken, async (req, res) => {
                             provider: streamProvider,
                             partial: false
                         });
+                        if (assistantMetadata.toolUsage?.used) {
+                            logger.info('OpenClaw tool usage observed', {
+                                userId,
+                                conversationId,
+                                stream: true,
+                                tools: assistantMetadata.toolUsage.tools,
+                                callCount: assistantMetadata.toolUsage.callCount
+                            });
+                        }
                         if (generatedAttachments.length) {
                             writeSseEvent(res, { metadata: { generatedAttachments } });
+                        }
+                        if (assistantMetadata.toolUsage?.used) {
+                            writeSseEvent(res, {
+                                metadata: {
+                                    toolUsage: assistantMetadata.toolUsage,
+                                    toolCalls: assistantMetadata.toolCalls
+                                }
+                            });
                         }
                     }
                     writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
@@ -1723,8 +1912,25 @@ router.post('/chat', authenticateToken, async (req, res) => {
                                     provider: streamProvider,
                                     partial: false
                                 });
+                                if (assistantMetadata.toolUsage?.used) {
+                                    logger.info('OpenClaw tool usage observed', {
+                                        userId,
+                                        conversationId,
+                                        stream: true,
+                                        tools: assistantMetadata.toolUsage.tools,
+                                        callCount: assistantMetadata.toolUsage.callCount
+                                    });
+                                }
                                 if (generatedAttachments.length) {
                                     writeSseEvent(res, { metadata: { generatedAttachments } });
+                                }
+                                if (assistantMetadata.toolUsage?.used) {
+                                    writeSseEvent(res, {
+                                        metadata: {
+                                            toolUsage: assistantMetadata.toolUsage,
+                                            toolCalls: assistantMetadata.toolCalls
+                                        }
+                                    });
                                 }
                                 fullAssistantContent = ''; // Prevent double save if loop continues
                                 fullReasoningContent = '';
@@ -1759,6 +1965,29 @@ router.post('/chat', authenticateToken, async (req, res) => {
                             const chunkProvider = extractProviderFromPayload(chunk);
                             if (chunkProvider && !streamProvider) {
                                 streamProvider = chunkProvider;
+                            }
+                            const chunkToolCalls = extractToolCallsFromPayload(chunk);
+                            if (chunkToolCalls.length) {
+                                observedToolCalls = mergeObservedToolCalls(observedToolCalls, chunkToolCalls);
+                                const newToolNames = [];
+                                for (const call of chunkToolCalls) {
+                                    const name = String(call?.name || '').trim();
+                                    if (!name || emittedToolNames.has(name)) continue;
+                                    emittedToolNames.add(name);
+                                    newToolNames.push(name);
+                                }
+                                if (newToolNames.length) {
+                                    writeSseEvent(
+                                        res,
+                                        buildStreamStatus('tool_invocation', 'Tool invocation', `Calling ${newToolNames.join(', ')}`)
+                                    );
+                                    writeSseEvent(res, {
+                                        metadata: {
+                                            toolUsage: summarizeToolUsage(observedToolCalls),
+                                            toolCalls: observedToolCalls
+                                        }
+                                    });
+                                }
                             }
                             if (typeof chunk?.system_fingerprint === 'string' && chunk.system_fingerprint.trim()) {
                                 streamSystemFingerprint = chunk.system_fingerprint.trim();
@@ -1811,10 +2040,27 @@ router.post('/chat', authenticateToken, async (req, res) => {
                             provider: streamProvider,
                             partial: true
                         });
+                        if (partialMetadata.toolUsage?.used) {
+                            logger.info('OpenClaw tool usage observed', {
+                                userId,
+                                conversationId,
+                                stream: true,
+                                tools: partialMetadata.toolUsage.tools,
+                                callCount: partialMetadata.toolUsage.callCount
+                            });
+                        }
                     })
                     .catch(e => logger.error('Failed to save partial message', e));
                 if (generatedAttachments.length) {
                     writeSseEvent(res, { metadata: { generatedAttachments } });
+                }
+                if (partialMetadata.toolUsage?.used) {
+                    writeSseEvent(res, {
+                        metadata: {
+                            toolUsage: partialMetadata.toolUsage,
+                            toolCalls: partialMetadata.toolCalls
+                        }
+                    });
                 }
             }
             writeSseEvent(res, buildStreamStatus('error', 'Response interrupted', streamErr.message));

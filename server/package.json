@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "test": "node --test __tests__/*.test.js",
+    "test:openclaw-tools": "node scripts/test-openclaw-nexus-tools.js",
     "type-check": "tsc --project tsconfig.json --noEmit",
     "migrate": "node src/database/migrate.js",
     "migrate:status": "node -e \"const MigrationRunner = require('./src/database/migrate'); new MigrationRunner().getMigrationStatus().then(console.log).catch(console.error)\"",
