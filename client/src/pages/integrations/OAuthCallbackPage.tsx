@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useOAuthIntegrations } from '../../integrations/hooks/useOAuthIntegrations';
 import { Button } from '../../shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/Card';
 import {
@@ -11,10 +10,15 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import type { OAuthProvider } from '../../core/types/integrations';
+import { useAuth } from '@/hooks/index';
+import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
+import { resolveCanonicalUserId } from '@/core/auth/userIdentity';
+import { oauthIntegrationService } from '@/services/integrations/OAuthIntegrationService';
 
 export const OAuthCallbackPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -26,11 +30,10 @@ export const OAuthCallbackPage: React.FC = () => {
     userId: ''
   });
 
-  // Mock user ID for now - in real app this would come from auth context
-  const userId = 'test-user-123';
-  const { completeOAuthFlow } = useOAuthIntegrations({ userId });
-
   useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
     // Get OAuth parameters from URL
     const code = searchParams.get('code');
     const state = searchParams.get('state');
@@ -41,11 +44,15 @@ export const OAuthCallbackPage: React.FC = () => {
     const storedState = sessionStorage.getItem('oauth_state');
     const storedProvider = sessionStorage.getItem('oauth_provider') as OAuthProvider;
     const storedUserId = sessionStorage.getItem('oauth_user_id');
+    const sessionResult = await authentikAuthService.getSession();
+    const callbackUserId = resolveCanonicalUserId(storedUserId || user?.id, sessionResult.data);
+
+    if (cancelled) return;
 
     setOauthState({
       state: storedState || '',
       provider: storedProvider || 'hubspot',
-      userId: storedUserId || userId
+      userId: callbackUserId || ''
     });
 
     // Handle OAuth error
@@ -56,11 +63,11 @@ export const OAuthCallbackPage: React.FC = () => {
     }
 
     // Complete OAuth flow
-    if (code && state && storedState && storedProvider) {
-      completeOAuthFlow({
+    if (code && state && storedState && storedProvider && callbackUserId) {
+      oauthIntegrationService.completeOAuthFlow({
         code,
         state,
-        userId: storedUserId || userId,
+        userId: callbackUserId,
         redirectUri: `${window.location.origin}/integrations/oauth/callback`,
         provider: storedProvider as OAuthProvider
       })
@@ -86,7 +93,18 @@ export const OAuthCallbackPage: React.FC = () => {
       setStatus('error');
       setError('Invalid OAuth callback parameters');
     }
-  }, [searchParams, completeOAuthFlow, userId]);
+    };
+
+    run().catch((err) => {
+      if (cancelled) return;
+      setStatus('error');
+      setError(err instanceof Error ? err.message : 'Failed to complete OAuth flow');
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, user?.id]);
 
   const handleGoToIntegrations = () => {
     navigate('/integrations');

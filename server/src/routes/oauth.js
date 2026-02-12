@@ -6,6 +6,7 @@ const router = express.Router();
 const { logger } = require('../utils/logger');
 const userProfileService = require('../services/UserProfileService');
 const { query } = require('../database/connection');
+const { optionalAuth } = require('../middleware/auth');
 
 const PROVIDER_ALIASES = {
   microsoft365: 'microsoft',
@@ -188,17 +189,26 @@ const oauthStates = new Map();
 /**
  * Start OAuth authorization flow
  */
-router.get('/:provider/start', async (req, res) => {
+router.get('/:provider/start', optionalAuth, async (req, res) => {
   try {
     const provider = normalizeProvider(req.params.provider);
-    const { userId, redirectUri } = req.query;
+    const { userId: requestedUserId, redirectUri } = req.query;
     const config = getOAuthProviders()[provider];
 
     if (!config) {
       return res.status(404).json({ error: 'Provider not found' });
     }
 
-    if (!userId || typeof userId !== 'string') {
+    if (requestedUserId && typeof requestedUserId !== 'string') {
+      return res.status(400).json({ error: 'userId must be a string' });
+    }
+
+    if (req.user?.id && requestedUserId && req.user.id !== requestedUserId) {
+      return res.status(403).json({ error: 'userId does not match authenticated user' });
+    }
+
+    const effectiveUserId = req.user?.id || requestedUserId;
+    if (!effectiveUserId) {
       return res.status(400).json({ error: 'userId is required' });
     }
 
@@ -216,7 +226,7 @@ router.get('/:provider/start', async (req, res) => {
     oauthStates.set(state, {
       state,
       codeVerifier,
-      userId,
+      userId: effectiveUserId,
       integrationSlug: provider,
       redirectUri: resolvedRedirectUri,
       timestamp: Date.now(),
@@ -601,7 +611,7 @@ router.post('/refresh', async (req, res) => {
  * POST /:provider/callback
  * Handles OAuth callback, exchanges code for token, and syncs user profile
  */
-router.post('/:provider/callback', async (req, res) => {
+router.post('/:provider/callback', optionalAuth, async (req, res) => {
   try {
     const provider = normalizeProvider(req.params.provider);
     const { code, state, redirectUri } = req.body;
@@ -625,6 +635,10 @@ router.post('/:provider/callback', async (req, res) => {
       // But for some flows maybe we allow it if authenticated?
       // For now enforce state
       return res.status(400).json({ error: 'State parameter is required' });
+    }
+
+    if (req.user?.id && req.user.id !== userId) {
+      return res.status(403).json({ error: 'OAuth state does not belong to authenticated user' });
     }
 
     const config = getOAuthProviders()[provider];
@@ -840,9 +854,12 @@ router.post('/:provider/callback', async (req, res) => {
  * GET /integrations/:userId
  * Get user's connected integrations
  */
-router.get('/integrations/:userId', async (req, res) => {
+router.get('/integrations/:userId', optionalAuth, async (req, res) => {
   try {
     const { userId } = req.params;
+    if (req.user?.id && req.user.id !== userId) {
+      return res.status(403).json({ error: 'Not authorized to view integrations for this user' });
+    }
 
     // In a real app, verify req.user.id === userId or is admin
     const result = await query(
@@ -891,7 +908,7 @@ router.get('/integrations/:userId', async (req, res) => {
  * POST /disconnect/:integrationId
  * Disconnect an integration
  */
-router.post('/disconnect/:integrationId', async (req, res) => {
+router.post('/disconnect/:integrationId', optionalAuth, async (req, res) => {
   try {
     const { integrationId } = req.params;
     const { userId } = req.body; // Optional security check
@@ -903,6 +920,9 @@ router.post('/disconnect/:integrationId', async (req, res) => {
     const integration = existing?.data?.[0];
     if (!integration) {
       return res.status(404).json({ error: 'Integration not found' });
+    }
+    if (req.user?.id && integration.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized for this integration' });
     }
     if (userId && integration.user_id !== userId) {
       return res.status(403).json({ error: 'Not authorized for this integration' });

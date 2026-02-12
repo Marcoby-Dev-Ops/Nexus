@@ -43,6 +43,7 @@ import { database } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 import { HUBSPOT_REQUIRED_SCOPES } from '@/services/integrations/hubspot/constants';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
+import { resolveCanonicalUserId } from '@/core/auth/userIdentity';
 
 interface MarketplaceIntegration {
   id: string;
@@ -311,11 +312,17 @@ const IntegrationMarketplacePage: React.FC = () => {
 
     try {
       setLoading(true);
+      const sessionResult = await authentikAuthService.getSession();
+      const canonicalUserId = resolveCanonicalUserId(user.id, sessionResult.data);
+      if (!canonicalUserId) {
+        setConnectedIntegrations([]);
+        return;
+      }
       
       const { data, error } = await select(
         'user_integrations',
         'integration_slug, status',
-        { user_id: user.id, status: 'active' }
+        { user_id: canonicalUserId, status: 'active' }
       );
 
       if (error) {
@@ -388,11 +395,22 @@ const IntegrationMarketplacePage: React.FC = () => {
           throw new Error('User session missing. Please sign in again.');
         }
 
+        const sessionResult = await authentikAuthService.getSession();
+        const session = sessionResult.data;
+        const canonicalUserId = resolveCanonicalUserId(user.id, session);
+        const accessToken = session?.session?.accessToken || session?.accessToken;
+        if (!canonicalUserId) {
+          throw new Error('Unable to resolve authenticated user identity.');
+        }
+
         // Route Microsoft connect through the backend OAuth start endpoint.
         // Backend handles state + PKCE and (for Marcoby) can broker through identity.marcoby.com.
         const redirectUri = `${window.location.origin}/integrations/oauth/callback`;
-        const startUrl = `/api/oauth/microsoft/start?userId=${encodeURIComponent(user.id)}&redirectUri=${encodeURIComponent(redirectUri)}`;
-        const startResponse = await fetch(startUrl, { credentials: 'include' });
+        const startUrl = `/api/oauth/microsoft/start?userId=${encodeURIComponent(canonicalUserId)}&redirectUri=${encodeURIComponent(redirectUri)}`;
+        const startResponse = await fetch(startUrl, {
+          credentials: 'include',
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined
+        });
         if (!startResponse.ok) {
           const details = await startResponse.text();
           throw new Error(`Failed to start Microsoft OAuth (${startResponse.status}): ${details}`);
@@ -406,7 +424,7 @@ const IntegrationMarketplacePage: React.FC = () => {
         // Generic OAuth callback page expects these keys.
         sessionStorage.setItem('oauth_state', startData.state);
         sessionStorage.setItem('oauth_provider', 'microsoft');
-        sessionStorage.setItem('oauth_user_id', user.id);
+        sessionStorage.setItem('oauth_user_id', canonicalUserId);
 
         window.location.href = startData.authUrl;
       } catch (error) {
