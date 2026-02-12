@@ -113,6 +113,37 @@ function buildModelWayInstructionBlock(intent, phase) {
     ].join('\n');
 }
 
+function buildSoulContext() {
+    try {
+        const soulPath = path.join(process.cwd(), 'SOUL.md');
+        if (fs.existsSync(soulPath)) {
+            const soulContent = fs.readFileSync(soulPath, 'utf8');
+            return `## Agent Identity & Philosophy (SOUL)\n${soulContent}`;
+        }
+    } catch (error) {
+        logger.warn('Failed to read SOUL.md', { error: error.message });
+    }
+    return null;
+}
+
+function buildCodebaseContext() {
+    const codebasePath = process.env.NEXUS_CODEBASE_PATH || process.cwd();
+    // Only provide context if we are likely in a repo (check for .git or package.json)
+    const hasGit = fs.existsSync(path.join(codebasePath, '.git'));
+    const hasPackage = fs.existsSync(path.join(codebasePath, 'package.json'));
+
+    if (hasGit || hasPackage) {
+        return [
+            '## Codebase Environment',
+            `You are running in a development environment.`,
+            `The codebase is located at: ${codebasePath}`,
+            `You have direct filesystem access to these files.`,
+            `When asked to review or modify code, you should use your tools to read files from this path.`
+        ].join('\n');
+    }
+    return null;
+}
+
 // Helper to structure metadata without injecting prompt logic
 function structureResponse(content, modelWayMetadata, originalResponse = {}) {
     return {
@@ -247,6 +278,32 @@ async function saveMessage(conversationId, role, content, metadata = {}) {
         // Don't throw, just log - we don't want to break the chat flow if audit fails momentarily
     }
     return result.data?.[0]?.id;
+}
+
+// Helper to fetch authoritative conversation history from DB
+// This fixes "Short Term Memory" by ensuring the agent sees the full recorded history
+// even if the client payload is truncated.
+async function fetchConversationHistory(conversationId, limit = 50) {
+    const result = await query(
+        `SELECT role, content
+         FROM ai_messages
+         WHERE conversation_id = $1
+         ORDER BY created_at ASC`, // Ascending order is critical for LLM context
+        [conversationId]
+    );
+
+    if (result.error) {
+        logger.warn('Failed to fetch conversation history', { conversationId, error: result.error });
+        return [];
+    }
+
+    // Return all messages, let the runtime handle context window, 
+    // but we could limit here if needed.
+    const messages = result.data || [];
+    if (limit && messages.length > limit) {
+        return messages.slice(messages.length - limit);
+    }
+    return messages;
 }
 
 function normalizeIncomingAttachments(attachments) {
@@ -800,6 +857,10 @@ router.post('/chat', authenticateToken, async (req, res) => {
             await saveMessage(conversationId, 'user', lastMessage.content, userMetadata);
         }
 
+        // Fetch authoritative history from DB (Long Term Memory)
+        // This ensures OpenClaw sees the full conversation even if client truncated it
+        const dbConversationHistory = await fetchConversationHistory(conversationId, 50);
+
         if (shouldRefuseDirectExecutionInDiscovery(phase, lastUserMessage)) {
             const refusalContent = buildDiscoveryRefusalMessage();
             await saveMessage(conversationId, 'assistant', refusalContent);
@@ -855,7 +916,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 jwtPayload: req.user?.jwtPayload,
                 agentId: resolvedAgentId,
                 conversationId,
-                includeShort: true,
+                includeShort: false, // Usage of dbConversationHistory makes this redundant
                 includeMedium: true,
                 includeLong: true,
                 maxBlocks: 8
@@ -887,6 +948,21 @@ router.post('/chat', authenticateToken, async (req, res) => {
             ? `${contextSystemMessage}\n\n${modelWayInstructionBlock}`
             : modelWayInstructionBlock;
         const contextInjected = Boolean(contextSystemMessage);
+
+        // Inject Soul and Codebase Context (Identity & Environment)
+        const soulContext = buildSoulContext();
+        const codebaseContext = buildCodebaseContext();
+        const preambleParts = [];
+        if (soulContext) preambleParts.push(soulContext);
+        if (codebaseContext) preambleParts.push(codebaseContext);
+
+        if (preambleParts.length > 0) {
+            const preamble = preambleParts.join('\n\n');
+            contextSystemMessage = contextSystemMessage
+                ? `${preamble}\n\n${contextSystemMessage}`
+                : preamble;
+        }
+
         setKeepAliveFrames([
             `Synthesizing context for ${intent.name} (${phase})`,
             `Preparing agent instructions for ${resolvedAgentId}`,
@@ -899,7 +975,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
         }
 
         // Strip any system messages from client and inject deterministic backend context
-        const openClawMessages = buildOpenClawMessages(messages, contextSystemMessage);
+        // Use dbConversationHistory instead of client messages to ensure full context
+        const openClawMessages = buildOpenClawMessages(dbConversationHistory, contextSystemMessage);
 
         const openClawSessionId = buildOpenClawSessionId(userId, conversationId);
 
