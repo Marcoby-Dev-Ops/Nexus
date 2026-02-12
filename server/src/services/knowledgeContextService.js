@@ -536,7 +536,10 @@ function createKnowledgeContextService(deps = {}) {
 
     if (!grouped.size) return null;
 
-    const lines = [];
+    const lines = [
+      'NOTE: The following are summaries of past conversations from the database. Use them for context. DO NOT attempt to read them as files; they are not file paths.',
+      ''
+    ];
     for (const [conversationId, entry] of grouped.entries()) {
       const shortId = conversationId.slice(0, 8);
       const title = entry.title ? truncateText(String(entry.title), 64) : `Conversation ${shortId}`;
