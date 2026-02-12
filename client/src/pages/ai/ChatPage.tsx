@@ -810,6 +810,7 @@ export const ChatPage: React.FC = () => {
       };
 
       let accumulatedResponse = '';
+      let accumulatedReasoning = '';
       let generatedAttachmentsFromStream: GeneratedAttachment[] = [];
       setStreamingContent('');
       setThinkingContent('');
@@ -859,6 +860,7 @@ export const ChatPage: React.FC = () => {
           setStreamStatus(status);
         },
         (thought: string) => {
+          accumulatedReasoning += thought;
           setThinkingContent(prev => prev + thought);
         }
       );
@@ -866,8 +868,22 @@ export const ChatPage: React.FC = () => {
       // Save final response
       if (saveAIResponse && currentConversationId) {
         const finalResponse = appendGeneratedAttachmentSummary(accumulatedResponse, generatedAttachmentsFromStream);
+        const localAttachments = generatedAttachmentsFromStream.map((attachment) => ({
+          id: attachment.id,
+          name: attachment.name,
+          size: attachment.size,
+          type: attachment.type,
+          url: attachment.url,
+          downloadUrl: attachment.downloadUrl
+        }));
         // We use persist: false because the backend /api/ai/chat already saves the assistant message for audit/metadata purposes
-        await saveAIResponse(finalResponse, currentConversationId, { persist: false });
+        await saveAIResponse(finalResponse, currentConversationId, {
+          persist: false,
+          metadata: {
+            reasoning: accumulatedReasoning || undefined,
+            attachments: localAttachments.length ? localAttachments : undefined
+          }
+        });
       }
 
       setStreamingContent('');

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/index';
 import { useRedirectManager } from '@/shared/hooks/useRedirectManager';
 import { Header } from './Header';
@@ -12,8 +13,10 @@ interface UnifiedLayoutProps {
 export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
   // Changed to false by default for utility panel behavior
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
   const { loading, initialized } = useAuth();
   const { isPublicRoute, redirectInProgress } = useRedirectManager();
+  const isChatRoute = location.pathname === '/chat';
 
   // For public routes, render children without auth context
   if (isPublicRoute()) {
@@ -55,7 +58,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
           {/* Utility Panel (formerly Sidebar) */}
           <div className={`
              border-r bg-muted/10 transition-all duration-300 ease-in-out
-             ${sidebarOpen ? 'w-[22rem] translate-x-0' : 'w-0 -translate-x-full overflow-hidden opacity-0'}
+             ${sidebarOpen ? 'w-[23rem] xl:w-[24rem] translate-x-0 opacity-100' : 'w-0 -translate-x-full overflow-hidden opacity-0'}
           `}>
             <Sidebar
               isOpen={sidebarOpen}
@@ -64,7 +67,11 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
           </div>
 
           {/* Main content area */}
-          <main id="main-content" role="main" className="flex-1 min-h-0 overflow-y-auto relative bg-background">
+          <main
+            id="main-content"
+            role="main"
+            className={`flex-1 min-h-0 relative bg-background ${isChatRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
+          >
             {children}
           </main>
         </div>

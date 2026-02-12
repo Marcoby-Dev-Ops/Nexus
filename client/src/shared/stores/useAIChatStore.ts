@@ -109,9 +109,13 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
   },
 
-  saveAIResponse: async (content: string, conversationId: string, options: { persist?: boolean } = { persist: true }) => {
+  saveAIResponse: async (
+    content: string,
+    conversationId: string,
+    options: { persist?: boolean; metadata?: Partial<ChatMessage['metadata']> } = { persist: true }
+  ) => {
     try {
-      const { persist = true } = options;
+      const { persist = true, metadata: metadataOverrides = {} } = options;
       // Create AI response message
       const aiMessage: Omit<ChatMessage, 'id' | 'created_at' | 'updated_at'> = {
         conversation_id: conversationId,
@@ -120,7 +124,8 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
         metadata: {
           tokens: Math.ceil(content.length / 4),
           model: 'gpt-4',
-          streaming: false
+          streaming: false,
+          ...metadataOverrides
         }
       };
 

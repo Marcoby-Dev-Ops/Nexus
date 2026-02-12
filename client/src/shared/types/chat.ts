@@ -40,6 +40,7 @@ export interface ChatMessage {
     temperature?: number;
     streaming?: boolean;
     error?: string;
+    reasoning?: string;
     attachments?: FileAttachment[];
     pacing_analysis?: PacingAnalysis;
   };
@@ -103,7 +104,11 @@ export interface ChatState {
 
 export interface ChatActions {
   sendMessage: (content: string, conversationId: string, attachments?: FileAttachment[], options?: { persist?: boolean }) => Promise<void>;
-  saveAIResponse: (content: string, conversationId: string, options?: { persist?: boolean }) => Promise<void>;
+  saveAIResponse: (
+    content: string,
+    conversationId: string,
+    options?: { persist?: boolean; metadata?: Partial<ChatMessage['metadata']> }
+  ) => Promise<void>;
   fetchMessages: (conversationId: string) => Promise<void>;
   fetchConversations: () => Promise<void>;
   createConversation: (title: string, model: string, systemPrompt?: string, userId?: string) => Promise<string>;

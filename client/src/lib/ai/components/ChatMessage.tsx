@@ -2,13 +2,11 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
-import { Copy, ThumbsUp, ThumbsDown, User, Bot } from 'lucide-react';
+import { Copy, User, Bot, Brain, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { ChatMessage as ChatMessageType, FileAttachment } from '@/shared/types/chat';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
-import 'highlight.js/styles/github-dark.css'; // Or any other style
 
 import { getGravatarUrl } from '@/shared/utils/gravatar';
 import { ATTACHMENT_ONLY_PLACEHOLDER } from '@/shared/constants/chat';
@@ -23,6 +21,21 @@ interface ChatMessageProps {
   userName?: string;
 }
 
+function normalizeMarkdownForReadability(content: string): string {
+  const singleLineFencePattern = /```(?:[a-zA-Z0-9_-]+)?\s*\n([^\n`]{1,120})\n```/g;
+
+  return content.replace(singleLineFencePattern, (fullBlock, lineContent: string) => {
+    const normalized = lineContent.trim();
+    if (!normalized) return fullBlock;
+    if (/\s/.test(normalized)) return fullBlock;
+
+    const looksLikeCode = /[{}();=<>]|^\s*(const|let|var|function|class|import|export|if|for|while|return)\b/.test(normalized);
+    if (looksLikeCode) return fullBlock;
+
+    return `\`${normalized}\``;
+  });
+}
+
 export default function ChatMessage({
   message,
   onCopy,
@@ -32,6 +45,7 @@ export default function ChatMessage({
   agentColor,
   userName
 }: ChatMessageProps) {
+  const [isReasoningExpanded, setIsReasoningExpanded] = React.useState(false);
 
   // Ensure message has required properties
   if (!message || !message.content || !message.role) {
@@ -44,9 +58,14 @@ export default function ChatMessage({
   const messageAttachments = Array.isArray(metadata.attachments)
     ? (metadata.attachments as FileAttachment[])
     : [];
+  const reasoning = typeof metadata.reasoning === 'string' ? metadata.reasoning.trim() : '';
+  const hasReasoning = Boolean(reasoning);
   const hasAttachments = messageAttachments.length > 0;
   const isAttachmentOnlyMessage = message.content === ATTACHMENT_ONLY_PLACEHOLDER && hasAttachments;
   const renderedContent = isAttachmentOnlyMessage ? 'Attached files:' : message.content;
+  const normalizedContent = message.role === 'assistant'
+    ? normalizeMarkdownForReadability(renderedContent)
+    : renderedContent;
 
   // Custom component to handle media URLs within markdown
   const MediaLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
@@ -115,7 +134,8 @@ export default function ChatMessage({
 
       {/* Message Content */}
       <div className={cn(
-        "flex-1 max-w-3xl",
+        "flex-1",
+        message.role === 'assistant' ? 'max-w-[72ch]' : 'max-w-[60ch]',
         message.role === 'user' ? 'order-1' : 'order-2'
       )}>
         {/* Name label for first message in sequence */}
@@ -129,10 +149,13 @@ export default function ChatMessage({
         )}
 
         <div className={cn(
-          "rounded-2xl px-4 py-2.5 shadow-sm border border-border bg-muted/50 text-foreground"
+          "rounded-2xl px-4 py-3 shadow-sm border text-foreground",
+          message.role === 'user'
+            ? 'bg-primary/10 border-primary/20'
+            : 'bg-card/90 border-border/80'
         )}>
           <div
-            className="prose prose-sm dark:prose-invert max-w-none break-words text-[0.96rem] leading-relaxed select-text"
+            className="max-w-none break-words text-[0.96rem] leading-7 text-foreground/95 select-text"
             style={{
               WebkitUserSelect: 'text',
               userSelect: 'text',
@@ -141,33 +164,69 @@ export default function ChatMessage({
           >
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeHighlight]}
               components={{
                 a: MediaLink as any,
-                // Ensure list items and other block elements look good
-                p: ({ children }: { children: React.ReactNode }) => <p className="mb-2 last:mb-0">{children}</p>,
-                ul: ({ children }: { children: React.ReactNode }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-                ol: ({ children }: { children: React.ReactNode }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-                li: ({ children }: { children: React.ReactNode }) => <li className="mb-1">{children}</li>,
-                code: ({ node, inline, className, children, ...props }: any) => {
-                  const match = /language-(\w+)/.exec(className || '');
-                  return !inline ? (
-                    <div className="relative group/code my-2">
-                      <pre className={cn("rounded-md p-3 overflow-x-auto bg-black/30 border border-border/50", className)}>
-                        <code {...props}>{children}</code>
-                      </pre>
-                    </div>
-                  ) : (
-                    <code className={cn("bg-muted px-1.5 py-0.5 rounded text-xs font-mono", className)} {...props}>
+                p: ({ children }: { children: React.ReactNode }) => <p className="mb-3 leading-7 last:mb-0">{children}</p>,
+                ul: ({ children }: { children: React.ReactNode }) => <ul className="mb-3 list-disc pl-5 leading-7 space-y-1">{children}</ul>,
+                ol: ({ children }: { children: React.ReactNode }) => <ol className="mb-3 list-decimal pl-5 leading-7 space-y-1">{children}</ol>,
+                li: ({ children }: { children: React.ReactNode }) => <li>{children}</li>,
+                strong: ({ children }: { children: React.ReactNode }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                blockquote: ({ children }: { children: React.ReactNode }) => (
+                  <blockquote className="my-3 border-l-2 border-primary/50 pl-3 text-foreground/85 italic">
+                    {children}
+                  </blockquote>
+                ),
+                pre: ({ children }: { children: React.ReactNode }) => (
+                  <pre className="my-4 overflow-x-auto rounded-xl border border-border/70 bg-muted/30 px-4 py-3 text-[0.84rem] leading-6">
+                    {children}
+                  </pre>
+                ),
+                code: ({ className, children, ...props }: any) => {
+                  const text = String(children ?? '');
+                  const isBlockCode = (className || '').includes('language-') || text.includes('\n');
+                  if (isBlockCode) {
+                    return (
+                      <code className={cn("font-mono text-foreground", className)} {...props}>
+                        {children}
+                      </code>
+                    );
+                  }
+
+                  return (
+                    <code className={cn("rounded border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[0.82em] font-mono text-foreground", className)} {...props}>
                       {children}
                     </code>
                   );
-                }
+                },
+                hr: () => <hr className="my-4 border-border/70" />
               }}
             >
-              {renderedContent}
+              {normalizedContent}
             </ReactMarkdown>
           </div>
+
+          {message.role === 'assistant' && hasReasoning && (
+            <div className="mt-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+              <button
+                onClick={() => setIsReasoningExpanded(!isReasoningExpanded)}
+                className="flex w-full items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Brain className="w-3 h-3" />
+                <span>Reasoning Trace</span>
+                {isReasoningExpanded ? (
+                  <ChevronDown className="w-3 h-3 ml-auto opacity-50" />
+                ) : (
+                  <ChevronRight className="w-3 h-3 ml-auto opacity-50" />
+                )}
+              </button>
+
+              {isReasoningExpanded && (
+                <div className="mt-2 max-h-56 overflow-y-auto whitespace-pre-wrap rounded-md bg-background/60 p-2 text-xs font-mono text-muted-foreground/90">
+                  {reasoning}
+                </div>
+              )}
+            </div>
+          )}
 
           {hasAttachments && (
             <div className="mt-3 flex flex-col gap-2">

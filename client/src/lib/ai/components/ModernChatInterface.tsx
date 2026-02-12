@@ -5,13 +5,11 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Avatar, AvatarFallback } from '@/shared/components/ui/Avatar';
 import { useToast } from '@/shared/ui/components/Toast';
 import { Button } from '@/shared/components/ui/Button';
 import { Bot, Brain, Database, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { ChatMessage as ChatMessageType, FileAttachment } from '@/shared/types/chat';
-import { logger } from '@/shared/utils/logger';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import ChatWelcome from './ChatWelcome';
@@ -73,6 +71,13 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [streamingElapsedSeconds, setStreamingElapsedSeconds] = useState(0);
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(true);
+  const [isActivityExpanded, setIsActivityExpanded] = useState(true);
+  const [statusEvents, setStatusEvents] = useState<Array<{
+    stage: string;
+    label: string;
+    detail?: string | null;
+    timestamp: string;
+  }>>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
@@ -104,6 +109,21 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
     ? streamStatus.label.replace(/^Agent is\s+/i, `${statusActor} is `)
     : thinkingLabel;
   const statusDetail = streamStatus?.detail || (ragEnabled ? 'Business context is attached from backend memory.' : null);
+  const stageProgressMap: Record<string, number> = {
+    accepted: 8,
+    context_loading: 20,
+    context_ready: 34,
+    openclaw_request: 48,
+    openclaw_connected: 62,
+    thinking: 72,
+    responding: 84,
+    processing: 88,
+    completed: 100
+  };
+  const baseProgress = stageProgressMap[streamStatus?.stage || 'thinking'] || 35;
+  const animatedProgress = isStreaming
+    ? Math.min(96, baseProgress + Math.min(8, streamingElapsedSeconds % 9))
+    : baseProgress;
   const formatDuration = (totalSeconds: number) => {
     if (totalSeconds < 60) return `${totalSeconds}s`;
     const minutes = Math.floor(totalSeconds / 60);
@@ -142,11 +162,13 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   useEffect(() => {
     if (!isStreaming) {
       setStreamingElapsedSeconds(0);
+      setStatusEvents([]);
       return;
     }
 
     const startedAt = Date.now();
     setStreamingElapsedSeconds(0);
+    setStatusEvents([]);
 
     const intervalId = window.setInterval(() => {
       setStreamingElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
@@ -154,6 +176,33 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
 
     return () => window.clearInterval(intervalId);
   }, [isStreaming]);
+
+  useEffect(() => {
+    if (!isStreaming || !streamStatus) return;
+    setStatusEvents((previous) => {
+      const normalized = {
+        stage: streamStatus.stage || 'processing',
+        label: streamStatus.label || 'Agent is working',
+        detail: streamStatus.detail || null,
+        timestamp: streamStatus.timestamp || new Date().toISOString()
+      };
+      const last = previous[previous.length - 1];
+      if (
+        last
+        && last.stage === normalized.stage
+        && last.label === normalized.label
+        && (last.detail || '') === (normalized.detail || '')
+      ) {
+        return previous;
+      }
+      return [...previous, normalized].slice(-8);
+    });
+  }, [isStreaming, streamStatus]);
+
+  useEffect(() => {
+    if (!isStreaming || !isAtBottom) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [isStreaming, isAtBottom, thinkingContent, streamStatus]);
 
   const handleCopy = (content: string) => {
     navigator.clipboard.writeText(content);
@@ -190,9 +239,9 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="relative flex-1 overflow-y-auto min-h-0 px-5 py-5 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-gray-700"
+        className="relative flex-1 overflow-y-auto min-h-0 px-3 py-4 sm:px-5 sm:py-5 lg:px-8 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-gray-700"
       >
-        <div className="max-w-4xl mx-auto space-y-5 min-h-full">
+        <div className="mx-auto min-h-full max-w-5xl space-y-4">
           {isEmptyState ? (
             <div className="mx-auto flex min-h-full w-full items-center justify-center py-4">
               <div className="w-full max-w-3xl">
@@ -223,7 +272,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
               </div>
             </div>
           ) : (
-            <div className="space-y-6 pb-3">
+            <div className="space-y-5 pb-4">
               {messages.map((message, index) => {
                 // Check if this is a consecutive message from the same role
                 const isConsecutive = index > 0 && messages[index - 1].role === message.role;
@@ -253,17 +302,83 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                       <Bot className="h-5 w-5 text-white" />
                     </div>
                     <div className="space-y-2 overflow-hidden w-full max-w-2xl">
-                      <div className="min-h-[20px] p-4 rounded-xl bg-card/90 border border-border/70 shadow-sm text-sm">
+                      <div className="min-h-[20px] p-4 rounded-xl bg-card/95 border border-border/70 shadow-sm text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-foreground/90">
+                            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                            Live Run
+                          </div>
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {formatDuration(streamingElapsedSeconds)}
+                          </span>
+                        </div>
 
-                        {/* Thinking Process Section */}
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-blue-500 dark:text-blue-300 leading-relaxed">
+                          <Brain className="w-3 h-3" />
+                          <span>{statusLabel}</span>
+                        </div>
+                        {statusDetail && (
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground leading-relaxed">
+                            <Database className="w-3 h-3" />
+                            <span>{statusDetail}</span>
+                          </div>
+                        )}
+
+                        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+                            style={{ width: `${animatedProgress}%` }}
+                          />
+                        </div>
+
+                        <div className="mt-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                          <button
+                            onClick={() => setIsActivityExpanded(!isActivityExpanded)}
+                            className="flex w-full items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <span>Activity Timeline</span>
+                            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
+                              {statusEvents.length || 1}
+                            </span>
+                            {isActivityExpanded ? (
+                              <ChevronDown className="w-3 h-3 ml-auto opacity-50" />
+                            ) : (
+                              <ChevronRight className="w-3 h-3 ml-auto opacity-50" />
+                            )}
+                          </button>
+                          {isActivityExpanded && (
+                            <div className="mt-2 space-y-1.5">
+                              {(statusEvents.length
+                                ? [...statusEvents].reverse()
+                                : [{ stage: 'thinking', label: statusLabel, detail: statusDetail, timestamp: new Date().toISOString() }])
+                                .map((event, idx) => (
+                                  <div
+                                    key={`${event.timestamp}-${event.stage}-${idx}`}
+                                    className="rounded-md border border-border/50 bg-background/60 px-2 py-1.5 text-xs"
+                                  >
+                                    <div className="flex items-center justify-between gap-2 text-foreground/90">
+                                      <span className="truncate">{event.label}</span>
+                                      <span className="shrink-0 text-[10px] text-muted-foreground uppercase">
+                                        {event.stage.replace(/_/g, ' ')}
+                                      </span>
+                                    </div>
+                                    {event.detail && (
+                                      <div className="mt-0.5 line-clamp-2 text-muted-foreground">{event.detail}</div>
+                                    )}
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+
                         {thinkingContent && (
-                          <div className="mb-3 border-b border-border/50 pb-3">
+                          <div className="mt-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
                             <button
                               onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
                               className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full"
                             >
                               <Brain className="w-3 h-3" />
-                              <span>Thinking Process</span>
+                              <span>Reasoning Stream</span>
                               {isThinkingExpanded ? (
                                 <ChevronDown className="w-3 h-3 ml-auto opacity-50" />
                               ) : (
@@ -272,7 +387,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                             </button>
 
                             {isThinkingExpanded && (
-                              <div className="mt-2 text-xs text-muted-foreground/80 font-mono bg-muted/30 p-2 rounded-md whitespace-pre-wrap animate-in fade-in slide-in-from-top-1">
+                              <div className="mt-2 max-h-56 overflow-y-auto text-xs text-muted-foreground/85 font-mono bg-background/60 p-2 rounded-md whitespace-pre-wrap animate-in fade-in slide-in-from-top-1">
                                 {thinkingContent}
                                 <span className="inline-block w-1.5 h-3 ml-1 bg-primary/50 animate-pulse align-middle" />
                               </div>
@@ -280,24 +395,12 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                           </div>
                         )}
 
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                        </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-blue-500 dark:text-blue-300 leading-relaxed">
-                          <Brain className="w-3 h-3" />
-                          <span>{statusLabel}</span>
-                          <span className="text-muted-foreground">({formatDuration(streamingElapsedSeconds)})</span>
-                        </div>
-                        {statusDetail && (
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground leading-relaxed">
-                            <Database className="w-3 h-3" />
-                            <span>{statusDetail}</span>
+                        {!thinkingContent && (
+                          <div className="mt-3 space-y-2">
+                            <div className="h-2 rounded bg-muted/70 animate-pulse w-11/12" />
+                            <div className="h-2 rounded bg-muted/60 animate-pulse w-9/12" />
+                            <div className="h-2 rounded bg-muted/50 animate-pulse w-7/12" />
                           </div>
-                        )}
-                        <div className="mt-2 h-1.5 w-full max-w-56 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                          <div className="h-full w-1/3 rounded-full bg-primary animate-pulse" />
                         </div>
                       </div>
                     </div>

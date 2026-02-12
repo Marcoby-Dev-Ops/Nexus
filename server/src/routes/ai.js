@@ -129,6 +129,10 @@ function buildModelWayInstructionBlock(intent, phase) {
         '- For inbox requests (today, last week, last month, specific sender), use nexus_search_emails with the appropriate datePreset/from/query filters.',
         '- Prefer OAuth for Microsoft 365 and Google Workspace; fallback to nexus_connect_imap for custom/non-exchange providers.',
         '- Never claim direct visibility into OAuth tokens. Report live state using tool results only.',
+        '- Keep markdown clean and readable: plain paragraphs first, bullets only when listing items, and short sections.',
+        '- Use fenced code blocks only for real code/commands. Do not wrap normal text, domains, filenames, or branch names in code fences.',
+        '- Use inline code for short technical tokens such as package names, file paths, and URLs.',
+        '- Keep responses concise and direct. Avoid repetitive confirmations, apologies, or filler.',
         '- Include direct source links for external facts.'
     ].join('\n');
 }
@@ -791,6 +795,134 @@ function mergeUniqueAttachments(...attachmentSets) {
     return merged;
 }
 
+function extractReasoningText(payload) {
+    if (!payload || typeof payload !== 'object') return '';
+
+    const delta = payload?.choices?.[0]?.delta || {};
+    const directCandidates = [
+        delta.reasoning_content,
+        delta.reasoning,
+        delta.thinking,
+        payload.reasoning_content,
+        payload.reasoning,
+        payload.thinking,
+        payload.thought
+    ];
+
+    for (const candidate of directCandidates) {
+        if (typeof candidate === 'string' && candidate.trim().length > 0) {
+            return candidate;
+        }
+    }
+
+    const listCandidates = [
+        delta.reasoning_details,
+        payload.reasoning_details,
+        delta.reasoning_trace,
+        payload.reasoning_trace
+    ];
+
+    for (const candidate of listCandidates) {
+        if (!Array.isArray(candidate)) continue;
+        const flattened = candidate
+            .map((item) => {
+                if (typeof item === 'string') return item;
+                if (item && typeof item === 'object') {
+                    if (typeof item.text === 'string') return item.text;
+                    if (typeof item.content === 'string') return item.content;
+                }
+                return '';
+            })
+            .filter(Boolean)
+            .join('\n');
+
+        if (flattened.trim().length > 0) {
+            return flattened;
+        }
+    }
+
+    return '';
+}
+
+function extractModelFromPayload(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+
+    const choice0 = Array.isArray(payload?.choices) ? payload.choices[0] : null;
+    const delta = choice0?.delta || {};
+    const message = choice0?.message || {};
+    const candidates = [
+        payload.model,
+        choice0?.model,
+        delta?.model,
+        message?.model,
+        payload?.metadata?.model,
+        payload?.response?.model
+    ];
+
+    for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.trim()) {
+            return candidate.trim();
+        }
+    }
+
+    return null;
+}
+
+function extractUsageFromPayload(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+
+    const candidates = [
+        payload.usage,
+        payload?.choices?.[0]?.usage,
+        payload?.metadata?.usage
+    ];
+
+    for (const candidate of candidates) {
+        if (candidate && typeof candidate === 'object') {
+            return candidate;
+        }
+    }
+
+    return null;
+}
+
+function extractResponseIdFromPayload(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+
+    const candidates = [
+        payload.id,
+        payload.response_id,
+        payload.request_id,
+        payload?.metadata?.response_id,
+        payload?.metadata?.request_id
+    ];
+
+    for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.trim()) {
+            return candidate.trim();
+        }
+    }
+
+    return null;
+}
+
+function extractProviderFromPayload(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+
+    const candidates = [
+        payload.provider,
+        payload?.metadata?.provider
+    ];
+
+    for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.trim()) {
+            return candidate.trim();
+        }
+    }
+
+    return null;
+}
+
 /**
  * POST /api/ai/chat
  * Streaming chat endpoint - Pure Proxy to OpenClaw
@@ -834,7 +966,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     buildStreamStatus('processing', 'Agent is still working', `${frame} (${elapsedSeconds}s elapsed)`)
                 );
             }
-        }, 15000);
+        }, 6000);
     };
     const stopKeepAlive = () => {
         if (keepAliveIntervalId) {
@@ -962,7 +1094,42 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
         if (shouldRefuseDirectExecutionInDiscovery(phase, lastUserMessage)) {
             const refusalContent = buildDiscoveryRefusalMessage();
-            await saveMessage(conversationId, 'assistant', refusalContent);
+            await saveMessage(conversationId, 'assistant', refusalContent, {
+                model: 'nexus:policy-guard',
+                usage: null,
+                modelWay: modelWayMetadata,
+                modelTrace: {
+                    runtimeId: 'nexus-policy-guard',
+                    runtimeEndpoint: null,
+                    requestedModel: null,
+                    nexusAgentId: resolvedAgentId,
+                    openClawAgentId: null,
+                    conversationId,
+                    streamRequested: Boolean(stream),
+                    upstreamRequestId: null,
+                    upstreamStatus: null,
+                    responseId: null,
+                    provider: 'nexus',
+                    systemFingerprint: null,
+                    resolvedModel: 'nexus:policy-guard',
+                    observedModels: ['nexus:policy-guard'],
+                    partial: false
+                }
+            });
+            logger.info('Chat model trace', {
+                userId,
+                conversationId,
+                stream: Boolean(stream),
+                requestedModel: null,
+                resolvedModel: 'nexus:policy-guard',
+                runtimeId: 'nexus-policy-guard',
+                openClawAgentId: null,
+                nexusAgentId: resolvedAgentId,
+                upstreamRequestId: null,
+                responseId: null,
+                provider: 'nexus',
+                partial: false
+            });
 
             if (stream) {
                 beginSseStream(res);
@@ -1149,6 +1316,22 @@ router.post('/chat', authenticateToken, async (req, res) => {
             const errorText = await openClawResponse.text();
             throw new Error(`OpenClaw API error: ${openClawResponse.status} - ${errorText}`);
         }
+        const upstreamRequestId =
+            openClawResponse.headers.get('x-request-id')
+            || openClawResponse.headers.get('x-openai-request-id')
+            || openClawResponse.headers.get('openai-request-id')
+            || null;
+        const baseModelTrace = {
+            runtimeId: runtimeInfo.id,
+            runtimeEndpoint: runtimeInfo.chatCompletionsUrl,
+            requestedModel: openClawPayload.model,
+            nexusAgentId: resolvedAgentId,
+            openClawAgentId,
+            conversationId,
+            streamRequested: Boolean(stream),
+            upstreamRequestId,
+            upstreamStatus: openClawResponse.status
+        };
         if (stream) {
             writeSseEvent(
                 res,
@@ -1167,6 +1350,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
             // Handle non-streaming upstream response from Bridge
             const data = await openClawResponse.json();
             const content = data.choices?.[0]?.message?.content || '';
+            const resolvedModel = extractModelFromPayload(data) || openClawPayload.model || 'openclaw';
+            const usage = extractUsageFromPayload(data) || data.usage || null;
+            const responseId = extractResponseIdFromPayload(data);
+            const provider = extractProviderFromPayload(data);
+            const systemFingerprint = typeof data?.system_fingerprint === 'string' ? data.system_fingerprint : null;
             const generatedAttachments = mergeUniqueAttachments(
                 extractGeneratedAttachmentsFromPayload(data),
                 extractGeneratedAttachmentsFromText(content)
@@ -1175,12 +1363,33 @@ router.post('/chat', authenticateToken, async (req, res) => {
             // Audit: Save Assistant Response
             if (content || generatedAttachments.length) {
                 const assistantMetadata = {
-                    model: data.model || 'openclaw',
-                    usage: data.usage || null,
+                    model: resolvedModel,
+                    usage,
                     modelWay: modelWayMetadata,
-                    attachments: generatedAttachments
+                    attachments: generatedAttachments,
+                    modelTrace: {
+                        ...baseModelTrace,
+                        responseId,
+                        provider,
+                        systemFingerprint,
+                        resolvedModel,
+                        observedModels: resolvedModel ? [resolvedModel] : []
+                    }
                 };
                 await saveMessage(conversationId, 'assistant', content || 'Generated documents attached.', assistantMetadata);
+                logger.info('Chat model trace', {
+                    userId,
+                    conversationId,
+                    stream: Boolean(stream),
+                    requestedModel: baseModelTrace.requestedModel,
+                    resolvedModel,
+                    runtimeId: baseModelTrace.runtimeId,
+                    openClawAgentId: baseModelTrace.openClawAgentId,
+                    nexusAgentId: baseModelTrace.nexusAgentId,
+                    upstreamRequestId: baseModelTrace.upstreamRequestId,
+                    responseId,
+                    provider
+                });
             }
 
             // If client wanted stream, emit it as an SSE event sequence
@@ -1207,8 +1416,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 const response = structureResponse(content, modelWayMetadata, {
                     success: true,
                     content,
-                    model: data.model,
-                    usage: data.usage,
+                    model: resolvedModel,
+                    usage,
                     attachments: generatedAttachments
                 }
                 );
@@ -1220,6 +1429,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
             // Non-streaming: return JSON response
             const data = await openClawResponse.json();
             const content = data.choices?.[0]?.message?.content || '';
+            const resolvedModel = extractModelFromPayload(data) || openClawPayload.model || 'openclaw';
+            const usage = extractUsageFromPayload(data) || data.usage || null;
+            const responseId = extractResponseIdFromPayload(data);
+            const provider = extractProviderFromPayload(data);
+            const systemFingerprint = typeof data?.system_fingerprint === 'string' ? data.system_fingerprint : null;
             const generatedAttachments = mergeUniqueAttachments(
                 extractGeneratedAttachmentsFromPayload(data),
                 extractGeneratedAttachmentsFromText(content)
@@ -1228,19 +1442,40 @@ router.post('/chat', authenticateToken, async (req, res) => {
             // Audit: Save Assistant Response
             if (content || generatedAttachments.length) {
                 const assistantMetadata = {
-                    model: data.model || 'openclaw',
-                    usage: data.usage || null,
+                    model: resolvedModel,
+                    usage,
                     modelWay: modelWayMetadata,
-                    attachments: generatedAttachments
+                    attachments: generatedAttachments,
+                    modelTrace: {
+                        ...baseModelTrace,
+                        responseId,
+                        provider,
+                        systemFingerprint,
+                        resolvedModel,
+                        observedModels: resolvedModel ? [resolvedModel] : []
+                    }
                 };
                 await saveMessage(conversationId, 'assistant', content || 'Generated documents attached.', assistantMetadata);
+                logger.info('Chat model trace', {
+                    userId,
+                    conversationId,
+                    stream: false,
+                    requestedModel: baseModelTrace.requestedModel,
+                    resolvedModel,
+                    runtimeId: baseModelTrace.runtimeId,
+                    openClawAgentId: baseModelTrace.openClawAgentId,
+                    nexusAgentId: baseModelTrace.nexusAgentId,
+                    upstreamRequestId: baseModelTrace.upstreamRequestId,
+                    responseId,
+                    provider
+                });
             }
 
             const response = structureResponse(content, modelWayMetadata, {
                 success: true,
                 content,
-                model: data.model,
-                usage: data.usage,
+                model: resolvedModel,
+                usage,
                 attachments: generatedAttachments
             }
             );
@@ -1258,6 +1493,34 @@ router.post('/chat', authenticateToken, async (req, res) => {
         let fullAssistantContent = ''; // Accumulate for audit
         let fullReasoningContent = ''; // Accumulate reasoning
         let generatedAttachmentCandidates = [];
+        const observedStreamModels = new Set();
+        let streamResolvedModel = null;
+        let streamUsage = null;
+        let streamResponseId = null;
+        let streamProvider = null;
+        let streamSystemFingerprint = null;
+        const responseHeaderModel = openClawResponse.headers.get('x-model') || openClawResponse.headers.get('openai-model');
+        if (typeof responseHeaderModel === 'string' && responseHeaderModel.trim()) {
+            streamResolvedModel = responseHeaderModel.trim();
+            observedStreamModels.add(streamResolvedModel);
+        }
+
+        const buildStreamingAssistantMetadata = (generatedAttachments, partial = false) => ({
+            model: streamResolvedModel || openClawPayload.model || (partial ? 'openclaw:stream-partial' : 'openclaw:stream'),
+            usage: streamUsage || null,
+            modelWay: modelWayMetadata,
+            attachments: generatedAttachments,
+            reasoning: fullReasoningContent || undefined,
+            modelTrace: {
+                ...baseModelTrace,
+                responseId: streamResponseId,
+                provider: streamProvider,
+                systemFingerprint: streamSystemFingerprint,
+                resolvedModel: streamResolvedModel || null,
+                observedModels: Array.from(observedStreamModels),
+                partial
+            }
+        });
 
         try {
             while (true) {
@@ -1270,13 +1533,22 @@ router.post('/chat', authenticateToken, async (req, res) => {
                             generatedAttachmentCandidates,
                             extractGeneratedAttachmentsFromText(fullAssistantContent)
                         );
-                        const assistantMetadata = {
-                            model: 'openclaw:stream',
-                            modelWay: modelWayMetadata,
-                            attachments: generatedAttachments,
-                            reasoning: fullReasoningContent || undefined
-                        };
+                        const assistantMetadata = buildStreamingAssistantMetadata(generatedAttachments);
                         await saveMessage(conversationId, 'assistant', fullAssistantContent || (fullReasoningContent ? '' : '...'), assistantMetadata);
+                        logger.info('Chat model trace', {
+                            userId,
+                            conversationId,
+                            stream: true,
+                            requestedModel: baseModelTrace.requestedModel,
+                            resolvedModel: assistantMetadata.model,
+                            runtimeId: baseModelTrace.runtimeId,
+                            openClawAgentId: baseModelTrace.openClawAgentId,
+                            nexusAgentId: baseModelTrace.nexusAgentId,
+                            upstreamRequestId: baseModelTrace.upstreamRequestId,
+                            responseId: streamResponseId,
+                            provider: streamProvider,
+                            partial: false
+                        });
                         if (generatedAttachments.length) {
                             writeSseEvent(res, { metadata: { generatedAttachments } });
                         }
@@ -1305,13 +1577,22 @@ router.post('/chat', authenticateToken, async (req, res) => {
                                     generatedAttachmentCandidates,
                                     extractGeneratedAttachmentsFromText(fullAssistantContent)
                                 );
-                                const assistantMetadata = {
-                                    model: 'openclaw:stream',
-                                    modelWay: modelWayMetadata,
-                                    attachments: generatedAttachments,
-                                    reasoning: fullReasoningContent || undefined
-                                };
+                                const assistantMetadata = buildStreamingAssistantMetadata(generatedAttachments);
                                 await saveMessage(conversationId, 'assistant', fullAssistantContent || (fullReasoningContent ? '' : '...'), assistantMetadata);
+                                logger.info('Chat model trace', {
+                                    userId,
+                                    conversationId,
+                                    stream: true,
+                                    requestedModel: baseModelTrace.requestedModel,
+                                    resolvedModel: assistantMetadata.model,
+                                    runtimeId: baseModelTrace.runtimeId,
+                                    openClawAgentId: baseModelTrace.openClawAgentId,
+                                    nexusAgentId: baseModelTrace.nexusAgentId,
+                                    upstreamRequestId: baseModelTrace.upstreamRequestId,
+                                    responseId: streamResponseId,
+                                    provider: streamProvider,
+                                    partial: false
+                                });
                                 if (generatedAttachments.length) {
                                     writeSseEvent(res, { metadata: { generatedAttachments } });
                                 }
@@ -1330,8 +1611,30 @@ router.post('/chat', authenticateToken, async (req, res) => {
                             if (chunkAttachments.length) {
                                 generatedAttachmentCandidates = mergeUniqueAttachments(generatedAttachmentCandidates, chunkAttachments);
                             }
+                            const chunkModel = extractModelFromPayload(chunk);
+                            if (chunkModel) {
+                                observedStreamModels.add(chunkModel);
+                                if (!streamResolvedModel) {
+                                    streamResolvedModel = chunkModel;
+                                }
+                            }
+                            const chunkUsage = extractUsageFromPayload(chunk);
+                            if (chunkUsage) {
+                                streamUsage = chunkUsage;
+                            }
+                            const chunkResponseId = extractResponseIdFromPayload(chunk);
+                            if (chunkResponseId && !streamResponseId) {
+                                streamResponseId = chunkResponseId;
+                            }
+                            const chunkProvider = extractProviderFromPayload(chunk);
+                            if (chunkProvider && !streamProvider) {
+                                streamProvider = chunkProvider;
+                            }
+                            if (typeof chunk?.system_fingerprint === 'string' && chunk.system_fingerprint.trim()) {
+                                streamSystemFingerprint = chunk.system_fingerprint.trim();
+                            }
                             const content = chunk.choices?.[0]?.delta?.content;
-                            const reasoning = chunk.choices?.[0]?.delta?.reasoning_content;
+                            const reasoning = extractReasoningText(chunk);
 
                             if (reasoning) {
                                 fullReasoningContent += reasoning;
@@ -1359,12 +1662,25 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     generatedAttachmentCandidates,
                     extractGeneratedAttachmentsFromText(fullAssistantContent)
                 );
-                saveMessage(conversationId, 'assistant', fullAssistantContent, {
-                    model: 'openclaw:stream-partial',
-                    modelWay: modelWayMetadata,
-                    attachments: generatedAttachments,
-                    reasoning: fullReasoningContent || undefined
-                }).catch(e => logger.error('Failed to save partial message', e));
+                const partialMetadata = buildStreamingAssistantMetadata(generatedAttachments, true);
+                saveMessage(conversationId, 'assistant', fullAssistantContent, partialMetadata)
+                    .then(() => {
+                        logger.info('Chat model trace', {
+                            userId,
+                            conversationId,
+                            stream: true,
+                            requestedModel: baseModelTrace.requestedModel,
+                            resolvedModel: partialMetadata.model,
+                            runtimeId: baseModelTrace.runtimeId,
+                            openClawAgentId: baseModelTrace.openClawAgentId,
+                            nexusAgentId: baseModelTrace.nexusAgentId,
+                            upstreamRequestId: baseModelTrace.upstreamRequestId,
+                            responseId: streamResponseId,
+                            provider: streamProvider,
+                            partial: true
+                        });
+                    })
+                    .catch(e => logger.error('Failed to save partial message', e));
                 if (generatedAttachments.length) {
                     writeSseEvent(res, { metadata: { generatedAttachments } });
                 }
