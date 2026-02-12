@@ -49,7 +49,8 @@ RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
     echo 'set -e' >> /docker-entrypoint.sh && \
     # Prepare backend URL used by nginx and the app
     echo 'export BACKEND_URL=${VITE_API_URL:-http://localhost:3001}' >> /docker-entrypoint.sh && \
-    echo 'export BACKEND_PROXY_URL=${BACKEND_PROXY_URL:-http://nexus-server:3001}' >> /docker-entrypoint.sh && \
+    # Default to docker-compose service DNS name. Override in Coolify when needed.
+    echo 'export BACKEND_PROXY_URL=${BACKEND_PROXY_URL:-http://server:3001}' >> /docker-entrypoint.sh && \
     echo 'echo "BACKEND_URL (frontend): $BACKEND_URL"' >> /docker-entrypoint.sh && \
     echo 'echo "BACKEND_PROXY_URL (nginx): $BACKEND_PROXY_URL"' >> /docker-entrypoint.sh && \
     # Generate nginx config from template

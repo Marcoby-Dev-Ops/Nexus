@@ -177,7 +177,7 @@ export class OAuthIntegrationService {
 
       integrations.forEach(integration => {
         const status = integration.status;
-        if (status === 'active') {
+        if (status === 'active' || status === 'connected') {
           summary.connected++;
         } else if (status in summary) {
           // @ts-ignore

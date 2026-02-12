@@ -7,11 +7,29 @@ const { logger } = require('../utils/logger');
 const userProfileService = require('../services/UserProfileService');
 const { query } = require('../database/connection');
 
+const PROVIDER_ALIASES = {
+  microsoft365: 'microsoft',
+  'google-analytics': 'google_analytics',
+  google_analytics: 'google_analytics',
+  googleworkspace: 'google-workspace',
+  google_workspace: 'google-workspace',
+};
+
+function normalizeProvider(provider) {
+  if (!provider) return provider;
+  return PROVIDER_ALIASES[provider] || provider;
+}
+
 
 
 // Helper function to generate random strings
 function generateRandomString(length) {
   return crypto.randomBytes(length).toString('base64url');
+}
+
+// PKCE challenge generator
+function generateCodeChallenge(verifier) {
+  return crypto.createHash('sha256').update(verifier).digest('base64url');
 }
 
 // Helper function to decode JWT payload (without signature verification)
@@ -121,7 +139,7 @@ const TokenRefreshSchema = z.object({
  * Get OAuth configuration for a provider (public info only)
  */
 router.get('/config/:provider', (req, res) => {
-  const { provider } = req.params;
+  const provider = normalizeProvider(req.params.provider);
   const config = getOAuthProviders()[provider];
 
   if (!config) {
@@ -151,6 +169,82 @@ router.get('/config/:provider', (req, res) => {
 
 // In-memory OAuth state storage (for development)
 const oauthStates = new Map();
+
+/**
+ * Start OAuth authorization flow
+ */
+router.get('/:provider/start', async (req, res) => {
+  try {
+    const provider = normalizeProvider(req.params.provider);
+    const { userId, redirectUri } = req.query;
+    const config = getOAuthProviders()[provider];
+
+    if (!config) {
+      return res.status(404).json({ error: 'Provider not found' });
+    }
+
+    if (!userId || typeof userId !== 'string') {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    const resolvedRedirectUri = typeof redirectUri === 'string' && redirectUri.length > 0
+      ? redirectUri
+      : provider === 'authentik'
+        ? `${getFrontendUrl()}/auth/callback`
+        : `${getFrontendUrl()}/integrations/oauth/callback`;
+
+    const state = generateRandomString(32);
+    const codeVerifier = generateRandomString(64);
+    const codeChallenge = generateCodeChallenge(codeVerifier);
+
+    oauthStates.set(state, {
+      state,
+      codeVerifier,
+      userId,
+      integrationSlug: provider,
+      redirectUri: resolvedRedirectUri,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
+
+    const now = Date.now();
+    for (const [key, value] of oauthStates.entries()) {
+      if (value.expiresAt < now) oauthStates.delete(key);
+    }
+
+    const authUrl = new URL(config.authorizationUrl);
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: config.clientId || '',
+      redirect_uri: resolvedRedirectUri,
+      scope: config.scope || '',
+      state,
+    });
+
+    if (['authentik', 'microsoft', 'google', 'google_analytics', 'google-workspace'].includes(provider)) {
+      params.set('code_challenge', codeChallenge);
+      params.set('code_challenge_method', 'S256');
+    }
+
+    if (['google', 'google_analytics', 'google-workspace'].includes(provider)) {
+      params.set('access_type', 'offline');
+      params.set('prompt', 'consent');
+      params.set('include_granted_scopes', 'true');
+    }
+
+    authUrl.search = params.toString();
+
+    return res.json({
+      authUrl: authUrl.toString(),
+      state,
+      provider,
+      redirectUri: resolvedRedirectUri,
+    });
+  } catch (error) {
+    logger.error('Failed to start OAuth flow', { error: error?.message || String(error) });
+    return res.status(500).json({ error: 'Failed to start OAuth flow' });
+  }
+});
 
 /**
  * Generate OAuth state for CSRF protection
@@ -209,7 +303,9 @@ router.post('/state', async (req, res) => {
  */
 router.post('/token', async (req, res) => {
   try {
-    const { provider, code, redirectUri, codeVerifier, state } = req.body;
+    const provider = normalizeProvider(req.body.provider);
+    const { code, redirectUri, state } = req.body;
+    let { codeVerifier } = req.body;
 
     const config = getOAuthProviders()[provider];
     if (!config) {
@@ -339,7 +435,7 @@ function getAccessTokenFromRequest(req) {
 
 async function handleUserinfo(req, res) {
   try {
-    const provider = (req.body && req.body.provider) || (req.query && req.query.provider) || 'authentik';
+    const provider = normalizeProvider((req.body && req.body.provider) || (req.query && req.query.provider) || 'authentik');
     const accessToken = getAccessTokenFromRequest(req);
 
 
@@ -417,7 +513,9 @@ router.get('/userinfo', handleUserinfo);
  */
 router.post('/refresh', async (req, res) => {
   try {
-    const { provider, refreshToken } = TokenRefreshSchema.parse(req.body);
+    const parsed = TokenRefreshSchema.parse(req.body);
+    const provider = normalizeProvider(parsed.provider);
+    const { refreshToken } = parsed;
 
     const config = getOAuthProviders()[provider];
     if (!config) {
@@ -477,7 +575,7 @@ router.post('/refresh', async (req, res) => {
  */
 router.post('/:provider/callback', async (req, res) => {
   try {
-    const { provider } = req.params;
+    const provider = normalizeProvider(req.params.provider);
     const { code, state, redirectUri } = req.body;
 
     // 1. Validate State and get userId
@@ -615,9 +713,85 @@ router.post('/:provider/callback', async (req, res) => {
       logger.error('Failed to update user profile during OAuth callback', { error: err.message });
     }
 
+    const expiresAt = tokenData.expires_in
+      ? new Date(Date.now() + (Number(tokenData.expires_in) * 1000)).toISOString()
+      : null;
+    const externalAccountId =
+      userInfo?.id ||
+      userInfo?.sub ||
+      userInfo?.user_id ||
+      userInfo?.preferred_username ||
+      null;
+    const tenantId = userInfo?.tid || tokenData?.tenant_id || null;
+
+    const credentials = {
+      access_token: tokenData.access_token || null,
+      refresh_token: tokenData.refresh_token || null,
+      token_type: tokenData.token_type || 'Bearer',
+      expires_at: expiresAt,
+      scope: tokenData.scope || null,
+    };
+
+    const settings = {
+      provider,
+      external_account_id: externalAccountId,
+      tenant_id: tenantId,
+      email: userInfo?.email || null,
+    };
+
+    const integrationLookup = await query(
+      'SELECT id FROM integrations WHERE slug = $1 LIMIT 1',
+      [provider]
+    );
+    const integrationId = integrationLookup?.data?.[0]?.id || null;
+
+    const integrationUpsert = await query(
+      `INSERT INTO user_integrations (
+          user_id, integration_name, integration_id, credentials, settings, status, last_sync_at
+        )
+        VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, 'active', NOW())
+        ON CONFLICT (user_id, integration_name)
+        DO UPDATE SET
+          integration_id = EXCLUDED.integration_id,
+          credentials = EXCLUDED.credentials,
+          settings = EXCLUDED.settings,
+          status = 'active',
+          updated_at = NOW()
+        RETURNING id`,
+      [userId, provider, integrationId, JSON.stringify(credentials), JSON.stringify(settings)]
+    );
+
+    await query(
+      `INSERT INTO oauth_tokens (
+          user_id, integration_slug, access_token, refresh_token, token_type, expires_at, scope
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (user_id, integration_slug)
+        DO UPDATE SET
+          access_token = EXCLUDED.access_token,
+          refresh_token = EXCLUDED.refresh_token,
+          token_type = EXCLUDED.token_type,
+          expires_at = EXCLUDED.expires_at,
+          scope = EXCLUDED.scope,
+          updated_at = NOW()`,
+      [
+        userId,
+        provider,
+        tokenData.access_token,
+        tokenData.refresh_token || null,
+        tokenData.token_type || 'Bearer',
+        expiresAt,
+        tokenData.scope || null,
+      ]
+    );
+
     return res.json({
       success: true,
       message: `Successfully connected ${provider}`,
+      integrationId: integrationUpsert?.data?.[0]?.id,
+      status: 'connected',
+      externalAccountId,
+      tenantId,
       data: {
         ...tokenData,
         user: userInfo
@@ -643,9 +817,18 @@ router.get('/integrations/:userId', async (req, res) => {
 
     // In a real app, verify req.user.id === userId or is admin
     const result = await query(
-      `SELECT ui.*, i.name as integration_name, i.provider 
+      `SELECT
+         ui.*,
+         i.name as catalog_integration_name,
+         ot.access_token,
+         ot.refresh_token,
+         ot.expires_at,
+         ot.scope
        FROM user_integrations ui
        LEFT JOIN integrations i ON ui.integration_id = i.id
+       LEFT JOIN oauth_tokens ot
+         ON ot.user_id = ui.user_id
+        AND ot.integration_slug = ui.integration_name
        WHERE ui.user_id = $1`,
       [userId]
     );
@@ -653,11 +836,18 @@ router.get('/integrations/:userId', async (req, res) => {
     const integrations = (result.data || []).map(row => ({
       id: row.id,
       userId: row.user_id,
-      provider: row.integration_slug, // Fallback to slug if provider join is null
-      name: row.integration_name || row.integration_slug,
-      status: row.status,
+      provider: row.integration_name,
+      integrationName: row.catalog_integration_name || row.integration_name,
+      integrationType: 'oauth',
+      status: row.status === 'active' ? 'connected' : row.status,
       connectedAt: row.created_at,
       lastSyncAt: row.last_sync_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      accessToken: row.access_token || undefined,
+      refreshToken: row.refresh_token || undefined,
+      expiresAt: row.expires_at || undefined,
+      scopes: row.scope || undefined,
       config: row.settings || {}
     }));
 
@@ -677,6 +867,22 @@ router.post('/disconnect/:integrationId', async (req, res) => {
     const { integrationId } = req.params;
     const { userId } = req.body; // Optional security check
 
+    const existing = await query(
+      'SELECT id, user_id, integration_name FROM user_integrations WHERE id = $1 LIMIT 1',
+      [integrationId]
+    );
+    const integration = existing?.data?.[0];
+    if (!integration) {
+      return res.status(404).json({ error: 'Integration not found' });
+    }
+    if (userId && integration.user_id !== userId) {
+      return res.status(403).json({ error: 'Not authorized for this integration' });
+    }
+
+    await query(
+      'DELETE FROM oauth_tokens WHERE user_id = $1 AND integration_slug = $2',
+      [integration.user_id, integration.integration_name]
+    );
     await query('DELETE FROM user_integrations WHERE id = $1', [integrationId]);
 
     // Also clear from social links if applicable?
@@ -700,7 +906,13 @@ router.post('/sync', async (req, res) => {
     // Logic to trigger sync job would go here
     // For now, update last_sync_at
 
+    let provider = null;
     if (integrationId) {
+      const integrationResult = await query(
+        'SELECT integration_name FROM user_integrations WHERE id = $1 LIMIT 1',
+        [integrationId]
+      );
+      provider = integrationResult?.data?.[0]?.integration_name || null;
       await query(
         'UPDATE user_integrations SET last_sync_at = NOW() WHERE id = $1',
         [integrationId]
@@ -710,6 +922,13 @@ router.post('/sync', async (req, res) => {
     res.json({
       success: true,
       syncedAt: new Date().toISOString(),
+      integrationId,
+      provider,
+      result: {
+        contacts: { count: 0, data: [] },
+        companies: { count: 0, data: [] },
+        emails: { count: 0, data: [] },
+      },
       message: 'Sync started'
     });
   } catch (error) {
@@ -718,15 +937,84 @@ router.post('/sync', async (req, res) => {
   }
 });
 
-// Utility function to generate random strings
-function generateRandomString(length) {
+/**
+ * GET /sync/history/:integrationId
+ * Simple history endpoint used by integration clients.
+ */
+router.get('/sync/history/:integrationId', async (req, res) => {
+  try {
+    const { integrationId } = req.params;
+    const result = await query(
+      'SELECT id, integration_name, last_sync_at, updated_at FROM user_integrations WHERE id = $1 LIMIT 1',
+      [integrationId]
+    );
 
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    const record = result?.data?.[0];
+    if (!record) {
+      return res.json({ history: [] });
+    }
+
+    return res.json({
+      history: [
+        {
+          integrationId: record.id,
+          provider: record.integration_name,
+          syncedAt: record.last_sync_at || record.updated_at,
+        },
+      ],
+    });
+  } catch (error) {
+    logger.error('Failed to load sync history', { error: error?.message || String(error) });
+    return res.status(500).json({ error: 'Internal server error' });
   }
-  return result;
-}
+});
+
+/**
+ * POST /:provider/test
+ * Validate connectivity with current access token.
+ */
+router.post('/:provider/test', async (req, res) => {
+  try {
+    const provider = normalizeProvider(req.params.provider);
+    const { accessToken } = req.body || {};
+    if (!accessToken) {
+      return res.status(400).json({ connected: false, error: 'Access token required' });
+    }
+
+    let testResponse;
+    if (provider === 'microsoft') {
+      testResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    } else if (provider === 'hubspot') {
+      testResponse = await fetch(`https://api.hubapi.com/oauth/v1/access-tokens/${encodeURIComponent(accessToken)}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    } else if (provider === 'authentik') {
+      const cfg = getOAuthProviders().authentik;
+      testResponse = await fetch(cfg.userInfoUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    } else {
+      testResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    }
+
+    if (!testResponse.ok) {
+      const details = await testResponse.text().catch(() => '');
+      return res.status(400).json({
+        connected: false,
+        error: 'Connection test failed',
+        details,
+      });
+    }
+
+    return res.json({ connected: true });
+  } catch (error) {
+    logger.error('OAuth connection test failed', { error: error?.message || String(error) });
+    return res.status(500).json({ connected: false, error: 'Internal server error' });
+  }
+});
 
 module.exports = router;
