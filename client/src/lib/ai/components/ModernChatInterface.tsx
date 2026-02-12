@@ -401,7 +401,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                             <div className="h-2 rounded bg-muted/60 animate-pulse w-9/12" />
                             <div className="h-2 rounded bg-muted/50 animate-pulse w-7/12" />
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
