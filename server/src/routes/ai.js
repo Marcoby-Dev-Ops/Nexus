@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const dns = require('dns').promises;
 let mammoth = null;
 try {
     mammoth = require('mammoth');
@@ -78,7 +79,7 @@ const OPENCLAW_TOOLS_BY_INTENT = {
     [INTENT_TYPES.LEARN.id]: OPENCLAW_TOOLS_DEFAULT,
     [INTENT_TYPES.SOLVE.id]: OPENCLAW_TOOLS_DEFAULT,
     [INTENT_TYPES.DECIDE.id]: OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS
-        ? ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills', 'nexus_get_integration_status', 'nexus_search_emails', 'nexus_test_integration_connection']
+        ? ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills', 'nexus_get_integration_status', 'nexus_search_emails', 'nexus_resolve_email_provider', 'nexus_start_email_connection', 'nexus_connect_imap', 'nexus_test_integration_connection', 'nexus_disconnect_integration']
         : ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills'],
     [INTENT_TYPES.WRITE.id]: ['web_search', 'advanced_scrape', 'summarize_strategy']
 };
@@ -96,6 +97,9 @@ const CONTROL_RESOURCE_METHODS = {
     channels: 'listChannels',
     plugins: 'listPlugins'
 };
+const EMAIL_ADDRESS_REGEX = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
+const EMAIL_CONNECT_INTENT_REGEX = /(connect|set\s*up|setup|link|integrat|oauth|imap|inbox|mailbox|email\s+account)/i;
+const PROVIDER_CONFIRMATION_QUESTION_REGEX = /(could you please confirm|please confirm if this is|is this (a|an)?\s*(microsoft|google)|another type of email provider|what provider|which provider)/i;
 
 // In-memory conversation tracking (in production, use database)
 const conversations = new Map();
@@ -173,6 +177,105 @@ function buildCodebaseContext() {
         ].join('\n');
     }
     return null;
+}
+
+function extractEmailFromText(text = '') {
+    const normalized = String(text || '').trim().toLowerCase();
+    const match = normalized.match(EMAIL_ADDRESS_REGEX);
+    return match ? match[0] : null;
+}
+
+function inferEmailProviderFromMxRecords(mxRecords = []) {
+    const hosts = mxRecords
+        .map((record) => String(record?.exchange || '').toLowerCase())
+        .filter(Boolean);
+
+    const hasHost = (fragments = []) =>
+        hosts.some((host) => fragments.some((fragment) => host.includes(fragment)));
+
+    if (hasHost(['protection.outlook.com', 'outlook.com', 'office365.com'])) {
+        return {
+            provider: 'microsoft',
+            displayName: 'Microsoft 365',
+            workflow: 'oauth',
+            confidence: 'high'
+        };
+    }
+
+    if (hasHost(['google.com', 'googlemail.com'])) {
+        return {
+            provider: 'google_workspace',
+            displayName: 'Google Workspace',
+            workflow: 'oauth',
+            confidence: 'high'
+        };
+    }
+
+    return {
+        provider: 'custom_imap',
+        displayName: 'Custom IMAP/SMTP',
+        workflow: 'imap_manual',
+        confidence: hosts.length ? 'medium' : 'low'
+    };
+}
+
+async function resolveEmailProviderForGuard(lastUserMessage = '') {
+    if (!EMAIL_CONNECT_INTENT_REGEX.test(String(lastUserMessage || ''))) return null;
+
+    const email = extractEmailFromText(lastUserMessage);
+    if (!email) return null;
+
+    const domainMatch = email.match(/^[^\s@]+@([^\s@]+\.[^\s@]+)$/);
+    if (!domainMatch) return null;
+
+    const domain = domainMatch[1];
+    let mxRecords = [];
+
+    try {
+        mxRecords = await dns.resolveMx(domain);
+        mxRecords.sort((a, b) => Number(a.priority || 0) - Number(b.priority || 0));
+    } catch (_error) {
+        mxRecords = [];
+    }
+
+    const recommendation = inferEmailProviderFromMxRecords(mxRecords);
+    return {
+        email,
+        domain,
+        mxRecords,
+        recommendation
+    };
+}
+
+function buildEmailProviderGuardInstruction(guardState) {
+    if (!guardState?.recommendation) return null;
+    const { email, domain, recommendation } = guardState;
+    if (!['microsoft', 'google_workspace'].includes(recommendation.provider)) return null;
+
+    return [
+        'Email Provider Guard (deterministic backend resolution):',
+        `- Target email: ${email}`,
+        `- Domain: ${domain}`,
+        `- MX-resolved provider: ${recommendation.displayName} (${recommendation.provider})`,
+        '- Do not ask the user to confirm provider type.',
+        '- Immediately proceed with provider-specific OAuth flow via nexus_start_email_connection.'
+    ].join('\n');
+}
+
+function enforceResolvedProviderResponse(content, guardState) {
+    const original = String(content || '');
+    if (!original) return original;
+    if (!guardState?.recommendation) return original;
+
+    const recommendation = guardState.recommendation;
+    if (!['microsoft', 'google_workspace'].includes(recommendation.provider)) return original;
+    if (!PROVIDER_CONFIRMATION_QUESTION_REGEX.test(original)) return original;
+
+    return [
+        `I resolved \`${guardState.email}\` via MX lookup to **${recommendation.displayName}**.`,
+        'No provider confirmation is needed.',
+        `Proceeding with the ${recommendation.displayName} OAuth connection flow now.`
+    ].join('\n\n');
 }
 
 // Helper to structure metadata without injecting prompt logic
@@ -987,6 +1090,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         const openClawAgentId = toOpenClawAgentId(resolvedAgentId);
 
         const lastUserMessage = getLastUserMessage(messages);
+        const emailProviderGuard = await resolveEmailProviderForGuard(lastUserMessage);
         const intent = detectIntent(messages);
 
         // Handle Switching Intent BEFORE creating a conversation to prevent dummy threads
@@ -1234,6 +1338,12 @@ router.post('/chat', authenticateToken, async (req, res) => {
         contextSystemMessage = contextSystemMessage
             ? `${contextSystemMessage}\n\n${modelWayInstructionBlock}`
             : modelWayInstructionBlock;
+        const emailProviderGuardInstruction = buildEmailProviderGuardInstruction(emailProviderGuard);
+        if (emailProviderGuardInstruction) {
+            contextSystemMessage = contextSystemMessage
+                ? `${contextSystemMessage}\n\n${emailProviderGuardInstruction}`
+                : emailProviderGuardInstruction;
+        }
         const contextInjected = Boolean(contextSystemMessage);
 
         // Inject Soul and Codebase Context (Identity & Environment)
@@ -1356,7 +1466,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
         if (contentType && contentType.includes('application/json')) {
             // Handle non-streaming upstream response from Bridge
             const data = await openClawResponse.json();
-            const content = data.choices?.[0]?.message?.content || '';
+            const rawContent = data.choices?.[0]?.message?.content || '';
+            const content = enforceResolvedProviderResponse(rawContent, emailProviderGuard);
             const resolvedModel = extractModelFromPayload(data) || openClawPayload.model || 'openclaw';
             const usage = extractUsageFromPayload(data) || data.usage || null;
             const responseId = extractResponseIdFromPayload(data);
@@ -1435,7 +1546,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
         if (!stream) {
             // Non-streaming: return JSON response
             const data = await openClawResponse.json();
-            const content = data.choices?.[0]?.message?.content || '';
+            const rawContent = data.choices?.[0]?.message?.content || '';
+            const content = enforceResolvedProviderResponse(rawContent, emailProviderGuard);
             const resolvedModel = extractModelFromPayload(data) || openClawPayload.model || 'openclaw';
             const usage = extractUsageFromPayload(data) || data.usage || null;
             const responseId = extractResponseIdFromPayload(data);
@@ -1506,6 +1618,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         let streamResponseId = null;
         let streamProvider = null;
         let streamSystemFingerprint = null;
+        const holdAssistantChunksForProviderGuard = Boolean(emailProviderGuard?.recommendation && ['microsoft', 'google_workspace'].includes(emailProviderGuard.recommendation.provider));
         const responseHeaderModel = openClawResponse.headers.get('x-model') || openClawResponse.headers.get('openai-model');
         if (typeof responseHeaderModel === 'string' && responseHeaderModel.trim()) {
             streamResolvedModel = responseHeaderModel.trim();
@@ -1534,6 +1647,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 const { done, value } = await reader.read();
 
                 if (done) {
+                    const finalGuardedContent = enforceResolvedProviderResponse(fullAssistantContent, emailProviderGuard);
+                    if (holdAssistantChunksForProviderGuard && finalGuardedContent) {
+                        writeSseEvent(res, { content: finalGuardedContent });
+                    }
+                    fullAssistantContent = finalGuardedContent;
                     // Audit: Save collected assistant response
                     if (fullAssistantContent || fullReasoningContent) {
                         const generatedAttachments = mergeUniqueAttachments(
@@ -1578,6 +1696,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
                         const dataStr = trimmed.slice(6);
 
                         if (dataStr === '[DONE]') {
+                            const finalGuardedContent = enforceResolvedProviderResponse(fullAssistantContent, emailProviderGuard);
+                            if (holdAssistantChunksForProviderGuard && finalGuardedContent) {
+                                writeSseEvent(res, { content: finalGuardedContent });
+                            }
+                            fullAssistantContent = finalGuardedContent;
                             // Audit: Save collected assistant response on upstream done
                             if (fullAssistantContent || fullReasoningContent) {
                                 const generatedAttachments = mergeUniqueAttachments(
@@ -1651,8 +1774,10 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
                             if (content) {
                                 fullAssistantContent += content;
-                                // Forward the content to the client
-                                res.write(`data: ${JSON.stringify({ content })}\n\n`);
+                                if (!holdAssistantChunksForProviderGuard) {
+                                    // Forward the content to the client unless deterministic guard is active.
+                                    res.write(`data: ${JSON.stringify({ content })}\n\n`);
+                                }
                             }
                         } catch (parseErr) {
                             // Skip malformed JSON chunks

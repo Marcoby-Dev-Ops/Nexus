@@ -34,9 +34,12 @@ function getLastUserMessage(messages = []) {
 function detectIntent(messages = []) {
   const lastMessage = getLastUserMessage(messages).toLowerCase();
 
+  if (/(connect|integration|oauth|imap|inbox|mx\s*lookup|email\s+provider|google\s+workspace|microsoft\s*365)/.test(lastMessage)) {
+    return INTENT_TYPES.SOLVE;
+  }
   if (/(brainstorm|ideas?|creative|possibilities)/.test(lastMessage)) return INTENT_TYPES.BRAINSTORM;
   if (/(solve|problem|fix|debug|issue)/.test(lastMessage)) return INTENT_TYPES.SOLVE;
-  if (/(write|draft|email|document|copy)/.test(lastMessage)) return INTENT_TYPES.WRITE;
+  if (/(write|draft|compose|rewrite|copy|document)/.test(lastMessage)) return INTENT_TYPES.WRITE;
   if (/(decide|choose|option|tradeoff|analysis)/.test(lastMessage)) return INTENT_TYPES.DECIDE;
   if (/(learn|research|understand|explain|teach)/.test(lastMessage)) return INTENT_TYPES.LEARN;
   if (/(continue this:|switch to:)/i.test(lastMessage)) return INTENT_TYPES.SWITCH;
