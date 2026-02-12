@@ -212,27 +212,38 @@ router.get('/:provider/start', async (req, res) => {
       if (value.expiresAt < now) oauthStates.delete(key);
     }
 
-    const authUrl = new URL(config.authorizationUrl);
-    const params = new URLSearchParams({
-      response_type: 'code',
-      client_id: config.clientId || '',
-      redirect_uri: resolvedRedirectUri,
-      scope: config.scope || '',
-      state,
-    });
+    let authUrl;
+    if (provider === 'microsoft') {
+      // Marcoby connector broker handles tenant-safe redirect routing.
+      const brokerBaseUrl = process.env.CONNECT_BROKER_BASE_URL || 'https://identity.marcoby.com';
+      authUrl = new URL('/connect/microsoft/start', brokerBaseUrl);
+      authUrl.search = new URLSearchParams({
+        return_url: resolvedRedirectUri,
+        relay_state: state,
+      }).toString();
+    } else {
+      authUrl = new URL(config.authorizationUrl);
+      const params = new URLSearchParams({
+        response_type: 'code',
+        client_id: config.clientId || '',
+        redirect_uri: resolvedRedirectUri,
+        scope: config.scope || '',
+        state,
+      });
 
-    if (['authentik', 'microsoft', 'google', 'google_analytics', 'google-workspace'].includes(provider)) {
-      params.set('code_challenge', codeChallenge);
-      params.set('code_challenge_method', 'S256');
+      if (['authentik', 'microsoft', 'google', 'google_analytics', 'google-workspace'].includes(provider)) {
+        params.set('code_challenge', codeChallenge);
+        params.set('code_challenge_method', 'S256');
+      }
+
+      if (['google', 'google_analytics', 'google-workspace'].includes(provider)) {
+        params.set('access_type', 'offline');
+        params.set('prompt', 'consent');
+        params.set('include_granted_scopes', 'true');
+      }
+
+      authUrl.search = params.toString();
     }
-
-    if (['google', 'google_analytics', 'google-workspace'].includes(provider)) {
-      params.set('access_type', 'offline');
-      params.set('prompt', 'consent');
-      params.set('include_granted_scopes', 'true');
-    }
-
-    authUrl.search = params.toString();
 
     return res.json({
       authUrl: authUrl.toString(),

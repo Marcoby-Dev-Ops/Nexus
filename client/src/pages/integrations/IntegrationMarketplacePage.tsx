@@ -38,7 +38,6 @@ import { useAuth } from '@/hooks/index';
 import { adapterRegistry, type AdapterMetadata } from '@/core/adapters/adapterRegistry';
 import { IntegrationService } from '@/core/integrations';
 import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
-import { msalInstance, msalReady } from '@/shared/auth/msal';
 import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { database } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
@@ -385,27 +384,37 @@ const IntegrationMarketplacePage: React.FC = () => {
       if (authInProgress) return;
       try {
         setAuthInProgress(true);
-        await msalReady;
-        // Use MSAL's built-in flow with proper scopes for refresh tokens
-        await msalInstance.loginRedirect({
-          scopes: [
-            'User.Read',
-            'Mail.Read',
-            'Mail.ReadWrite', 
-            'Calendars.Read',
-            'Files.Read.All',
-            'Contacts.Read',
-            'offline_access'
-          ],
-          redirectStartPage: `${window.location.origin}/integrations/microsoft365/callback`
-        });
+        if (!user?.id) {
+          throw new Error('User session missing. Please sign in again.');
+        }
+
+        // Route Microsoft connect through the backend OAuth start endpoint.
+        // Backend handles state + PKCE and (for Marcoby) can broker through identity.marcoby.com.
+        const redirectUri = `${window.location.origin}/integrations/oauth/callback`;
+        const startUrl = `/api/oauth/microsoft/start?userId=${encodeURIComponent(user.id)}&redirectUri=${encodeURIComponent(redirectUri)}`;
+        const startResponse = await fetch(startUrl, { credentials: 'include' });
+        if (!startResponse.ok) {
+          const details = await startResponse.text();
+          throw new Error(`Failed to start Microsoft OAuth (${startResponse.status}): ${details}`);
+        }
+
+        const startData = await startResponse.json();
+        if (!startData?.authUrl || !startData?.state) {
+          throw new Error('Microsoft OAuth start response is missing authUrl/state');
+        }
+
+        // Generic OAuth callback page expects these keys.
+        sessionStorage.setItem('oauth_state', startData.state);
+        sessionStorage.setItem('oauth_provider', 'microsoft');
+        sessionStorage.setItem('oauth_user_id', user.id);
+
+        window.location.href = startData.authUrl;
       } catch (error) {
         logger.error('Microsoft auth redirect failed', { 
           error: error instanceof Error ? error.message : error,
           errorStack: error instanceof Error ? error.stack : undefined,
           errorType: typeof error,
-          clientId: '***', // Retrieved from server-side API
-          redirectUri: '***' // Retrieved from server-side API
+          userId: user?.id
         });
         setAuthInProgress(false);
       }
