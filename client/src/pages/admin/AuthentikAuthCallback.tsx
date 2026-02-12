@@ -33,7 +33,7 @@ export default function AuthentikAuthCallback() {
         url: window.location.href,
         params: Object.fromEntries(searchParams.entries()),
       });
-      
+
       try {
         logger.info('Processing Marcoby IAM OAuth callback...');
 
@@ -61,65 +61,90 @@ export default function AuthentikAuthCallback() {
           return;
         }
 
-                 // Handle OAuth callback
-         logger.info('🔍 [MarcobyIAMCallback] Calling handleOAuthCallback with code and state');
-         const result = await authentikAuthService.handleOAuthCallback(code, state);
-         
-         logger.info('🔍 [MarcobyIAMCallback] handleOAuthCallback result:', { 
-           success: result.success, 
-           hasData: !!result.data, 
-           error: result.error 
-         });
-         
-         if (!result.success || !result.data) {
-           const errorMessage = result.error || 'Authentication failed';
-           logger.error('OAuth callback failed:', errorMessage);
-           setError(errorMessage);
-           setProcessing(false);
-           return;
-         }
+        // Handle OAuth callback
+        logger.info('🔍 [MarcobyIAMCallback] Calling handleOAuthCallback with code and state');
+        const result = await authentikAuthService.handleOAuthCallback(code, state);
 
-         // Success! Refresh authentication state
-         logger.info('🔍 [MarcobyIAMCallback] OAuth callback successful, refreshing auth state', {
-           userId: result.data.user?.id,
-           groups: result.data.user?.groups,
-         });
-         
-         // Refresh the authentication context (only once)
-         logger.info('🔍 [MarcobyIAMCallback] Calling refreshAuth...');
-         await refreshAuth();
-         logger.info('🔍 [MarcobyIAMCallback] refreshAuth completed');
-         
-         // Check if this is a new user (you can implement your own logic here)
-         // For now, we'll check if the user came from the signup flow
-         const isFromSignup = searchParams.get('signup') === 'true';
-         
-         if (isFromSignup) {
-           logger.info('🔍 [MarcobyIAMCallback] New user detected, showing completion flow');
-           setIsNewUser(true);
-           setShowCompletion(true);
-           setProcessing(false);
-         } else {
-           // Determine redirect destination
-           // Priority: 1) URL next param, 2) location state from, 3) default to chat (Single Purpose)
-           const urlNext = searchParams.get('next');
-           const stateFrom = location.state?.from?.pathname;
-           // FORCE CHAT DEFAULT: replace '/dashboard' with '/chat'
-           const redirectDestination = (urlNext || stateFrom || '/chat').replace('/dashboard', '/chat');
-           
-           logger.info('🔍 [MarcobyIAMCallback] Redirecting to:', {
-             urlNext,
-             stateFrom,
-             finalDestination: redirectDestination
-           });
-           
-           // Add a small delay to ensure authentication state is properly updated
-           setTimeout(() => {
-             logger.info('🔍 [MarcobyIAMCallback] Executing navigation to:', redirectDestination);
-             navigate(redirectDestination, { replace: true });
-           }, 500);
-         }
-        
+        logger.info('🔍 [MarcobyIAMCallback] handleOAuthCallback result:', {
+          success: result.success,
+          hasData: !!result.data,
+          error: result.error
+        });
+
+        if (!result.success || !result.data) {
+          const errorMessage = result.error || 'Authentication failed';
+          logger.error('OAuth callback failed:', errorMessage);
+          setError(errorMessage);
+          setProcessing(false);
+          return;
+        }
+
+        // Success! Refresh authentication state
+        logger.info('🔍 [MarcobyIAMCallback] OAuth callback successful, refreshing auth state', {
+          userId: result.data.user?.id,
+          groups: result.data.user?.groups,
+        });
+
+        // Refresh the authentication context (only once)
+        logger.info('🔍 [MarcobyIAMCallback] Calling refreshAuth...');
+        await refreshAuth();
+        logger.info('🔍 [MarcobyIAMCallback] refreshAuth completed');
+
+        // CHECK FOR INSTANCE REDIRECTION (Authentik-Managed)
+        try {
+          const attributes = result.data.user?.attributes;
+          const userInstanceUrl = attributes?.instance_url || attributes?.nexus_instance_url;
+
+          if (userInstanceUrl) {
+            const currentOrigin = window.location.origin;
+            // Ensure instanceUrl is a full URL or at least has a protocol
+            const normalizedInstanceUrl = userInstanceUrl.startsWith('http') ? userInstanceUrl : `https://${userInstanceUrl}`;
+
+            if (!normalizedInstanceUrl.includes(currentOrigin)) {
+              logger.info('🔍 [MarcobyIAMCallback] Authentik-managed instance mismatch detected, redirecting...', {
+                currentOrigin,
+                targetInstance: normalizedInstanceUrl
+              });
+
+              window.location.href = normalizedInstanceUrl;
+              return; // Stop further processing
+            }
+          }
+        } catch (instanceError) {
+          logger.error('Error checking Authentik instance redirection:', instanceError);
+          // Continue with normal redirect if instance check fails
+        }
+
+        // Check if this is a new user (you can implement your own logic here)
+        // For now, we'll check if the user came from the signup flow
+        const isFromSignup = searchParams.get('signup') === 'true';
+
+        if (isFromSignup) {
+          logger.info('🔍 [MarcobyIAMCallback] New user detected, showing completion flow');
+          setIsNewUser(true);
+          setShowCompletion(true);
+          setProcessing(false);
+        } else {
+          // Determine redirect destination
+          // Priority: 1) URL next param, 2) location state from, 3) default to chat (Single Purpose)
+          const urlNext = searchParams.get('next');
+          const stateFrom = location.state?.from?.pathname;
+          // FORCE CHAT DEFAULT: replace '/dashboard' with '/chat'
+          const redirectDestination = (urlNext || stateFrom || '/chat').replace('/dashboard', '/chat');
+
+          logger.info('🔍 [MarcobyIAMCallback] Redirecting to:', {
+            urlNext,
+            stateFrom,
+            finalDestination: redirectDestination
+          });
+
+          // Add a small delay to ensure authentication state is properly updated
+          setTimeout(() => {
+            logger.info('🔍 [MarcobyIAMCallback] Executing navigation to:', redirectDestination);
+            navigate(redirectDestination, { replace: true });
+          }, 500);
+        }
+
       } catch (error) {
         logger.error('Unexpected error during OAuth callback:', error);
         setError('An unexpected error occurred during authentication');
@@ -167,7 +192,7 @@ export default function AuthentikAuthCallback() {
   // Show signup completion flow for new users
   if (showCompletion && isNewUser) {
     return (
-      <SignupCompletion 
+      <SignupCompletion
         onComplete={() => {
           setShowCompletion(false);
           navigate('/dashboard', { replace: true });

@@ -17,7 +17,6 @@ import { PrivacyPage } from '@/shared/pages/PrivacyPage';
 import { TermsPage } from '@/shared/pages/TermsPage';
 // ...existing code...
 import Login from '@/pages/auth/Login';
-import Signup from '@/pages/auth/Signup';
 import ProfilePage from '@/pages/auth/ProfilePage';
 import AuthentikAuthCallback from '@/pages/admin/AuthentikAuthCallback';
 import NotificationsSettings from '@/pages/admin/NotificationsSettings';
@@ -54,69 +53,65 @@ function AppRoutes() {
       <Route path="/pricing" element={<Navigate to="/chat" replace />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
-      <Route 
-        path="/login" 
+      <Route
+        path="/login"
         element={
           <PublicRoute>
             <Login />
           </PublicRoute>
-        } 
+        }
       />
-      <Route 
-        path="/signup" 
-        element={
-          <PublicRoute>
-            <Signup />
-          </PublicRoute>
-        } 
+      <Route
+        path="/signup"
+        element={<Navigate to="https://nexus.marcoby.com/signup" replace />}
       />
-      
+
       {/* Auth callback routes - must be public */}
       <Route path="/admin/auth-callback" element={<AuthentikAuthCallback />} />
       <Route path="/auth/callback" element={<AuthentikAuthCallback />} />
-      
+
       {/* Debug route - public for troubleshooting */}
       <Route path="/auth/debug" element={<AuthDebug />} />
-      
+
       {/* Protected routes */}
       {/* /dashboard route removed: only core, sidebar-linked pages remain */}
-      <Route 
-        path="/profile" 
+      <Route
+        path="/profile"
         element={
           <ProtectedRoute>
             <ProfilePage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/notifications" 
+      <Route
+        path="/notifications"
         element={
           <ProtectedRoute>
             <NotificationsSettings />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       {/* Admin routes */}
-      <Route 
-        path="/admin" 
+      <Route
+        path="/admin"
         element={
           <ProtectedRoute>
             <AdminPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       {/* Settings routes */}
-      <Route 
-        path="/settings" 
+      <Route
+        path="/settings"
         element={
           <ProtectedRoute>
             <SettingsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       {/* Knowledge - What Nexus knows about you */}
       <Route
         path="/knowledge"
@@ -126,24 +121,24 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Journey routes */}
-        <Route
-          path="/journey-management"
-          element={
-            <ProtectedRoute>
-              <JourneysPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/journey/business-identity/:journeyId?"
-          element={
-            <ProtectedRoute>
-              <BusinessIdentityJourneyPage />
-            </ProtectedRoute>
-          }
-        />
+      <Route
+        path="/journey-management"
+        element={
+          <ProtectedRoute>
+            <JourneysPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/journey/business-identity/:journeyId?"
+        element={
+          <ProtectedRoute>
+            <BusinessIdentityJourneyPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* AI Chat route */}
       <Route
@@ -166,13 +161,13 @@ function AppRoutes() {
       />
 
       {/* Integrations routes */}
-      <Route 
-        path="/integrations" 
+      <Route
+        path="/integrations"
         element={
           <ProtectedRoute>
             <IntegrationMarketplacePage />
           </ProtectedRoute>
-        } 
+        }
       />
       <Route
         path="/integrations/manage"
@@ -188,7 +183,7 @@ function AppRoutes() {
           <ProtectedRoute>
             <IntegrationMarketplacePage />
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Ops */}
@@ -210,21 +205,21 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/integrations/test-oauth" 
+      <Route
+        path="/integrations/test-oauth"
         element={
           <ProtectedRoute>
             <TestOAuthPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/integrations/oauth/callback" 
+      <Route
+        path="/integrations/oauth/callback"
         element={
           <ProtectedRoute>
             <OAuthCallbackPage />
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Email workspace routes */}
@@ -244,10 +239,10 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Redirect all other routes to chat */}
-      <Route 
-        path="*" 
+      <Route
+        path="*"
         element={<Navigate to="/chat" replace />}
       />
     </Routes>

@@ -809,6 +809,11 @@ router.post('/tools/execute', authenticateOpenClaw, async (req, res) => {
     }
 
     const result = await executeToolByName(req, toolName, args);
+    logger.info('OpenClaw tool executed', {
+      tool: toolName,
+      userId: getTrustedUserId(req),
+      correlationId: String(req.headers['x-correlation-id'] || '').trim() || null
+    });
     return res.json({
       success: true,
       tool: toolName,

@@ -19,6 +19,7 @@ export interface AuthUser {
   firstName?: string;
   lastName?: string;
   groups?: string[];
+  attributes?: Record<string, any>;
 }
 
 export interface AuthSession {
@@ -45,25 +46,25 @@ export interface SignInRequest {
 }
 
 class AuthentikAuthService extends BaseService {
-    // Parse JWT ID token for user info
-    private parseIdToken(idToken: string): any {
-      try {
-        const base64Url = idToken.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-          atob(base64)
-            .split('')
-            .map(function (c) {
-              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            })
-            .join('')
-        );
-        return JSON.parse(jsonPayload);
-      } catch (e) {
-        this.logger.error('Failed to parse id_token', e);
-        return null;
-      }
+  // Parse JWT ID token for user info
+  private parseIdToken(idToken: string): any {
+    try {
+      const base64Url = idToken.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          })
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      this.logger.error('Failed to parse id_token', e);
+      return null;
     }
+  }
   private baseUrl: string;
   private clientId: string;
   private redirectUri: string;
@@ -161,7 +162,7 @@ class AuthentikAuthService extends BaseService {
 
     const expiryTime = new Date(expiresAt).getTime();
     const isValid = Number.isFinite(expiryTime) && expiryTime > Date.now() + bufferMs;
-    
+
     if (this.authLogsEnabled) {
       this.logger.info('Session validation', {
         expiryTime: new Date(expiryTime).toISOString(),
@@ -171,7 +172,7 @@ class AuthentikAuthService extends BaseService {
         timeUntilExpiry: expiryTime - Date.now()
       });
     }
-    
+
     return isValid;
   }
 
@@ -537,6 +538,7 @@ class AuthentikAuthService extends BaseService {
           firstName: userData.given_name || undefined,
           lastName: userData.family_name || undefined,
           groups: userData.groups || [],
+          attributes: userData.attributes || {},
         },
         session: {
           accessToken: tokenData.access_token,

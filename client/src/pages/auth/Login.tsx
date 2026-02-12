@@ -6,7 +6,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
-  
+
   const { signIn } = useAuthentikAuth();
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export default function Login() {
 
     try {
       const result = await signIn();
-      
+
       if (!result.success) {
         setError(result.error || 'Failed to initiate authentication');
       }
@@ -36,20 +36,20 @@ export default function Login() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-green-900 to-slate-900">
       {/* Background image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
         style={{
           backgroundImage: 'url(/marcoby_authentik_logos/flow_background.jpg)',
         }}
       />
-             {/* Overlay for better text readability */}
-       <div className="absolute inset-0 bg-gradient-to-br from-slate-900/30 via-green-900/10 to-slate-900/30" />
-             {/* Animated background elements */}
-       <div className="absolute inset-0">
-         <div className="absolute top-0 -left-4 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-         <div className="absolute top-0 -right-4 w-72 h-72 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" style={{ animationDelay: '2s' }}></div>
-         <div className="absolute -bottom-8 left-20 w-72 h-72 bg-teal-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" style={{ animationDelay: '4s' }}></div>
-       </div>
+      {/* Overlay for better text readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/30 via-green-900/10 to-slate-900/30" />
+      {/* Animated background elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-teal-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" style={{ animationDelay: '4s' }}></div>
+      </div>
 
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -68,20 +68,19 @@ export default function Login() {
       </div>
 
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className={`w-full max-w-md transform transition-all duration-700 ease-out ${
-          mounted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-        }`}>
-                     {/* Logo and branding */}
-           <div className="text-center mb-8">
-             <div className="flex justify-center mb-6">
-               <img
-                 src="/Nexus/Nexus by Marcoby - Transparent (500x250).png"
-                 alt="Nexus by Marcoby"
-                 className="w-64 h-auto drop-shadow-2xl animate-float"
-               />
-             </div>
-             <div className="mt-4 w-16 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full mx-auto"></div>
-           </div>
+        <div className={`w-full max-w-md transform transition-all duration-700 ease-out ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+          }`}>
+          {/* Logo and branding */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-6">
+              <img
+                src="/Nexus/Nexus by Marcoby - Transparent (500x250).png"
+                alt="Nexus by Marcoby"
+                className="w-64 h-auto drop-shadow-2xl animate-float"
+              />
+            </div>
+            <div className="mt-4 w-16 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full mx-auto"></div>
+          </div>
 
           {/* Login card */}
           <div className="backdrop-blur-2xl bg-black/20 border border-white/30 rounded-2xl shadow-2xl p-8">
@@ -89,24 +88,24 @@ export default function Login() {
               <h2 className="text-2xl font-bold text-white mb-2">
                 Welcome Back
               </h2>
-                             <p className="text-green-200 text-sm">
-                 Sign in to access your business intelligence platform
-               </p>
+              <p className="text-green-200 text-sm">
+                Sign in to access your business intelligence platform
+              </p>
             </div>
 
             <div className="space-y-6">
-                             <div className="text-center">
-                 <p className="text-sm text-green-200 mb-6">
-                   Sign in with your Marcoby account
-                 </p>
-               </div>
+              <div className="text-center">
+                <p className="text-sm text-green-200 mb-6">
+                  Sign in with your Marcoby account
+                </p>
+              </div>
 
-                             <button
-                 type="button"
-                 onClick={handleSignIn}
-                 disabled={loading}
-                 className="group relative w-full flex justify-center items-center py-4 px-6 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-               >
+              <button
+                type="button"
+                onClick={handleSignIn}
+                disabled={loading}
+                className="group relative w-full flex justify-center items-center py-4 px-6 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+              >
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
@@ -134,31 +133,31 @@ export default function Login() {
               )}
             </div>
           </div>
-          
-          
-                                {/* Footer */}
-           <div className="text-center mt-8 space-y-4">
-             <p className="text-sm text-green-300">
-               Don't have an account yet?{' '}
-               <Link 
-                 to="/signup" 
-                 className="text-green-200 hover:text-white transition-colors duration-200 font-medium underline"
-               >
-                 Sign up now
-               </Link>
-             </p>
-             <p className="text-sm text-green-300">
-               <Link 
-                 to="/" 
-                 className="text-green-200 hover:text-white transition-colors duration-200 flex items-center justify-center group"
-               >
+
+
+          {/* Footer */}
+          <div className="text-center mt-8 space-y-4">
+            <p className="text-sm text-green-300">
+              Don't have an account yet?{' '}
+              <Link
+                to="/signup"
+                className="text-green-200 hover:text-white transition-colors duration-200 font-medium underline"
+              >
+                Sign up now
+              </Link>
+            </p>
+            <p className="text-sm text-green-300">
+              <a
+                href="https://nexus.marcoby.com"
+                className="text-green-200 hover:text-white transition-colors duration-200 flex items-center justify-center group"
+              >
                 <svg className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
                 </svg>
                 Back to home page
-               </Link>
-             </p>
-           </div>
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

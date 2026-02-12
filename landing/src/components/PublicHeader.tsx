@@ -1,14 +1,14 @@
 import React from 'react';
 import { Button } from './Button';
 import { Moon, Sun } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function PublicHeader() {
   const appPortalBase = String(import.meta.env.VITE_APP_PORTAL_URL || '').trim().replace(/\/+$/, '');
   const toPortalHref = (path: string) => (appPortalBase ? `${appPortalBase}${path}` : path);
   const identityLoginUrl = String(import.meta.env.VITE_IDENTITY_LOGIN_URL || '').trim();
-  const identitySignupUrl = String(import.meta.env.VITE_IDENTITY_SIGNUP_URL || '').trim();
   const loginHref = identityLoginUrl || toPortalHref('/login');
-  const signupHref = identitySignupUrl || toPortalHref('/signup');
+  const signupHref = '/signup';
   const [theme, setTheme] = React.useState<'light' | 'dark'>(() => {
     if (typeof window === 'undefined') {
       return 'light';
@@ -29,12 +29,12 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-30 bg-background/95 border-b border-border shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2">
-          <img 
-            src="/Nexus/nexus-horizontal-160x48-transparent.png" 
-            alt="Nexus by Marcoby" 
+          <img
+            src="/Nexus/nexus-horizontal-160x48-transparent.png"
+            alt="Nexus by Marcoby"
             className="h-8 w-auto"
           />
         </a>
@@ -81,12 +81,12 @@ export function PublicHeader() {
 
           {/* Sign up button */}
           <Button asChild className="font-medium">
-            <a href={signupHref}>
+            <Link to={signupHref}>
               Get Started
-            </a>
+            </Link>
           </Button>
         </div>
       </div>
     </header>
   );
-} 
+}

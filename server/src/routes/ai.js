@@ -40,6 +40,7 @@ const {
     detectIntent,
     determinePhase,
     getLastUserMessage,
+    isEmailConnectConfirmationFollowUp,
     isEmailConnectionFollowUp,
     shouldRefuseDirectExecutionInDiscovery,
     resolveTopicToConversationId
@@ -49,7 +50,8 @@ require('../../loadEnv');
 const router = express.Router();
 
 function toOpenClawAgentId(agentId) {
-    if (agentId === 'executive-assistant') return 'main';
+    // Use a dedicated OpenClaw agent workspace optimized for Nexus tool usage.
+    if (agentId === 'executive-assistant') return 'nexus';
     return agentId;
 }
 
@@ -122,6 +124,7 @@ function shouldForceEmailConnectTools(lastUserMessage = '', messages = [], guard
     const normalized = String(lastUserMessage || '');
     return (
         EMAIL_CONNECT_INTENT_REGEX.test(normalized) ||
+        isEmailConnectConfirmationFollowUp(messages, normalized) ||
         isEmailConnectionFollowUp(messages, normalized) ||
         hasEmailOnlyContent(normalized)
     );
@@ -137,6 +140,7 @@ function buildModelWayInstructionBlock(intent, phase) {
         '- If the task requires external or current information, use web_search first.',
         '- If results are thin or blocked, use advanced_scrape for direct extraction.',
         '- For integration connect/status workflows, prefer Nexus tools: nexus_get_integration_status, nexus_search_emails, nexus_resolve_email_provider, nexus_start_email_connection, nexus_connect_imap, nexus_test_integration_connection, nexus_disconnect_integration.',
+        '- When you use a Nexus integration tool, explicitly state which tool you used and summarize what it returned.',
         '- For email connection requests: confirm the target email first, then run nexus_resolve_email_provider before proposing any provider-specific flow.',
         '- For inbox requests (today, last week, last month, specific sender), use nexus_search_emails with the appropriate datePreset/from/query filters.',
         '- Prefer OAuth for Microsoft 365 and Google Workspace; fallback to nexus_connect_imap for custom/non-exchange providers.',
@@ -203,6 +207,17 @@ function extractEmailFromText(text = '') {
     return match ? match[0] : null;
 }
 
+function extractMostRecentEmailFromMessages(messages = []) {
+    if (!Array.isArray(messages) || messages.length === 0) return null;
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+        const message = messages[index];
+        if (!message || typeof message.content !== 'string') continue;
+        const email = extractEmailFromText(message.content);
+        if (email) return email;
+    }
+    return null;
+}
+
 function hasEmailOnlyContent(text = '') {
     const normalized = String(text || '').trim().toLowerCase();
     if (!normalized) return false;
@@ -250,12 +265,13 @@ async function resolveEmailProviderForGuard(lastUserMessage = '', messages = [])
     const normalizedMessage = String(lastUserMessage || '');
     const isConnectFlowMessage =
         EMAIL_CONNECT_INTENT_REGEX.test(normalizedMessage) ||
+        isEmailConnectConfirmationFollowUp(messages, normalizedMessage) ||
         isEmailConnectionFollowUp(messages, normalizedMessage) ||
         hasEmailOnlyContent(normalizedMessage);
 
     if (!isConnectFlowMessage) return null;
 
-    const email = extractEmailFromText(normalizedMessage);
+    const email = extractEmailFromText(normalizedMessage) || extractMostRecentEmailFromMessages(messages);
     if (!email) return null;
 
     const domainMatch = email.match(/^[^\s@]+@([^\s@]+\.[^\s@]+)$/);
@@ -1524,7 +1540,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
         // Pure proxy payload: OpenClaw's agent runtime (SOUL.md, AGENTS.md) drives behavior
         const openClawPayload = {
-            model: 'openclaw:main', // Route through OpenClaw agent runtime
+            model: `openclaw:${openClawAgentId}`, // Route through OpenClaw agent runtime
             messages: openClawMessages,
             stream: stream,
             user: openClawSessionId, // Isolate OpenClaw memory by Nexus conversation
@@ -1536,14 +1552,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
             }
         };
         const forceEmailConnectTools = shouldForceEmailConnectTools(lastUserMessage, messages, emailProviderGuard);
-        let modelWayTools = getModelWayToolsForIntent(intent.id);
-        if (forceEmailConnectTools) {
-            modelWayTools = mergeUniqueToolIds(modelWayTools, OPENCLAW_TOOLS_NEXUS_INTEGRATIONS);
-        }
-        if (modelWayTools.length > 0) {
-            openClawPayload.tools = modelWayTools;
-            openClawPayload.toolChoice = 'auto';
-        }
+        const modelWayTools = getModelWayToolsForIntent(intent.id);
+        // NOTE: Do not send `tools` to OpenClaw's /v1/chat/completions endpoint.
+        // That field is for OpenAI "client tools" (delegated execution), and OpenClaw
+        // will not treat string tool IDs as valid schemas. OpenClaw should surface
+        // real tools via plugins + its own tool policy (openclaw.json).
 
         const runtimeInfo = agentRuntime.getRuntimeInfo();
         logger.info('Chat proxy request', {

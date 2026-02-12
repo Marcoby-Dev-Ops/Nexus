@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from './components/Button';
 import { PublicHeader } from './components/PublicHeader';
+import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   BarChart3,
@@ -140,9 +141,8 @@ export const LandingPage: React.FC = () => {
   const appPortalBase = String(import.meta.env.VITE_APP_PORTAL_URL || '').trim().replace(/\/+$/, '');
   const toPortalHref = (path: string) => (appPortalBase ? `${appPortalBase}${path}` : path);
   const identityLoginUrl = String(import.meta.env.VITE_IDENTITY_LOGIN_URL || '').trim();
-  const identitySignupUrl = String(import.meta.env.VITE_IDENTITY_SIGNUP_URL || '').trim();
   const loginHref = identityLoginUrl || toPortalHref('/login');
-  const signupHref = identitySignupUrl || toPortalHref('/signup');
+  const signupHref = '/signup';
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -173,10 +173,10 @@ export const LandingPage: React.FC = () => {
 
               <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
                 <Button asChild size="lg" className="h-12 px-8 text-base">
-                  <a href={signupHref} className="inline-flex items-center gap-2">
+                  <Link to={signupHref} className="inline-flex items-center gap-2">
                     Get Started
                     <ArrowRight className="h-4 w-4" />
-                  </a>
+                  </Link>
                 </Button>
                 <a href="#pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
                   View pricing
@@ -444,7 +444,7 @@ export const LandingPage: React.FC = () => {
                 </ul>
 
                 <Button asChild variant={tier.highlight ? 'default' : 'outline'} className="w-full">
-                  <a href={signupHref}>{tier.cta}</a>
+                  <Link to={signupHref}>{tier.cta}</Link>
                 </Button>
               </div>
             ))}
@@ -461,15 +461,15 @@ export const LandingPage: React.FC = () => {
 
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button asChild size="lg" className="h-12 px-8 text-base">
-                <a href={signupHref} className="inline-flex items-center gap-2">
+                <Link to={signupHref} className="inline-flex items-center gap-2">
                   Start Your Growth Now
                   <ArrowRight className="h-4 w-4" />
-                </a>
+                </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base">
-                <a href={signupHref} className="inline-flex items-center gap-2">
+                <Link to={signupHref} className="inline-flex items-center gap-2">
                   Request a Strategic Demo
-                </a>
+                </Link>
               </Button>
             </div>
 

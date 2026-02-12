@@ -24,6 +24,25 @@ const PHASE_PROGRESS = {
 const EMAIL_ADDRESS_REGEX = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 const EMAIL_CONNECT_CONTEXT_REGEX = /(connect|integration|oauth|imap|inbox|mx\s*lookup|email\s+provider|google\s+workspace|microsoft\s*365|email\s+address)/i;
 const ASSISTANT_EMAIL_PROMPT_REGEX = /(what (is|['’]?s)? (the )?email|email address.*connect|connect.*email|which email|oauth|provider|google workspace|microsoft 365)/i;
+const SHORT_AFFIRMATIVE_REPLIES = new Set([
+  'yes',
+  'y',
+  'yeah',
+  'yep',
+  'ok',
+  'okay',
+  'sure',
+  'go ahead',
+  'proceed',
+  'continue',
+  'do it',
+  "let's do it",
+  'lets do it',
+  'sounds good',
+  'alright',
+  'all right',
+  'confirm'
+]);
 
 function getLastUserMessage(messages = []) {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -55,6 +74,20 @@ function hasEmailOnlyContent(message = '') {
   return stripped.length === 0;
 }
 
+function normalizeShortReply(message = '') {
+  return String(message || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+function isShortAffirmativeReply(message = '') {
+  const normalized = normalizeShortReply(message);
+  if (!normalized) return false;
+  if (normalized.length > 32) return false;
+  return SHORT_AFFIRMATIVE_REPLIES.has(normalized);
+}
+
 function isEmailConnectionFollowUp(messages = [], lastUserMessage = '') {
   if (!hasEmailOnlyContent(lastUserMessage)) return false;
 
@@ -80,13 +113,37 @@ function isEmailConnectionFollowUp(messages = [], lastUserMessage = '') {
   return false;
 }
 
+function isEmailConnectConfirmationFollowUp(messages = [], lastUserMessage = '') {
+  if (!isShortAffirmativeReply(lastUserMessage)) return false;
+
+  const lastUserIndex = getLastUserMessageIndex(messages);
+  if (lastUserIndex <= 0) return false;
+
+  const startIndex = Math.max(0, lastUserIndex - 8);
+  const recentMessages = messages.slice(startIndex, lastUserIndex);
+
+  for (const message of recentMessages) {
+    const content = String(message?.content || '').toLowerCase();
+    if (!content) continue;
+
+    if (EMAIL_CONNECT_CONTEXT_REGEX.test(content) || ASSISTANT_EMAIL_PROMPT_REGEX.test(content)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function detectIntent(messages = []) {
   const lastMessageRaw = getLastUserMessage(messages);
   const lastMessage = lastMessageRaw.toLowerCase();
 
   if (/(continue this:|switch to:)/i.test(lastMessage)) return INTENT_TYPES.SWITCH;
 
-  if (/(connect|integration|oauth|imap|inbox|mx\s*lookup|email\s+provider|google\s+workspace|microsoft\s*365)/.test(lastMessage) || isEmailConnectionFollowUp(messages, lastMessageRaw)) {
+  if (/(connect|integration|oauth|imap|inbox|mx\s*lookup|email\s+provider|google\s+workspace|microsoft\s*365)/.test(lastMessage)
+    || isEmailConnectionFollowUp(messages, lastMessageRaw)
+    || isEmailConnectConfirmationFollowUp(messages, lastMessageRaw)
+  ) {
     return INTENT_TYPES.SOLVE;
   }
   if (/(brainstorm|ideas?|creative|possibilities)/.test(lastMessage)) return INTENT_TYPES.BRAINSTORM;
@@ -181,6 +238,7 @@ module.exports = {
   detectIntent,
   determinePhase,
   getLastUserMessage,
+  isEmailConnectConfirmationFollowUp,
   isEmailConnectionFollowUp,
   shouldRefuseDirectExecutionInDiscovery,
   resolveTopicToConversationId
