@@ -25,6 +25,7 @@ interface ModernChatInterfaceProps {
   className?: string;
   userName?: string;
   userEmail?: string;
+  userAvatarUrl?: string;
   agentId?: string;
   agentName?: string;
   ragEnabled?: boolean;
@@ -54,6 +55,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   className,
   userName = "User",
   userEmail,
+  userAvatarUrl,
   agentId: _agentId = "executive-assistant",
   agentName = "Executive Assistant",
   ragEnabled = false,
@@ -303,6 +305,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                     agentColor={agentColor}
                     userName={userName}
                     userEmail={userEmail}
+                    userAvatarUrl={userAvatarUrl}
                     onCopy={handleCopy}
                   />
                 );

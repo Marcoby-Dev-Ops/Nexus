@@ -979,6 +979,7 @@ export const ChatPage: React.FC = () => {
             className="h-full"
             userName={displayName}
             userEmail={profile?.email || user?.email}
+            userAvatarUrl={profile?.avatar_url}
             agentId={requestedAgentId}
             agentName={selectedAgentName}
             ragEnabled={ragEnabled}

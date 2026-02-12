@@ -15,6 +15,7 @@ interface ChatMessageProps {
   message: ChatMessageType;
   onCopy: (content: string) => void;
   userEmail?: string;
+  userAvatarUrl?: string;
   isConsecutive?: boolean;
   agentName?: string;
   agentColor?: string;
@@ -40,6 +41,7 @@ export default function ChatMessage({
   message,
   onCopy,
   userEmail,
+  userAvatarUrl,
   isConsecutive,
   agentName,
   agentColor,
@@ -66,6 +68,7 @@ export default function ChatMessage({
   const normalizedContent = message.role === 'assistant'
     ? normalizeMarkdownForReadability(renderedContent)
     : renderedContent;
+  const resolvedUserAvatarUrl = userAvatarUrl || getGravatarUrl(userEmail);
 
   // Custom component to handle media URLs within markdown
   const MediaLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
@@ -113,9 +116,9 @@ export default function ChatMessage({
         message.role === 'user' ? 'order-2' : 'order-1',
         isConsecutive ? "invisible" : ""
       )}>
-        <Avatar className="w-8 h-8">
+          <Avatar className="w-8 h-8">
           {message.role === 'user' ? (
-            <AvatarImage src={getGravatarUrl(userEmail)} />
+            <AvatarImage src={resolvedUserAvatarUrl} />
           ) : (
             <AvatarImage src={undefined} />
           )}
