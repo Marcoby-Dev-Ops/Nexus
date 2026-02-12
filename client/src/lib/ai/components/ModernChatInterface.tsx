@@ -233,6 +233,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                     agentName={agentName}
                     agentColor={agentColor}
                     userName={userName}
+                    userEmail={userEmail}
                     onCopy={handleCopy}
                   />
                 );

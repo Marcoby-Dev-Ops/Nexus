@@ -71,19 +71,19 @@ export default function ChatMessage({
       } else if (isDoc) {
         return (
           <div className="my-2 not-prose flex items-center">
-            <a href={url} target="_blank" rel="noopener noreferrer" className="underline text-primary hover:text-primary/80">{href.split('/').pop()}</a>
+            <a href={url} target="_blank" rel="noopener noreferrer" className="underline text-primary dark:text-info hover:text-primary/80 dark:hover:text-info/80">{href.split('/').pop()}</a>
             <Button size="sm" variant="ghost" onClick={() => navigator.clipboard.writeText(url)} className="ml-2 h-8 px-2">Copy Link</Button>
           </div>
         );
       }
     }
-    return <a href={href} target="_blank" rel="noopener noreferrer" className="underline text-primary hover:text-primary/80">{children}</a>;
+    return <a href={href} target="_blank" rel="noopener noreferrer" className="underline text-primary dark:text-info hover:text-primary/80 dark:hover:text-info/80">{children}</a>;
   };
 
   return (
     <div
       className={cn(
-        "flex gap-4 max-w-4xl mx-auto w-full", // Added w-full
+        "group flex gap-4 max-w-4xl mx-auto w-full", // Added w-full and group
         message.role === 'user' ? 'justify-end' : 'justify-start',
         isConsecutive && "mt-1" // Reduced margin for consecutive messages
       )}
@@ -129,10 +129,7 @@ export default function ChatMessage({
         )}
 
         <div className={cn(
-          "rounded-2xl px-4 py-2.5 shadow-sm",
-          message.role === 'user'
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted/50 text-foreground border border-border'
+          "rounded-2xl px-4 py-2.5 shadow-sm border border-border bg-muted/50 text-foreground"
         )}>
           <div
             className="prose prose-sm dark:prose-invert max-w-none break-words text-[0.96rem] leading-relaxed select-text"
