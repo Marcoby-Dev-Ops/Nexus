@@ -61,6 +61,20 @@ interface MarketplaceIntegration {
   adapterMetadata: AdapterMetadata;
 }
 
+const INTEGRATION_ALIASES: Record<string, string[]> = {
+  microsoft: ['microsoft', 'microsoft365'],
+  microsoft365: ['microsoft365', 'microsoft'],
+  google: ['google', 'google_workspace', 'google-workspace'],
+  google_workspace: ['google_workspace', 'google-workspace', 'google'],
+  'google-workspace': ['google-workspace', 'google_workspace', 'google'],
+};
+
+function getIntegrationAliasSet(value: string): Set<string> {
+  const normalized = value.toLowerCase().replace(/\s+/g, '_');
+  const aliases = INTEGRATION_ALIASES[normalized] || [normalized];
+  return new Set(aliases);
+}
+
 const IntegrationMarketplacePage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -322,7 +336,7 @@ const IntegrationMarketplacePage: React.FC = () => {
       
       const { data, error } = await select(
         'user_integrations',
-        'integration_slug, status',
+        'integration_name, status',
         { user_id: canonicalUserId, status: 'active' }
       );
 
@@ -331,7 +345,7 @@ const IntegrationMarketplacePage: React.FC = () => {
         setConnectedIntegrations([]);
       } else {
         const connectedNames = (data || []).map(integration => 
-          integration.integration_slug.toLowerCase()
+          integration.integration_name.toLowerCase()
         );
         setConnectedIntegrations(connectedNames);
       }
@@ -346,10 +360,20 @@ const IntegrationMarketplacePage: React.FC = () => {
   // Update marketplace integrations with connection status
   const marketplaceIntegrationsWithStatus: MarketplaceIntegration[] = marketplaceIntegrations.map(integration => {
     try {
-      const isConnected =
-        connectedIntegrations.includes(integration.name.toLowerCase()) ||
-        connectedIntegrations.includes(integration.provider.toLowerCase()) ||
-        connectedIntegrations.includes(integration.id.toLowerCase());
+      const candidateKeys = new Set<string>();
+      for (const alias of getIntegrationAliasSet(integration.name)) candidateKeys.add(alias);
+      for (const alias of getIntegrationAliasSet(integration.provider)) candidateKeys.add(alias);
+      for (const alias of getIntegrationAliasSet(integration.id)) candidateKeys.add(alias);
+
+      const isConnected = connectedIntegrations.some((slug) => {
+        const normalizedSlug = slug.toLowerCase().replace(/\s+/g, '_');
+        if (candidateKeys.has(normalizedSlug)) return true;
+        const slugAliases = getIntegrationAliasSet(normalizedSlug);
+        for (const alias of slugAliases) {
+          if (candidateKeys.has(alias)) return true;
+        }
+        return false;
+      });
       
       return {
         ...integration,
@@ -670,7 +694,7 @@ const IntegrationMarketplacePage: React.FC = () => {
       // Search for the specific integration in user_integrations using integration_slug
       const { data: integrationRecords, error: findError } = await select('user_integrations', '*', { 
         user_id: user.id, 
-        integration_slug: integration.id 
+        integration_name: integration.id 
       });
 
       logger.info(`Integration search result:`, { integrationRecords, findError });

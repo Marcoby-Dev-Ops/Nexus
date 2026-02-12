@@ -9,6 +9,7 @@ const router = express.Router();
 const { logger } = require('../utils/logger');
 const userProfileService = require('../services/UserProfileService');
 const { query } = require('../database/connection');
+const { transaction } = require('../database/connection');
 const { optionalAuth } = require('../middleware/auth');
 
 const PROVIDER_ALIASES = {
@@ -441,12 +442,6 @@ router.post('/imap/connect', optionalAuth, async (req, res) => {
     }
 
     const integrationSlug = 'custom_imap';
-    const integrationLookup = await query(
-      'SELECT id FROM integrations WHERE slug = $1 LIMIT 1',
-      [integrationSlug]
-    );
-    const integrationId = integrationLookup?.data?.[0]?.id || null;
-
     const credentials = {
       host: String(host).trim(),
       port: resolvedPort,
@@ -466,27 +461,48 @@ router.post('/imap/connect', optionalAuth, async (req, res) => {
       workflow: 'imap_manual',
     };
 
-    const integrationUpsert = await query(
-      `INSERT INTO user_integrations (
-          user_id, integration_name, integration_id, credentials, settings, status, last_sync_at
-        )
-        VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, 'active', NOW())
-        ON CONFLICT (user_id, integration_name)
-        DO UPDATE SET
-          integration_id = EXCLUDED.integration_id,
-          credentials = EXCLUDED.credentials,
-          settings = EXCLUDED.settings,
-          status = 'active',
-          updated_at = NOW()
-        RETURNING id`,
-      [effectiveUserId, integrationSlug, integrationId, JSON.stringify(credentials), JSON.stringify(settings)]
-    );
+    const persistenceResult = await transaction(async (client) => {
+      const integrationLookup = await client.query(
+        'SELECT id FROM integrations WHERE slug = $1 LIMIT 1',
+        [integrationSlug]
+      );
+      const integrationId = integrationLookup.rows?.[0]?.id || null;
+
+      const integrationUpsert = await client.query(
+        `INSERT INTO user_integrations (
+            user_id, integration_name, integration_id, credentials, settings, status, last_sync_at
+          )
+          VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, 'active', NOW())
+          ON CONFLICT (user_id, integration_name)
+          DO UPDATE SET
+            integration_id = EXCLUDED.integration_id,
+            credentials = EXCLUDED.credentials,
+            settings = EXCLUDED.settings,
+            status = 'active',
+            updated_at = NOW()
+          RETURNING id`,
+        [effectiveUserId, integrationSlug, integrationId, JSON.stringify(credentials), JSON.stringify(settings)]
+      );
+
+      return { integrationId: integrationUpsert.rows?.[0]?.id || null };
+    }, req.user?.jwtPayload || null);
+
+    if (persistenceResult.error) {
+      logger.error('IMAP persistence failed', {
+        userId: effectiveUserId,
+        error: persistenceResult.error,
+      });
+      return res.status(500).json({
+        error: 'Failed to persist IMAP integration credentials',
+        details: persistenceResult.error,
+      });
+    }
 
     return res.json({
       success: true,
       message: 'Successfully connected IMAP email account',
       provider: integrationSlug,
-      integrationId: integrationUpsert?.data?.[0]?.id,
+      integrationId: persistenceResult.data?.integrationId || null,
       status: 'connected',
     });
   } catch (error) {
@@ -1094,56 +1110,72 @@ router.post('/:provider/callback', optionalAuth, async (req, res) => {
       email: userInfo?.email || null,
     };
 
-    const integrationLookup = await query(
-      'SELECT id FROM integrations WHERE slug = $1 LIMIT 1',
-      [provider]
-    );
-    const integrationId = integrationLookup?.data?.[0]?.id || null;
+    const persistenceResult = await transaction(async (client) => {
+      const integrationLookup = await client.query(
+        'SELECT id FROM integrations WHERE slug = $1 LIMIT 1',
+        [provider]
+      );
+      const integrationId = integrationLookup.rows?.[0]?.id || null;
 
-    const integrationUpsert = await query(
-      `INSERT INTO user_integrations (
-          user_id, integration_name, integration_id, credentials, settings, status, last_sync_at
-        )
-        VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, 'active', NOW())
-        ON CONFLICT (user_id, integration_name)
-        DO UPDATE SET
-          integration_id = EXCLUDED.integration_id,
-          credentials = EXCLUDED.credentials,
-          settings = EXCLUDED.settings,
-          status = 'active',
-          updated_at = NOW()
-        RETURNING id`,
-      [userId, provider, integrationId, JSON.stringify(credentials), JSON.stringify(settings)]
-    );
+      const integrationUpsert = await client.query(
+        `INSERT INTO user_integrations (
+            user_id, integration_name, integration_id, credentials, settings, status, last_sync_at
+          )
+          VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, 'active', NOW())
+          ON CONFLICT (user_id, integration_name)
+          DO UPDATE SET
+            integration_id = EXCLUDED.integration_id,
+            credentials = EXCLUDED.credentials,
+            settings = EXCLUDED.settings,
+            status = 'active',
+            updated_at = NOW()
+          RETURNING id`,
+        [userId, provider, integrationId, JSON.stringify(credentials), JSON.stringify(settings)]
+      );
 
-    await query(
-      `INSERT INTO oauth_tokens (
-          user_id, integration_slug, access_token, refresh_token, token_type, expires_at, scope
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ON CONFLICT (user_id, integration_slug)
-        DO UPDATE SET
-          access_token = EXCLUDED.access_token,
-          refresh_token = EXCLUDED.refresh_token,
-          token_type = EXCLUDED.token_type,
-          expires_at = EXCLUDED.expires_at,
-          scope = EXCLUDED.scope,
-          updated_at = NOW()`,
-      [
-        userId,
+      await client.query(
+        `INSERT INTO oauth_tokens (
+            user_id, integration_slug, access_token, refresh_token, token_type, expires_at, scope
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          ON CONFLICT (user_id, integration_slug)
+          DO UPDATE SET
+            access_token = EXCLUDED.access_token,
+            refresh_token = EXCLUDED.refresh_token,
+            token_type = EXCLUDED.token_type,
+            expires_at = EXCLUDED.expires_at,
+            scope = EXCLUDED.scope,
+            updated_at = NOW()`,
+        [
+          userId,
+          provider,
+          tokenData.access_token,
+          tokenData.refresh_token || null,
+          tokenData.token_type || 'Bearer',
+          expiresAt,
+          tokenData.scope || null,
+        ]
+      );
+
+      return { integrationId: integrationUpsert.rows?.[0]?.id || null };
+    }, req.user?.jwtPayload || null);
+
+    if (persistenceResult.error) {
+      logger.error('OAuth persistence failed', {
         provider,
-        tokenData.access_token,
-        tokenData.refresh_token || null,
-        tokenData.token_type || 'Bearer',
-        expiresAt,
-        tokenData.scope || null,
-      ]
-    );
+        userId,
+        error: persistenceResult.error,
+      });
+      return res.status(500).json({
+        error: 'Failed to persist integration credentials',
+        details: persistenceResult.error,
+      });
+    }
 
     return res.json({
       success: true,
       message: `Successfully connected ${provider}`,
-      integrationId: integrationUpsert?.data?.[0]?.id,
+      integrationId: persistenceResult.data?.integrationId || null,
       status: 'connected',
       externalAccountId,
       tenantId,
