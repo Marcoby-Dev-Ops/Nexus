@@ -21,6 +21,10 @@ const PHASE_PROGRESS = {
   [PHASES.EXECUTION]: 100
 };
 
+const EMAIL_ADDRESS_REGEX = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
+const EMAIL_CONNECT_CONTEXT_REGEX = /(connect|integration|oauth|imap|inbox|mx\s*lookup|email\s+provider|google\s+workspace|microsoft\s*365|email\s+address)/i;
+const ASSISTANT_EMAIL_PROMPT_REGEX = /(what (is|['’]?s)? (the )?email|email address.*connect|connect.*email|which email|oauth|provider|google workspace|microsoft 365)/i;
+
 function getLastUserMessage(messages = []) {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];
@@ -31,10 +35,58 @@ function getLastUserMessage(messages = []) {
   return '';
 }
 
-function detectIntent(messages = []) {
-  const lastMessage = getLastUserMessage(messages).toLowerCase();
+function getLastUserMessageIndex(messages = []) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === 'user' && typeof message.content === 'string') {
+      return index;
+    }
+  }
+  return -1;
+}
 
-  if (/(connect|integration|oauth|imap|inbox|mx\s*lookup|email\s+provider|google\s+workspace|microsoft\s*365)/.test(lastMessage)) {
+function hasEmailOnlyContent(message = '') {
+  const raw = String(message || '').trim().toLowerCase();
+  if (!raw) return false;
+  const emailMatch = raw.match(EMAIL_ADDRESS_REGEX);
+  if (!emailMatch) return false;
+
+  const stripped = raw.replace(emailMatch[0], '').replace(/[\s.,;:!?()[\]{}"'`-]/g, '');
+  return stripped.length === 0;
+}
+
+function isEmailConnectionFollowUp(messages = [], lastUserMessage = '') {
+  if (!hasEmailOnlyContent(lastUserMessage)) return false;
+
+  const lastUserIndex = getLastUserMessageIndex(messages);
+  if (lastUserIndex <= 0) return false;
+
+  const startIndex = Math.max(0, lastUserIndex - 8);
+  const recentMessages = messages.slice(startIndex, lastUserIndex);
+
+  for (const message of recentMessages) {
+    const content = String(message?.content || '').toLowerCase();
+    if (!content) continue;
+
+    if (message?.role === 'user' && EMAIL_CONNECT_CONTEXT_REGEX.test(content)) {
+      return true;
+    }
+
+    if (message?.role === 'assistant' && ASSISTANT_EMAIL_PROMPT_REGEX.test(content)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function detectIntent(messages = []) {
+  const lastMessageRaw = getLastUserMessage(messages);
+  const lastMessage = lastMessageRaw.toLowerCase();
+
+  if (/(continue this:|switch to:)/i.test(lastMessage)) return INTENT_TYPES.SWITCH;
+
+  if (/(connect|integration|oauth|imap|inbox|mx\s*lookup|email\s+provider|google\s+workspace|microsoft\s*365)/.test(lastMessage) || isEmailConnectionFollowUp(messages, lastMessageRaw)) {
     return INTENT_TYPES.SOLVE;
   }
   if (/(brainstorm|ideas?|creative|possibilities)/.test(lastMessage)) return INTENT_TYPES.BRAINSTORM;
@@ -42,7 +94,6 @@ function detectIntent(messages = []) {
   if (/(write|draft|compose|rewrite|copy|document)/.test(lastMessage)) return INTENT_TYPES.WRITE;
   if (/(decide|choose|option|tradeoff|analysis)/.test(lastMessage)) return INTENT_TYPES.DECIDE;
   if (/(learn|research|understand|explain|teach)/.test(lastMessage)) return INTENT_TYPES.LEARN;
-  if (/(continue this:|switch to:)/i.test(lastMessage)) return INTENT_TYPES.SWITCH;
 
   return INTENT_TYPES.BRAINSTORM;
 }
@@ -130,6 +181,7 @@ module.exports = {
   detectIntent,
   determinePhase,
   getLastUserMessage,
+  isEmailConnectionFollowUp,
   shouldRefuseDirectExecutionInDiscovery,
   resolveTopicToConversationId
 };

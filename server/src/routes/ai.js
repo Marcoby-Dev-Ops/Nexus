@@ -40,6 +40,7 @@ const {
     detectIntent,
     determinePhase,
     getLastUserMessage,
+    isEmailConnectionFollowUp,
     shouldRefuseDirectExecutionInDiscovery,
     resolveTopicToConversationId
 } = require('../services/aiChatOrchestration');
@@ -219,10 +220,15 @@ function inferEmailProviderFromMxRecords(mxRecords = []) {
     };
 }
 
-async function resolveEmailProviderForGuard(lastUserMessage = '') {
-    if (!EMAIL_CONNECT_INTENT_REGEX.test(String(lastUserMessage || ''))) return null;
+async function resolveEmailProviderForGuard(lastUserMessage = '', messages = []) {
+    const normalizedMessage = String(lastUserMessage || '');
+    const isConnectFlowMessage =
+        EMAIL_CONNECT_INTENT_REGEX.test(normalizedMessage) ||
+        isEmailConnectionFollowUp(messages, normalizedMessage);
 
-    const email = extractEmailFromText(lastUserMessage);
+    if (!isConnectFlowMessage) return null;
+
+    const email = extractEmailFromText(normalizedMessage);
     if (!email) return null;
 
     const domainMatch = email.match(/^[^\s@]+@([^\s@]+\.[^\s@]+)$/);
@@ -1198,9 +1204,9 @@ router.post('/chat', authenticateToken, async (req, res) => {
         const resolvedAgentId = normalizeAgentId(typeof requestedAgentId === 'string' ? requestedAgentId : undefined);
         const openClawAgentId = toOpenClawAgentId(resolvedAgentId);
 
-        const lastUserMessage = getLastUserMessage(messages);
-        const emailProviderGuard = await resolveEmailProviderForGuard(lastUserMessage);
         const intent = detectIntent(messages);
+        const lastUserMessage = getLastUserMessage(messages);
+        const emailProviderGuard = await resolveEmailProviderForGuard(lastUserMessage, messages);
 
         // Handle Switching Intent BEFORE creating a conversation to prevent dummy threads
         if (intent.id === 'switch') {
