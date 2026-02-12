@@ -49,6 +49,7 @@ server/.env
 secrets/
 config/secrets/
 .secrets
+scripts/.secrets/
 mcp.json
 .cursor/mcp.json
 
