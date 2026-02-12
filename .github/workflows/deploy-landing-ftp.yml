@@ -1,0 +1,82 @@
+name: Deploy Landing (FTP)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "landing/**"
+      - "scripts/deploy-landing-ftp.sh"
+      - ".github/workflows/deploy-landing-ftp.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-landing-ftp
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create FTP deploy config
+        shell: bash
+        run: |
+          mkdir -p scripts/.secrets
+          cat > scripts/.secrets/landing-ftp.env <<'EOF'
+          FTP_HOST=${{ secrets.FTP_HOST }}
+          FTP_SCHEME=${{ secrets.FTP_SCHEME }}
+          FTP_USE_TLS=${{ secrets.FTP_USE_TLS }}
+          FTP_USER=${{ secrets.FTP_USER }}
+          FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE_DIR=${{ secrets.FTP_REMOTE_DIR }}
+          LANDING_DOMAIN=${{ secrets.LANDING_DOMAIN }}
+          VERIFY_URL=${{ secrets.VERIFY_URL }}
+          VITE_APP_PORTAL_URL=${{ secrets.VITE_APP_PORTAL_URL }}
+          VITE_IDENTITY_LOGIN_URL=${{ secrets.VITE_IDENTITY_LOGIN_URL }}
+          VITE_IDENTITY_SIGNUP_URL=${{ secrets.VITE_IDENTITY_SIGNUP_URL }}
+          VITE_ENABLE_MARKETING_ROUTES=${{ secrets.VITE_ENABLE_MARKETING_ROUTES }}
+          EOF
+
+      - name: Validate required secrets
+        shell: bash
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE_DIR: ${{ secrets.FTP_REMOTE_DIR }}
+          LANDING_DOMAIN: ${{ secrets.LANDING_DOMAIN }}
+          VITE_APP_PORTAL_URL: ${{ secrets.VITE_APP_PORTAL_URL }}
+        run: |
+          required=(FTP_HOST FTP_USER FTP_PASSWORD FTP_REMOTE_DIR LANDING_DOMAIN VITE_APP_PORTAL_URL)
+          missing=0
+          for key in "${required[@]}"; do
+            if [ -z "${!key}" ]; then
+              echo "::error::Missing required secret: $key"
+              missing=1
+            fi
+          done
+          if [ "$missing" -eq 1 ]; then
+            exit 1
+          fi
+
+      - name: Deploy landing over FTP
+        run: bash scripts/deploy-landing-ftp.sh --config scripts/.secrets/landing-ftp.env
