@@ -1,6 +1,7 @@
 const express = require('express');
 const { logger } = require('../src/utils/logger');
 const router = express.Router();
+const crypto = require('crypto');
 
 // Middleware to authenticate OpenClaw requests
 const authenticateOpenClaw = (req, res, next) => {
@@ -29,11 +30,34 @@ const authenticateOpenClaw = (req, res, next) => {
   next();
 };
 
-function getEffectiveUserId(req) {
+function getTrustedUserId(req) {
   const headerUserId = req.headers['x-nexus-user-id'];
+  return String(Array.isArray(headerUserId) ? headerUserId[0] : (headerUserId || '')).trim() || null;
+}
+
+function getUserOverrideAttempt(req) {
+  const headerUserId = getTrustedUserId(req);
   const bodyUserId = req.body?.userId;
   const queryUserId = req.query?.userId;
-  return String(headerUserId || bodyUserId || queryUserId || '').trim() || null;
+  const argsUserId = req.body?.args?.userId;
+  const providedUserId = String(bodyUserId || queryUserId || argsUserId || '').trim() || null;
+
+  if (!providedUserId || !headerUserId || providedUserId === headerUserId) return null;
+  return {
+    headerUserId,
+    providedUserId
+  };
+}
+
+function normalizeIntegrationStatus(rawStatus, expiresAtIso) {
+  const status = String(rawStatus || '').toLowerCase();
+  const expiresAtMs = expiresAtIso ? Date.parse(expiresAtIso) : NaN;
+  const expired = Number.isFinite(expiresAtMs) && expiresAtMs <= Date.now();
+  if (expired) return 'expired';
+  if (status === 'active' || status === 'connected') return 'connected';
+  if (status === 'failed' || status === 'error') return 'failed';
+  if (status === 'disconnected') return 'disconnected';
+  return status || 'unknown';
 }
 
 function normalizeProvider(provider) {
@@ -54,14 +78,25 @@ function getInternalApiBaseUrl(req) {
 }
 
 async function executeToolByName(req, toolName, args = {}) {
-  const userId = getEffectiveUserId(req);
+  const userId = getTrustedUserId(req);
   if (!userId) {
-    throw new Error('userId is required (x-nexus-user-id header or body.userId)');
+    throw new Error('x-nexus-user-id header is required');
+  }
+
+  const overrideAttempt = getUserOverrideAttempt(req);
+  if (overrideAttempt) {
+    logger.warn('Rejected OpenClaw userId override attempt', {
+      headerUserId: overrideAttempt.headerUserId,
+      providedUserId: overrideAttempt.providedUserId,
+      endpoint: req.originalUrl || req.path,
+      ip: req.ip
+    });
   }
 
   const internalApiBaseUrl = getInternalApiBaseUrl(req);
   const { query } = require('../src/database/connection');
   const safeName = String(toolName || '').trim();
+  const correlationId = String(req.headers['x-correlation-id'] || '').trim() || crypto.randomUUID();
 
   if (safeName === 'nexus_get_integration_status') {
     const result = await query(
@@ -83,10 +118,7 @@ async function executeToolByName(req, toolName, args = {}) {
     if (result.error) throw new Error(result.error);
     const integrations = (result.data || []).map((row) => {
       const expiresAt = row.expires_at ? new Date(row.expires_at).toISOString() : null;
-      const expired = expiresAt ? Date.parse(expiresAt) <= Date.now() : false;
-      const status = expired
-        ? 'expired'
-        : (String(row.status || '').toLowerCase() === 'active' ? 'connected' : String(row.status || 'unknown'));
+      const status = normalizeIntegrationStatus(row.status, expiresAt);
       return {
         integrationId: row.id,
         provider: row.integration_name,
@@ -104,7 +136,7 @@ async function executeToolByName(req, toolName, args = {}) {
     if (!email) throw new Error('email is required');
     const response = await fetch(`${internalApiBaseUrl}/api/oauth/email-provider/resolve`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId },
       body: JSON.stringify({ email, userId })
     });
     const payload = await response.json().catch(() => ({}));
@@ -119,7 +151,9 @@ async function executeToolByName(req, toolName, args = {}) {
     const redirectUri = String(args.redirectUri || '').trim();
     const search = new URLSearchParams({ userId });
     if (redirectUri) search.set('redirectUri', redirectUri);
-    const response = await fetch(`${internalApiBaseUrl}/api/oauth/${provider}/start?${search.toString()}`);
+    const response = await fetch(`${internalApiBaseUrl}/api/oauth/${provider}/start?${search.toString()}`, {
+      headers: { 'x-correlation-id': correlationId }
+    });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload?.error || `OAuth start failed (${response.status})`);
     return payload;
@@ -128,7 +162,7 @@ async function executeToolByName(req, toolName, args = {}) {
   if (safeName === 'nexus_connect_imap') {
     const response = await fetch(`${internalApiBaseUrl}/api/oauth/imap/connect`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId },
       body: JSON.stringify({
         userId,
         email: args.email,
@@ -151,7 +185,7 @@ async function executeToolByName(req, toolName, args = {}) {
     const provider = normalizeProvider(providerRaw);
     const response = await fetch(`${internalApiBaseUrl}/api/oauth/${provider}/test-saved`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId },
       body: JSON.stringify({ userId })
     });
     const payload = await response.json().catch(() => ({}));
@@ -180,7 +214,7 @@ async function executeToolByName(req, toolName, args = {}) {
 
     const response = await fetch(`${internalApiBaseUrl}/api/oauth/disconnect/${integrationId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId },
       body: JSON.stringify({ userId, confirm: 'DISCONNECT' })
     });
     const payload = await response.json().catch(() => ({}));
@@ -281,6 +315,13 @@ router.get('/health', authenticateOpenClaw, (req, res) => {
 router.get('/tools/catalog', authenticateOpenClaw, (req, res) => {
   res.json({
     success: true,
+    metadata: {
+      catalogVersion: '2026-02-12',
+      generatedAt: new Date().toISOString(),
+      compatibility: {
+        minOpenClawVersion: '2026.2.0'
+      }
+    },
     tools: NEXUS_TOOL_CATALOG
   });
 });
@@ -305,14 +346,15 @@ router.post('/tools/execute', authenticateOpenClaw, async (req, res) => {
       result
     });
   } catch (error) {
+    const isAuthError = String(error?.message || '').includes('x-nexus-user-id header is required');
     logger.error('OpenClaw tool execution failed', {
       tool: req.body?.tool,
       error: error?.message || String(error)
     });
-    return res.status(400).json({
+    return res.status(isAuthError ? 401 : 400).json({
       success: false,
       error: error?.message || 'Tool execution failed',
-      code: 'TOOL_EXECUTION_ERROR'
+      code: isAuthError ? 'UNAUTHORIZED' : 'TOOL_EXECUTION_ERROR'
     });
   }
 });

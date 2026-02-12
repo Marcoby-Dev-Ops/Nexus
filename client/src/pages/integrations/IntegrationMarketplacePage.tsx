@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
@@ -319,7 +319,7 @@ const IntegrationMarketplacePage: React.FC = () => {
 
 
     // Fetch connected integrations
-  const fetchConnectedIntegrations = async () => {
+  const fetchConnectedIntegrations = useCallback(async () => {
     if (!user?.id) {
       setConnectedIntegrations([]);
       return;
@@ -355,7 +355,7 @@ const IntegrationMarketplacePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   // Update marketplace integrations with connection status
   const marketplaceIntegrationsWithStatus: MarketplaceIntegration[] = marketplaceIntegrations.map(integration => {
@@ -847,7 +847,15 @@ const IntegrationMarketplacePage: React.FC = () => {
     }
     
     fetchConnectedIntegrations();
-  }, [user?.id]);
+  }, [user?.id, fetchConnectedIntegrations]);
+
+  useEffect(() => {
+    const onIntegrationsUpdated = () => {
+      fetchConnectedIntegrations();
+    };
+    window.addEventListener('nexus:integrations-updated', onIntegrationsUpdated);
+    return () => window.removeEventListener('nexus:integrations-updated', onIntegrationsUpdated);
+  }, [fetchConnectedIntegrations]);
 
   // Early return if user is not authenticated
   if (!user) {

@@ -124,6 +124,9 @@ function buildModelWayInstructionBlock(intent, phase) {
         '- If results are thin or blocked, use advanced_scrape for direct extraction.',
         '- For missing capability, use search_skills then install_skill before proposing custom implementation.',
         '- For integration connect/status workflows, prefer Nexus tools: nexus_get_integration_status, nexus_resolve_email_provider, nexus_start_email_connection, nexus_connect_imap, nexus_test_integration_connection, nexus_disconnect_integration.',
+        '- For email connection requests: confirm the target email first, then run nexus_resolve_email_provider before proposing any provider-specific flow.',
+        '- Prefer OAuth for Microsoft 365 and Google Workspace; fallback to nexus_connect_imap for custom/non-exchange providers.',
+        '- Never claim direct visibility into OAuth tokens. Report live state using tool results only.',
         '- Include direct source links for external facts.'
     ].join('\n');
 }

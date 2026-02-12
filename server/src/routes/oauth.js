@@ -45,6 +45,11 @@ function deriveIntegrationStatus(row = {}) {
   return rawStatus || 'unknown';
 }
 
+function getCorrelationId(req) {
+  const incoming = req.get('x-correlation-id');
+  return (incoming && String(incoming).trim()) || crypto.randomUUID();
+}
+
 async function recordIntegrationAuditEvent(req, eventType, data = {}) {
   const actorId = req.user?.id || null;
   try {
@@ -364,6 +369,7 @@ router.get('/config/:provider', (req, res) => {
  */
 router.post('/email-provider/resolve', optionalAuth, async (req, res) => {
   try {
+    const correlationId = getCorrelationId(req);
     const email = String(req.body?.email || '').trim().toLowerCase();
     if (!email) {
       return res.status(400).json({ error: 'email is required' });
@@ -392,7 +398,18 @@ router.post('/email-provider/resolve', optionalAuth, async (req, res) => {
     const defaultImapPort = recommendation.imap?.port || 993;
     const defaultUseSSL = recommendation.imap?.useSSL ?? true;
 
+    await recordIntegrationAuditEvent(req, 'integration.provider.resolved', {
+      userId: req.user?.id || req.body?.userId || null,
+      email,
+      domain,
+      provider: recommendation.provider,
+      workflow: recommendation.workflow,
+      confidence: recommendation.confidence,
+      correlationId
+    });
+
     return res.json({
+      correlationId,
       email,
       domain,
       mxRecords: mxRecords.map((mx) => ({
@@ -440,6 +457,7 @@ router.post('/email-provider/resolve', optionalAuth, async (req, res) => {
  */
 router.post('/imap/connect', optionalAuth, async (req, res) => {
   try {
+    const correlationId = getCorrelationId(req);
     const {
       userId: requestedUserId,
       email,
@@ -467,6 +485,13 @@ router.post('/imap/connect', optionalAuth, async (req, res) => {
     if (!Number.isFinite(resolvedPort) || resolvedPort <= 0 || resolvedPort > 65535) {
       return res.status(400).json({ error: 'port must be a valid number between 1 and 65535' });
     }
+
+    await recordIntegrationAuditEvent(req, 'integration.connect.started', {
+      userId: effectiveUserId,
+      provider: 'custom_imap',
+      workflow: 'imap_manual',
+      correlationId
+    });
 
     const loginResult = await testImapLogin({
       host: String(host).trim(),
@@ -534,11 +559,31 @@ router.post('/imap/connect', optionalAuth, async (req, res) => {
         userId: effectiveUserId,
         error: persistenceResult.error,
       });
+      await recordIntegrationAuditEvent(req, 'integration.connect.failed', {
+        userId: effectiveUserId,
+        provider: integrationSlug,
+        workflow: 'imap_manual',
+        reason: persistenceResult.error,
+        errorCode: 'PERSISTENCE_FAILED',
+        correlationId
+      });
       return res.status(500).json({
         error: 'Failed to persist IMAP integration credentials',
         details: persistenceResult.error,
+        errorCode: 'PERSISTENCE_FAILED',
+        correlationId,
       });
     }
+
+    const connectedAt = new Date().toISOString();
+    await recordIntegrationAuditEvent(req, 'integration.connect.completed', {
+      userId: effectiveUserId,
+      provider: integrationSlug,
+      workflow: 'imap_manual',
+      integrationId: persistenceResult.data?.integrationId || null,
+      connectedAt,
+      correlationId
+    });
 
     return res.json({
       success: true,
@@ -546,10 +591,12 @@ router.post('/imap/connect', optionalAuth, async (req, res) => {
       provider: integrationSlug,
       integrationId: persistenceResult.data?.integrationId || null,
       status: 'connected',
+      connectedAt,
+      correlationId,
     });
   } catch (error) {
     logger.error('Failed to connect IMAP account', { error: error?.message || String(error) });
-    return res.status(500).json({ error: 'Failed to connect IMAP account' });
+    return res.status(500).json({ error: 'Failed to connect IMAP account', errorCode: 'INTERNAL_ERROR' });
   }
 });
 
@@ -561,6 +608,7 @@ const oauthStates = new Map();
  */
 router.get('/:provider/start', optionalAuth, async (req, res) => {
   try {
+    const correlationId = getCorrelationId(req);
     const provider = normalizeProvider(req.params.provider);
     const { userId: requestedUserId, redirectUri } = req.query;
     const config = getOAuthProviders()[provider];
@@ -646,12 +694,20 @@ router.get('/:provider/start', optionalAuth, async (req, res) => {
       provider,
       redirectUri: resolvedRedirectUri
     });
+    await recordIntegrationAuditEvent(req, 'integration.connect.started', {
+      userId: effectiveUserId,
+      provider,
+      redirectUri: resolvedRedirectUri,
+      workflow: 'oauth',
+      correlationId
+    });
 
     return res.json({
       authUrl: authUrl.toString(),
       state,
       provider,
       redirectUri: resolvedRedirectUri,
+      correlationId,
     });
   } catch (error) {
     logger.error('Failed to start OAuth flow', { error: error?.message || String(error) });
@@ -989,6 +1045,7 @@ router.post('/refresh', async (req, res) => {
  */
 router.post('/:provider/callback', optionalAuth, async (req, res) => {
   try {
+    const correlationId = getCorrelationId(req);
     const provider = normalizeProvider(req.params.provider);
     const { code, state, redirectUri } = req.body;
 
@@ -1000,7 +1057,13 @@ router.post('/:provider/callback', optionalAuth, async (req, res) => {
     if (state) {
       oauthState = oauthStates.get(state);
       if (!oauthState || oauthState.expiresAt < Date.now()) {
-        return res.status(400).json({ error: 'Invalid or expired OAuth state' });
+        return res.status(400).json({
+          error: 'Invalid or expired OAuth state',
+          errorCode: 'INVALID_STATE',
+          provider,
+          status: 'failed',
+          correlationId
+        });
       }
       userId = oauthState.userId;
       codeVerifier = oauthState.codeVerifier;
@@ -1010,11 +1073,23 @@ router.post('/:provider/callback', optionalAuth, async (req, res) => {
       // If no state (unlikely for secure flows), we can't trust the userId from body
       // But for some flows maybe we allow it if authenticated?
       // For now enforce state
-      return res.status(400).json({ error: 'State parameter is required' });
+      return res.status(400).json({
+        error: 'State parameter is required',
+        errorCode: 'STATE_REQUIRED',
+        provider,
+        status: 'failed',
+        correlationId
+      });
     }
 
     if (req.user?.id && req.user.id !== userId) {
-      return res.status(403).json({ error: 'OAuth state does not belong to authenticated user' });
+      return res.status(403).json({
+        error: 'OAuth state does not belong to authenticated user',
+        errorCode: 'STATE_USER_MISMATCH',
+        provider,
+        status: 'failed',
+        correlationId
+      });
     }
 
     const config = getOAuthProviders()[provider];
@@ -1046,9 +1121,21 @@ router.post('/:provider/callback', optionalAuth, async (req, res) => {
 
     if (!tokenResponse.ok) {
       logger.error('Token exchange failed', { provider, error: tokenData });
+      await recordIntegrationAuditEvent(req, 'integration.connect.failed', {
+        userId,
+        provider,
+        workflow: 'oauth',
+        reason: tokenData.error_description || tokenData.error || 'token_exchange_failed',
+        errorCode: tokenData.error || 'TOKEN_EXCHANGE_FAILED',
+        correlationId
+      });
       return res.status(400).json({
         error: 'Token exchange failed',
-        details: tokenData.error_description || tokenData.error
+        details: tokenData.error_description || tokenData.error,
+        errorCode: tokenData.error || 'TOKEN_EXCHANGE_FAILED',
+        provider,
+        status: 'failed',
+        correlationId
       });
     }
 
@@ -1219,12 +1306,25 @@ router.post('/:provider/callback', optionalAuth, async (req, res) => {
         provider,
         reason: persistenceResult.error
       });
+      await recordIntegrationAuditEvent(req, 'integration.connect.failed', {
+        userId,
+        provider,
+        workflow: 'oauth',
+        reason: persistenceResult.error,
+        errorCode: 'PERSISTENCE_FAILED',
+        correlationId
+      });
       return res.status(500).json({
         error: 'Failed to persist integration credentials',
         details: persistenceResult.error,
+        errorCode: 'PERSISTENCE_FAILED',
+        provider,
+        status: 'failed',
+        correlationId
       });
     }
 
+    const connectedAt = new Date().toISOString();
     await recordIntegrationAuditEvent(req, 'integration_connected', {
       userId,
       provider,
@@ -1232,12 +1332,25 @@ router.post('/:provider/callback', optionalAuth, async (req, res) => {
       externalAccountId,
       tenantId
     });
+    await recordIntegrationAuditEvent(req, 'integration.connect.completed', {
+      userId,
+      provider,
+      workflow: 'oauth',
+      integrationId: persistenceResult.data?.integrationId || null,
+      externalAccountId,
+      tenantId,
+      connectedAt,
+      correlationId
+    });
 
     return res.json({
       success: true,
       message: `Successfully connected ${provider}`,
+      provider,
       integrationId: persistenceResult.data?.integrationId || null,
       status: 'connected',
+      connectedAt,
+      correlationId,
       externalAccountId,
       tenantId,
       data: {
@@ -1248,7 +1361,7 @@ router.post('/:provider/callback', optionalAuth, async (req, res) => {
 
   } catch (error) {
     logger.error('OAuth callback error', { error: error.message });
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', errorCode: 'INTERNAL_ERROR' });
   }
 });
 

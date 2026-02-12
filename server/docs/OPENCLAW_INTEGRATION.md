@@ -36,6 +36,11 @@ curl -X GET "https://napi.marcoby.net/api/openclaw/tools/catalog" \
   -H "X-OpenClaw-Api-Key: openclaw-default-key"
 ```
 
+Response now includes non-breaking catalog metadata:
+- `metadata.catalogVersion`
+- `metadata.generatedAt`
+- `metadata.compatibility.minOpenClawVersion`
+
 ### Execute a Nexus Tool
 ```bash
 curl -X POST "https://napi.marcoby.net/api/openclaw/tools/execute" \
@@ -158,9 +163,28 @@ All OpenClaw API endpoints require the `X-OpenClaw-Api-Key` header. Configure th
 - OpenClaw: Use this key when making requests
 
 ### User Isolation
-- Conversations are tied to `userId`
-- System user: `openclaw-system-user` (created by migration 113)
-- Can specify different users for multi-tenant scenarios
+- Tool execution requires `X-Nexus-User-Id` on `POST /api/openclaw/tools/execute`.
+- `body.userId`, `query.userId`, and `args.userId` are treated as untrusted overrides and ignored for identity mapping.
+- Conversations are tied to `userId`.
+- System user: `openclaw-system-user` (created by migration 113).
+- Can specify different users for multi-tenant scenarios.
+
+## 💬 Chat OAuth Handoff Contract
+
+OAuth callback now returns structured fields for chat-native handoff:
+- `provider`
+- `status` (`connected` or `failed`)
+- `integrationId`
+- `connectedAt`
+- `errorCode` (on failure)
+- `correlationId`
+
+Frontend chat popup flow should relay this payload to opener via `postMessage` and refresh live integration status.
+
+Feature flag:
+```bash
+VITE_CHAT_EMAIL_CONNECT_FLOW=true
+```
 
 ## 🎯 Real-time Updates
 

@@ -13,7 +13,18 @@ import type { OAuthProvider } from '../../core/types/integrations';
 import { useAuth } from '@/hooks/index';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
 import { resolveCanonicalUserId } from '@/core/auth/userIdentity';
-import { oauthIntegrationService } from '@/services/integrations/OAuthIntegrationService';
+
+type OAuthHandoffPayload = {
+  type: 'nexus:oauth:completed';
+  provider?: string;
+  status: 'connected' | 'failed';
+  integrationId?: string | null;
+  connectedAt?: string | null;
+  errorCode?: string;
+  error?: string;
+  correlationId?: string;
+  conversationId?: string | null;
+};
 
 export const OAuthCallbackPage: React.FC = () => {
   const navigate = useNavigate();
@@ -35,71 +46,132 @@ export const OAuthCallbackPage: React.FC = () => {
     let cancelled = false;
 
     const run = async () => {
-    // Get OAuth parameters from URL
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
-    const error = searchParams.get('error');
-    const errorDescription = searchParams.get('error_description');
+      const postToOpener = (payload: OAuthHandoffPayload) => {
+        const flow = sessionStorage.getItem('oauth_flow');
+        if (flow !== 'chat-inline') return;
+        if (!window.opener) return;
+        window.opener.postMessage(payload, window.location.origin);
+      };
 
-    // Get stored OAuth state
-    const storedState = sessionStorage.getItem('oauth_state');
-    const storedProvider = sessionStorage.getItem('oauth_provider') as OAuthProvider;
-    const storedUserId = sessionStorage.getItem('oauth_user_id');
-    const sessionResult = await authentikAuthService.getSession();
-    const callbackUserId = resolveCanonicalUserId(storedUserId || user?.id, sessionResult.data);
+      // Get OAuth parameters from URL
+      const code = searchParams.get('code');
+      const state = searchParams.get('state');
+      const oauthError = searchParams.get('error');
+      const errorDescription = searchParams.get('error_description');
 
-    if (cancelled) return;
+      // Get stored OAuth state
+      const storedState = sessionStorage.getItem('oauth_state');
+      const storedProvider = sessionStorage.getItem('oauth_provider') as OAuthProvider;
+      const storedUserId = sessionStorage.getItem('oauth_user_id');
+      const storedConversationId = sessionStorage.getItem('oauth_flow_conversation_id');
+      const sessionResult = await authentikAuthService.getSession();
+      const session = sessionResult.data;
+      const callbackUserId = resolveCanonicalUserId(storedUserId || user?.id, session);
+      const accessToken = session?.session?.accessToken || session?.accessToken;
 
-    setOauthState({
-      state: storedState || '',
-      provider: storedProvider || 'hubspot',
-      userId: callbackUserId || ''
-    });
+      if (cancelled) return;
 
-    // Handle OAuth error
-    if (error) {
-      setStatus('error');
-      setError(errorDescription || 'OAuth authorization failed');
-      return;
-    }
+      setOauthState({
+        state: storedState || '',
+        provider: storedProvider || 'hubspot',
+        userId: callbackUserId || ''
+      });
 
-    // Complete OAuth flow
-    if (code && state && storedState && storedProvider && callbackUserId) {
-      oauthIntegrationService.completeOAuthFlow({
-        code,
-        state,
-        userId: callbackUserId,
-        redirectUri: `${window.location.origin}/integrations/oauth/callback`,
-        provider: storedProvider as OAuthProvider
-      })
-        .then((result) => {
-          if (result.success) {
-            setStatus('success');
-            setMessage(result.message || 'Integration connected successfully!');
+      // Handle OAuth error from provider redirect
+      if (oauthError) {
+        const payload: OAuthHandoffPayload = {
+          type: 'nexus:oauth:completed',
+          provider: storedProvider,
+          status: 'failed',
+          errorCode: oauthError,
+          error: errorDescription || 'OAuth authorization failed',
+          conversationId: storedConversationId
+        };
+        setStatus('error');
+        setError(payload.error);
+        postToOpener(payload);
+        return;
+      }
 
-            const target = sessionStorage.getItem('oauth_return_to') || '/integrations';
-            setTimeout(() => {
-              navigate(target);
-            }, 900);
+      // Complete OAuth flow
+      if (!(code && state && storedState && storedProvider && callbackUserId)) {
+        const payload: OAuthHandoffPayload = {
+          type: 'nexus:oauth:completed',
+          provider: storedProvider,
+          status: 'failed',
+          errorCode: 'INVALID_CALLBACK',
+          error: 'Invalid OAuth callback parameters',
+          conversationId: storedConversationId
+        };
+        setStatus('error');
+        setError(payload.error);
+        postToOpener(payload);
+        return;
+      }
 
-            // Clean up session storage
-            sessionStorage.removeItem('oauth_state');
-            sessionStorage.removeItem('oauth_provider');
-            sessionStorage.removeItem('oauth_user_id');
-            sessionStorage.removeItem('oauth_return_to');
-          } else {
-            setStatus('error');
-            setError(result.message || 'Failed to complete OAuth flow');
-          }
+      const response = await fetch(`/api/oauth/${storedProvider}/callback`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+        },
+        body: JSON.stringify({
+          code,
+          state,
+          userId: callbackUserId,
+          redirectUri: `${window.location.origin}/integrations/oauth/callback`
         })
-        .catch((err) => {
-          setStatus('error');
-          setError(err.message || 'Failed to complete OAuth flow');
-        });
-    } else {
-      setStatus('error');
-      setError('Invalid OAuth callback parameters');
-    }
+      });
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || result?.success === false) {
+        const payload: OAuthHandoffPayload = {
+          type: 'nexus:oauth:completed',
+          provider: result?.provider || storedProvider,
+          status: 'failed',
+          errorCode: result?.errorCode || 'CALLBACK_FAILED',
+          error: result?.details || result?.error || 'Failed to complete OAuth flow',
+          correlationId: result?.correlationId,
+          conversationId: storedConversationId
+        };
+        setStatus('error');
+        setError(payload.error || 'Failed to complete OAuth flow');
+        postToOpener(payload);
+        return;
+      }
+
+      setStatus('success');
+      setMessage(result.message || 'Integration connected successfully!');
+
+      const payload: OAuthHandoffPayload = {
+        type: 'nexus:oauth:completed',
+        provider: result.provider || storedProvider,
+        status: 'connected',
+        integrationId: result.integrationId || null,
+        connectedAt: result.connectedAt || null,
+        correlationId: result.correlationId,
+        conversationId: storedConversationId
+      };
+      postToOpener(payload);
+
+      const target = sessionStorage.getItem('oauth_return_to') || '/integrations';
+      setTimeout(() => {
+        if (window.opener && sessionStorage.getItem('oauth_flow') === 'chat-inline') {
+          window.close();
+          return;
+        }
+        navigate(target);
+      }, 700);
+
+      // Clean up session storage
+      sessionStorage.removeItem('oauth_state');
+      sessionStorage.removeItem('oauth_provider');
+      sessionStorage.removeItem('oauth_user_id');
+      sessionStorage.removeItem('oauth_return_to');
+      sessionStorage.removeItem('oauth_flow');
+      sessionStorage.removeItem('oauth_flow_conversation_id');
+      sessionStorage.removeItem('oauth_correlation_id');
     };
 
     run().catch((err) => {
@@ -111,7 +183,7 @@ export const OAuthCallbackPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [searchParams, user?.id]);
+  }, [searchParams, user?.id, navigate]);
 
   const handleGoToIntegrations = () => {
     navigate(returnTo);
@@ -123,6 +195,9 @@ export const OAuthCallbackPage: React.FC = () => {
     sessionStorage.removeItem('oauth_provider');
     sessionStorage.removeItem('oauth_user_id');
     sessionStorage.removeItem('oauth_return_to');
+    sessionStorage.removeItem('oauth_flow');
+    sessionStorage.removeItem('oauth_flow_conversation_id');
+    sessionStorage.removeItem('oauth_correlation_id');
     navigate(returnTo);
   };
 
@@ -132,6 +207,10 @@ export const OAuthCallbackPage: React.FC = () => {
         return 'HubSpot CRM';
       case 'microsoft':
         return 'Microsoft 365';
+      case 'google_workspace':
+      case 'google-workspace':
+      case 'google':
+        return 'Google Workspace';
       default:
         return provider.charAt(0).toUpperCase() + provider.slice(1);
     }

@@ -20,6 +20,19 @@ import { ATTACHMENT_ONLY_PLACEHOLDER } from '@/shared/constants/chat';
 
 // Initialize AI Service
 const conversationalAIService = new ConversationalAIService();
+const CHAT_EMAIL_CONNECT_FLOW_ENABLED = import.meta.env.VITE_CHAT_EMAIL_CONNECT_FLOW !== 'false';
+
+type OAuthHandoffPayload = {
+  type: 'nexus:oauth:completed';
+  provider?: string;
+  status?: 'connected' | 'failed';
+  integrationId?: string | null;
+  connectedAt?: string | null;
+  errorCode?: string;
+  error?: string;
+  correlationId?: string;
+  conversationId?: string | null;
+};
 
 function generateTitle(message: string, maxLen = 50): string {
   const cleaned = message.replace(/\n/g, ' ').trim();
@@ -140,6 +153,7 @@ export const ChatPage: React.FC = () => {
     useSSL: boolean;
     username: string;
   } | null>(null);
+  const [pendingOAuthConversationId, setPendingOAuthConversationId] = useState<string | null>(null);
 
   // Knowledge context state
   const ragEnabled = contextInjectedForStream;
@@ -180,7 +194,10 @@ export const ChatPage: React.FC = () => {
     return session?.session?.accessToken || session?.accessToken || '';
   };
 
-  const startEmailOAuthProviderConnection = useCallback(async (provider: 'microsoft' | 'google_workspace') => {
+  const startEmailOAuthProviderConnection = useCallback(async (
+    provider: 'microsoft' | 'google_workspace',
+    options: { flowConversationId?: string | null } = {}
+  ) => {
     if (!user?.id) {
       toast({
         title: 'Session missing',
@@ -202,10 +219,16 @@ export const ChatPage: React.FC = () => {
 
       const redirectUri = `${window.location.origin}/integrations/oauth/callback`;
       const providerPath = provider === 'google_workspace' ? 'google-workspace' : provider;
+      const correlationId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const startUrl = `/api/oauth/${providerPath}/start?userId=${encodeURIComponent(canonicalUserId)}&redirectUri=${encodeURIComponent(redirectUri)}`;
       const startResponse = await fetch(startUrl, {
         credentials: 'include',
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          'x-correlation-id': correlationId
+        }
       });
 
       if (!startResponse.ok) {
@@ -222,8 +245,20 @@ export const ChatPage: React.FC = () => {
       sessionStorage.setItem('oauth_provider', provider);
       sessionStorage.setItem('oauth_user_id', canonicalUserId);
       sessionStorage.setItem('oauth_return_to', '/chat');
+      sessionStorage.setItem('oauth_flow', 'chat-inline');
+      sessionStorage.setItem('oauth_flow_conversation_id', options.flowConversationId || conversationId || '');
+      sessionStorage.setItem('oauth_correlation_id', startData.correlationId || correlationId);
 
-      window.location.href = startData.authUrl;
+      setPendingOAuthConversationId(options.flowConversationId || conversationId || null);
+
+      const popup = window.open(
+        startData.authUrl,
+        'nexus-oauth-connect',
+        'width=560,height=760,resizable=yes,scrollbars=yes'
+      );
+      if (!popup) {
+        window.location.href = startData.authUrl;
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : `Failed to start ${provider} OAuth`;
       logger.error('Chat-triggered email connection failed', { provider, error: message });
@@ -233,7 +268,7 @@ export const ChatPage: React.FC = () => {
         variant: 'destructive'
       });
     }
-  }, [user?.id, toast]);
+  }, [user?.id, toast, conversationId]);
 
   const isAffirmative = (text: string) =>
     /^(yes|yep|yeah|confirm|correct|use that|that one|go ahead|proceed|do it)\b/.test(text.trim());
@@ -279,7 +314,7 @@ export const ChatPage: React.FC = () => {
           flowConversationId,
           `Detected **${displayName}** for \`${email}\`. Starting Microsoft 365 connection now.`
         );
-        await startEmailOAuthProviderConnection('microsoft');
+        await startEmailOAuthProviderConnection('microsoft', { flowConversationId });
         return;
       }
 
@@ -288,7 +323,7 @@ export const ChatPage: React.FC = () => {
           flowConversationId,
           `Detected **${displayName}** for \`${email}\`. Starting Google Workspace connection now.`
         );
-        await startEmailOAuthProviderConnection('google_workspace');
+        await startEmailOAuthProviderConnection('google_workspace', { flowConversationId });
         return;
       }
 
@@ -424,6 +459,67 @@ export const ChatPage: React.FC = () => {
     loadContextChips();
   }, [loadContextChips]);
 
+  useEffect(() => {
+    const onOAuthMessage = async (event: MessageEvent<OAuthHandoffPayload>) => {
+      if (event.origin !== window.location.origin) return;
+      const payload = event.data;
+      if (!payload || payload.type !== 'nexus:oauth:completed') return;
+
+      let flowConversationId =
+        payload.conversationId ||
+        sessionStorage.getItem('oauth_flow_conversation_id') ||
+        pendingOAuthConversationId ||
+        conversationId ||
+        null;
+      if (!flowConversationId) {
+        flowConversationId = await ensureConversationForLocalFlow('integration connection result');
+      }
+      const provider = payload.provider || sessionStorage.getItem('oauth_provider') || 'email';
+
+      if (payload.status === 'connected') {
+        const connectedAt = payload.connectedAt ? new Date(payload.connectedAt).toLocaleString() : 'just now';
+        await postLocalAssistantMessage(
+          flowConversationId,
+          `Connected **${provider}** successfully at ${connectedAt}. Nexus now has delegated access for this service.`
+        );
+        window.dispatchEvent(new CustomEvent('nexus:integrations-updated'));
+      } else {
+        const failureReason = payload.error || payload.errorCode || 'OAuth callback failed';
+        await postLocalAssistantMessage(
+          flowConversationId,
+          `Connection failed for **${provider}**. Error: ${failureReason}. You can retry and I will continue from here.`
+        );
+      }
+
+      try {
+        const statusMessage = await getLiveIntegrationStatusMessage();
+        await postLocalAssistantMessage(flowConversationId, statusMessage);
+      } catch (error) {
+        logger.warn('Failed to refresh integration status after OAuth callback', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+
+      setPendingOAuthConversationId(null);
+      sessionStorage.removeItem('oauth_flow');
+      sessionStorage.removeItem('oauth_flow_conversation_id');
+      sessionStorage.removeItem('oauth_correlation_id');
+      sessionStorage.removeItem('oauth_state');
+      sessionStorage.removeItem('oauth_provider');
+      sessionStorage.removeItem('oauth_user_id');
+      sessionStorage.removeItem('oauth_return_to');
+    };
+
+    window.addEventListener('message', onOAuthMessage);
+    return () => window.removeEventListener('message', onOAuthMessage);
+  }, [
+    conversationId,
+    pendingOAuthConversationId,
+    getLiveIntegrationStatusMessage,
+    postLocalAssistantMessage,
+    ensureConversationForLocalFlow
+  ]);
+
   const handleSendMessage = async (message: string, attachments: FileAttachment[] = []) => {
     if (!user) return;
 
@@ -435,9 +531,12 @@ export const ChatPage: React.FC = () => {
     const wantsEmailConnection =
       normalizedMessage.includes('connect my email') ||
       normalizedMessage.includes('connect email') ||
+      normalizedMessage.includes('connect gmail') ||
+      normalizedMessage.includes('connect google') ||
       normalizedMessage.includes('connect outlook') ||
       normalizedMessage.includes('connect 365') ||
-      normalizedMessage.includes('connect microsoft 365');
+      normalizedMessage.includes('connect microsoft 365') ||
+      normalizedMessage.includes('set up email access');
     const asksIntegrationStatus =
       normalizedMessage.includes('status of my integration') ||
       normalizedMessage.includes('status of my integrations') ||
@@ -500,6 +599,7 @@ export const ChatPage: React.FC = () => {
           flowConversationId,
           `IMAP connected successfully for \`${pendingImapConnection.email}\`. Nexus can now access your email through this connector.`
         );
+        window.dispatchEvent(new CustomEvent('nexus:integrations-updated'));
         toast({
           title: 'Email connected',
           description: `IMAP connection established for ${pendingImapConnection.email}.`,
@@ -553,7 +653,7 @@ export const ChatPage: React.FC = () => {
       }
     }
 
-    if (wantsEmailConnection) {
+    if (CHAT_EMAIL_CONNECT_FLOW_ENABLED && wantsEmailConnection) {
       const flowConversationId = await ensureConversationForLocalFlow(trimmedMessage);
       if (flowConversationId) {
         await sendMessage(trimmedMessage, flowConversationId, [], { persist: false });

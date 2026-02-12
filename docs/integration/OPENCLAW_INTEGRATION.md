@@ -75,6 +75,7 @@ Use these endpoints from OpenClaw plugin/runtime to execute Nexus-native integra
 - **Execute**: `POST /api/openclaw/tools/execute`
 - **Auth**: `X-OpenClaw-Api-Key: <OPENCLAW_API_KEY>`
 - **User Scope**: include `X-Nexus-User-Id: <nexus_user_id>`
+- **Identity Enforcement**: `body.userId`, `query.userId`, and `args.userId` are treated as untrusted overrides for tool execution.
 
 Example execute payload:
 
@@ -92,6 +93,24 @@ Available tool names:
 - `nexus_connect_imap`
 - `nexus_test_integration_connection`
 - `nexus_disconnect_integration`
+
+Catalog responses include compatibility metadata:
+- `metadata.catalogVersion`
+- `metadata.generatedAt`
+- `metadata.compatibility.minOpenClawVersion`
+
+## Chat-Native OAuth Handoff
+
+For in-chat OAuth popup flows, callback responses include:
+- `provider`
+- `status`
+- `integrationId`
+- `connectedAt`
+- `errorCode` (failure cases)
+- `correlationId`
+
+Frontend flag for staged rollout:
+- `VITE_CHAT_EMAIL_CONNECT_FLOW` (defaults to enabled unless set to `false`)
 
 ## Model-Way Framework
 

@@ -5,8 +5,8 @@
 
 export type IntegrationDifficulty = 'easy' | 'medium' | 'advanced';
 export type IntegrationType = 'oauth' | 'api_key' | 'webhook' | 'credentials';
-export type OAuthProvider = 'hubspot' | 'microsoft' | 'google' | 'slack' | 'zapier';
-export type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'pending' | 'active';
+export type OAuthProvider = 'hubspot' | 'microsoft' | 'google' | 'google_workspace' | 'google-workspace' | 'slack' | 'zapier';
+export type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'failed' | 'expired' | 'pending' | 'active';
 export type IntegrationCategory = 'crm' | 'payment' | 'email' | 'automation' | 'communication' | 'productivity' | 'accounting' | 'analytics' | 'marketing';
 export type ConnectionStatus = 'idle' | 'connecting' | 'testing' | 'success' | 'error' | 'retry';
 export type SetupStepType = 'welcome' | 'prerequisites' | 'auth' | 'permissions' | 'configuration' | 'testing' | 'success';
@@ -118,8 +118,12 @@ export interface OAuthCallbackRequest {
 export interface OAuthConnectionResult {
   success: boolean;
   message: string;
+  provider?: OAuthProvider | string;
   integrationId?: string;
   status?: IntegrationStatus;
+  connectedAt?: string;
+  correlationId?: string;
+  errorCode?: string;
   externalAccountId?: string;
   tenantId?: string;
   mailSyncEnabled?: boolean;
