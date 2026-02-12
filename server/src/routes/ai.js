@@ -101,6 +101,7 @@ const CONTROL_RESOURCE_METHODS = {
 const EMAIL_ADDRESS_REGEX = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 const EMAIL_CONNECT_INTENT_REGEX = /(connect|set\s*up|setup|link|integrat|oauth|imap|inbox|mailbox|email\s+account)/i;
 const PROVIDER_CONFIRMATION_QUESTION_REGEX = /(could you please confirm|please confirm if this is|is this (a|an)?\s*(microsoft|google)|another type of email provider|what provider|which provider)/i;
+const FORCE_EMAIL_CONNECT_TOOLS = process.env.OPENCLAW_FORCE_EMAIL_CONNECT_TOOLS !== 'false';
 
 // In-memory conversation tracking (in production, use database)
 const conversations = new Map();
@@ -108,6 +109,22 @@ const conversations = new Map();
 function getModelWayToolsForIntent(intentId) {
     if (!OPENCLAW_ENABLE_MODELWAY_TOOLS) return [];
     return OPENCLAW_TOOLS_BY_INTENT[intentId] || [];
+}
+
+function mergeUniqueToolIds(base = [], extra = []) {
+    const merged = new Set([...(Array.isArray(base) ? base : []), ...(Array.isArray(extra) ? extra : [])]);
+    return Array.from(merged).filter((toolId) => typeof toolId === 'string' && toolId.trim().length > 0);
+}
+
+function shouldForceEmailConnectTools(lastUserMessage = '', messages = [], guardState = null) {
+    if (!FORCE_EMAIL_CONNECT_TOOLS) return false;
+    if (guardState?.recommendation) return true;
+    const normalized = String(lastUserMessage || '');
+    return (
+        EMAIL_CONNECT_INTENT_REGEX.test(normalized) ||
+        isEmailConnectionFollowUp(messages, normalized) ||
+        hasEmailOnlyContent(normalized)
+    );
 }
 
 function buildModelWayInstructionBlock(intent, phase) {
@@ -186,6 +203,15 @@ function extractEmailFromText(text = '') {
     return match ? match[0] : null;
 }
 
+function hasEmailOnlyContent(text = '') {
+    const normalized = String(text || '').trim().toLowerCase();
+    if (!normalized) return false;
+    const email = extractEmailFromText(normalized);
+    if (!email) return false;
+    const stripped = normalized.replace(email, '').replace(/[\s.,;:!?()[\]{}"'`-]/g, '');
+    return stripped.length === 0;
+}
+
 function inferEmailProviderFromMxRecords(mxRecords = []) {
     const hosts = mxRecords
         .map((record) => String(record?.exchange || '').toLowerCase())
@@ -224,7 +250,8 @@ async function resolveEmailProviderForGuard(lastUserMessage = '', messages = [])
     const normalizedMessage = String(lastUserMessage || '');
     const isConnectFlowMessage =
         EMAIL_CONNECT_INTENT_REGEX.test(normalizedMessage) ||
-        isEmailConnectionFollowUp(messages, normalizedMessage);
+        isEmailConnectionFollowUp(messages, normalizedMessage) ||
+        hasEmailOnlyContent(normalizedMessage);
 
     if (!isConnectFlowMessage) return null;
 
@@ -1505,7 +1532,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 attachments: userAttachmentMetadata
             }
         };
-        const modelWayTools = getModelWayToolsForIntent(intent.id);
+        const forceEmailConnectTools = shouldForceEmailConnectTools(lastUserMessage, messages, emailProviderGuard);
+        let modelWayTools = getModelWayToolsForIntent(intent.id);
+        if (forceEmailConnectTools) {
+            modelWayTools = mergeUniqueToolIds(modelWayTools, OPENCLAW_TOOLS_NEXUS_INTEGRATIONS);
+        }
         if (modelWayTools.length > 0) {
             openClawPayload.tools = modelWayTools;
             openClawPayload.toolChoice = 'auto';
@@ -1524,6 +1555,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
             injectedContext: contextInjected,
             attachmentCount: userAttachmentMetadata.length,
             modelWayTools: modelWayTools.length > 0 ? modelWayTools : undefined,
+            forceEmailConnectTools,
             stream,
             runtime: runtimeInfo.id,
             endpoint: runtimeInfo.chatCompletionsUrl

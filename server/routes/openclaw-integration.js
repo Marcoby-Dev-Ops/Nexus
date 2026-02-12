@@ -2,8 +2,10 @@ const express = require('express');
 const { logger } = require('../src/utils/logger');
 const router = express.Router();
 const crypto = require('crypto');
+const dns = require('dns').promises;
 
 const SUPPORTED_EMAIL_OAUTH_SLUGS = ['microsoft', 'google-workspace', 'google_workspace', 'google'];
+const EMAIL_ADDRESS_REGEX = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 
 // Middleware to authenticate OpenClaw requests
 const authenticateOpenClaw = (req, res, next) => {
@@ -69,6 +71,53 @@ function normalizeProvider(provider) {
   if (value === 'google_workspace' || value === 'googleworkspace') return 'google-workspace';
   if (value === 'google-workspace') return 'google-workspace';
   return value;
+}
+
+function inferEmailProviderFromMxRecords(mxRecords = []) {
+  const hosts = mxRecords
+    .map((record) => String(record?.exchange || '').toLowerCase())
+    .filter(Boolean);
+
+  const hasHost = (fragments = []) =>
+    hosts.some((host) => fragments.some((fragment) => host.includes(fragment)));
+
+  if (hasHost(['protection.outlook.com', 'outlook.com', 'office365.com'])) {
+    return {
+      provider: 'microsoft',
+      displayName: 'Microsoft 365',
+      workflow: 'oauth',
+      confidence: 'high'
+    };
+  }
+
+  if (hasHost(['google.com', 'googlemail.com'])) {
+    return {
+      provider: 'google_workspace',
+      displayName: 'Google Workspace',
+      workflow: 'oauth',
+      confidence: 'high'
+    };
+  }
+
+  return {
+    provider: 'custom_imap',
+    displayName: 'Custom IMAP/SMTP',
+    workflow: 'imap_manual',
+    confidence: hosts.length ? 'medium' : 'low'
+  };
+}
+
+function buildConnectorOptions() {
+  const supportsMicrosoft = SUPPORTED_EMAIL_OAUTH_SLUGS.includes('microsoft');
+  const supportsGoogle = SUPPORTED_EMAIL_OAUTH_SLUGS.includes('google-workspace')
+    || SUPPORTED_EMAIL_OAUTH_SLUGS.includes('google_workspace')
+    || SUPPORTED_EMAIL_OAUTH_SLUGS.includes('google');
+
+  return [
+    { provider: 'microsoft', displayName: 'Microsoft 365', workflow: 'oauth', supported: supportsMicrosoft },
+    { provider: 'google_workspace', displayName: 'Google Workspace', workflow: 'oauth', supported: supportsGoogle },
+    { provider: 'custom_imap', displayName: 'Custom IMAP/SMTP', workflow: 'imap_manual', supported: false }
+  ];
 }
 
 function getInternalApiBaseUrl(req) {
@@ -421,16 +470,38 @@ async function executeToolByName(req, toolName, args = {}) {
   }
 
   if (safeName === 'nexus_resolve_email_provider') {
-    const email = String(args.email || '').trim();
-    if (!email) throw new Error('email is required');
-    const response = await fetch(`${internalApiBaseUrl}/api/oauth/email-provider/resolve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId },
-      body: JSON.stringify({ email, userId })
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload?.error || `Provider resolution failed (${response.status})`);
-    return payload;
+    const email = normalizeEmailAddress(args.email || '');
+    if (!email || !EMAIL_ADDRESS_REGEX.test(email)) {
+      throw new Error('valid email is required');
+    }
+
+    const domainMatch = email.match(/^[^\s@]+@([^\s@]+\.[^\s@]+)$/);
+    if (!domainMatch) throw new Error('email domain is invalid');
+    const domain = domainMatch[1];
+
+    let mxRecords = [];
+    try {
+      mxRecords = await dns.resolveMx(domain);
+      mxRecords.sort((a, b) => Number(a.priority || 0) - Number(b.priority || 0));
+    } catch (_error) {
+      mxRecords = [];
+    }
+
+    const recommendation = inferEmailProviderFromMxRecords(mxRecords);
+    return {
+      correlationId,
+      email,
+      domain,
+      mxRecords,
+      recommendation,
+      suggestedImap: {
+        host: `imap.${domain}`,
+        port: 993,
+        useSSL: true,
+        username: email
+      },
+      connectorOptions: buildConnectorOptions()
+    };
   }
 
   if (safeName === 'nexus_start_email_connection') {
