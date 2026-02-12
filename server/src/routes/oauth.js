@@ -20,6 +20,21 @@ function normalizeProvider(provider) {
   return PROVIDER_ALIASES[provider] || provider;
 }
 
+function getBrokerBaseUrl() {
+  return process.env.CONNECT_BROKER_BASE_URL || 'https://identity.marcoby.com';
+}
+
+function getMicrosoftBrokerCallbackUrl() {
+  return process.env.MICROSOFT_REDIRECT_URI || `${getBrokerBaseUrl()}/connect/microsoft/callback`;
+}
+
+function resolveTokenRedirectUri(provider, requestedRedirectUri) {
+  if (provider === 'microsoft') {
+    return getMicrosoftBrokerCallbackUrl();
+  }
+  return requestedRedirectUri;
+}
+
 
 
 // Helper function to generate random strings
@@ -194,8 +209,9 @@ router.get('/:provider/start', async (req, res) => {
         : `${getFrontendUrl()}/integrations/oauth/callback`;
 
     const state = generateRandomString(32);
-    const codeVerifier = generateRandomString(64);
-    const codeChallenge = generateCodeChallenge(codeVerifier);
+    const usingBroker = provider === 'microsoft';
+    const codeVerifier = usingBroker ? null : generateRandomString(64);
+    const codeChallenge = codeVerifier ? generateCodeChallenge(codeVerifier) : null;
 
     oauthStates.set(state, {
       state,
@@ -215,7 +231,7 @@ router.get('/:provider/start', async (req, res) => {
     let authUrl;
     if (provider === 'microsoft') {
       // Marcoby connector broker handles tenant-safe redirect routing.
-      const brokerBaseUrl = process.env.CONNECT_BROKER_BASE_URL || 'https://identity.marcoby.com';
+      const brokerBaseUrl = getBrokerBaseUrl();
       authUrl = new URL('/connect/microsoft/start', brokerBaseUrl);
       authUrl.search = new URLSearchParams({
         return_url: resolvedRedirectUri,
@@ -231,7 +247,7 @@ router.get('/:provider/start', async (req, res) => {
         state,
       });
 
-      if (['authentik', 'microsoft', 'google', 'google_analytics', 'google-workspace'].includes(provider)) {
+      if (codeChallenge && ['authentik', 'microsoft', 'google', 'google_analytics', 'google-workspace'].includes(provider)) {
         params.set('code_challenge', codeChallenge);
         params.set('code_challenge_method', 'S256');
       }
@@ -317,6 +333,7 @@ router.post('/token', async (req, res) => {
     const provider = normalizeProvider(req.body.provider);
     const { code, redirectUri, state } = req.body;
     let { codeVerifier } = req.body;
+    const tokenRedirectUri = resolveTokenRedirectUri(provider, redirectUri);
 
     const config = getOAuthProviders()[provider];
     if (!config) {
@@ -359,7 +376,7 @@ router.post('/token', async (req, res) => {
       client_id: config.clientId,
       client_secret: config.clientSecret,
       code,
-      redirect_uri: redirectUri,
+      redirect_uri: tokenRedirectUri,
     });
 
     if (codeVerifier) {
@@ -616,12 +633,13 @@ router.post('/:provider/callback', async (req, res) => {
     }
 
     // 2. Exchange Token
+    const tokenRedirectUri = resolveTokenRedirectUri(provider, redirectUri);
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: config.clientId,
       client_secret: config.clientSecret,
       code,
-      redirect_uri: redirectUri,
+      redirect_uri: tokenRedirectUri,
     });
 
     if (codeVerifier) {
