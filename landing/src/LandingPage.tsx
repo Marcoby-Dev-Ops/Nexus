@@ -1,7 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/shared/components/ui/Button';
-import { PublicHeader } from '@/shared/components/layout/PublicHeader';
+import { Button } from './components/Button';
+import { PublicHeader } from './components/PublicHeader';
 import {
   ArrowRight,
   BarChart3,
@@ -140,6 +139,10 @@ const pricingTiers = [
 export const LandingPage: React.FC = () => {
   const appPortalBase = String(import.meta.env.VITE_APP_PORTAL_URL || '').trim().replace(/\/+$/, '');
   const toPortalHref = (path: string) => (appPortalBase ? `${appPortalBase}${path}` : path);
+  const identityLoginUrl = String(import.meta.env.VITE_IDENTITY_LOGIN_URL || '').trim();
+  const identitySignupUrl = String(import.meta.env.VITE_IDENTITY_SIGNUP_URL || '').trim();
+  const loginHref = identityLoginUrl || toPortalHref('/login');
+  const signupHref = identitySignupUrl || toPortalHref('/signup');
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -169,13 +172,13 @@ export const LandingPage: React.FC = () => {
               </p>
 
               <div className="mt-9 flex flex-col gap-4 sm:flex-row">
-                <Button size="lg" className="h-12 px-8 text-base">
-                  <a href={toPortalHref('/signup')} className="inline-flex items-center gap-2">
+                <Button asChild size="lg" className="h-12 px-8 text-base">
+                  <a href={signupHref} className="inline-flex items-center gap-2">
                     Start Your Free Trial
                     <ArrowRight className="h-4 w-4" />
                   </a>
                 </Button>
-                <Button variant="outline" size="lg" className="h-12 px-8 text-base">
+                <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base">
                   <a href="#pricing" className="inline-flex items-center gap-2">
                     View Pricing
                   </a>
@@ -386,9 +389,11 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="mt-12 flex justify-center">
-              <Button variant="outline" className="gap-2">
-                <Link to="/#integrations">Explore Integrations</Link>
-                <ArrowRight className="h-4 w-4" />
+              <Button asChild variant="outline" className="gap-2">
+                <a href="/#integrations" className="inline-flex items-center gap-2">
+                  Explore Integrations
+                  <ArrowRight className="h-4 w-4" />
+                </a>
               </Button>
             </div>
           </div>
@@ -430,8 +435,8 @@ export const LandingPage: React.FC = () => {
                   ))}
                 </ul>
 
-                <Button variant={tier.highlight ? 'default' : 'outline'} className="w-full">
-                  <a href={toPortalHref('/signup')}>{tier.cta}</a>
+                <Button asChild variant={tier.highlight ? 'default' : 'outline'} className="w-full">
+                  <a href={signupHref}>{tier.cta}</a>
                 </Button>
               </div>
             ))}
@@ -447,14 +452,14 @@ export const LandingPage: React.FC = () => {
             </p>
 
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button size="lg" className="h-12 px-8 text-base">
-                <a href={toPortalHref('/signup')} className="inline-flex items-center gap-2">
+              <Button asChild size="lg" className="h-12 px-8 text-base">
+                <a href={signupHref} className="inline-flex items-center gap-2">
                   Start Your Growth Now
                   <ArrowRight className="h-4 w-4" />
                 </a>
               </Button>
-              <Button variant="outline" size="lg" className="h-12 px-8 text-base">
-                <a href={toPortalHref('/signup')} className="inline-flex items-center gap-2">
+              <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base">
+                <a href={signupHref} className="inline-flex items-center gap-2">
                   Request a Strategic Demo
                 </a>
               </Button>
@@ -495,10 +500,10 @@ export const LandingPage: React.FC = () => {
             <a href="/#integrations" className="transition-colors hover:text-foreground">Integrations</a>
             <a href="/#pricing" className="transition-colors hover:text-foreground">Pricing</a>
             <a href="/#trust" className="transition-colors hover:text-foreground">Trust</a>
-            <Link to="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
-            <Link to="/terms" className="transition-colors hover:text-foreground">Terms</Link>
+            <a href={toPortalHref('/privacy')} className="transition-colors hover:text-foreground">Privacy</a>
+            <a href={toPortalHref('/terms')} className="transition-colors hover:text-foreground">Terms</a>
             <a href="https://marcoby.com" target="_blank" rel="noreferrer" className="transition-colors hover:text-foreground">Marcoby</a>
-            <a href={toPortalHref('/login')} className="transition-colors hover:text-foreground">Log In</a>
+            <a href={loginHref} className="transition-colors hover:text-foreground">Log In</a>
           </div>
         </div>
       </footer>

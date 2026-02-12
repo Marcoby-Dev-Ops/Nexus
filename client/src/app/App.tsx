@@ -13,7 +13,6 @@ import { PublicRoute } from '@/shared/components/PublicRoute';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 
 // Core pages - only what we need for foundation
-import { LandingPage } from '@/shared/pages/LandingPage';
 import { PrivacyPage } from '@/shared/pages/PrivacyPage';
 import { TermsPage } from '@/shared/pages/TermsPage';
 // ...existing code...
@@ -48,21 +47,11 @@ const LoadingSpinner = () => (
 );
 
 function AppRoutes() {
-  const isLandingOnly = import.meta.env.VITE_LANDING_ONLY === 'true';
-  const enableMarketingRoutes = isLandingOnly || import.meta.env.VITE_ENABLE_MARKETING_ROUTES === 'true';
-  const fallbackPath = isLandingOnly ? '/' : '/chat';
-  const rootRouteElement = enableMarketingRoutes
-    ? <LandingPage />
-    : <Navigate to="/chat" replace />;
-  const pricingRouteElement = enableMarketingRoutes
-    ? <Navigate to="/#pricing" replace />
-    : <Navigate to="/chat" replace />;
-
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={rootRouteElement} />
-      <Route path="/pricing" element={pricingRouteElement} />
+      <Route path="/" element={<Navigate to="/chat" replace />} />
+      <Route path="/pricing" element={<Navigate to="/chat" replace />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route 
@@ -259,7 +248,7 @@ function AppRoutes() {
       {/* Redirect all other routes to chat */}
       <Route 
         path="*" 
-        element={<Navigate to={fallbackPath} replace />}
+        element={<Navigate to="/chat" replace />}
       />
     </Routes>
   );

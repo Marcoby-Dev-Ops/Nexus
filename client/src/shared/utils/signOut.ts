@@ -10,6 +10,36 @@ function getAuthentikBaseUrl(): string {
   return url.replace(/\/+$/, '');
 }
 
+function getRuntimeConfigValue(key: string): string | undefined {
+  const runtimeValue = (window as any).__APP_CONFIG__?.[key];
+  if (typeof runtimeValue === 'string' && runtimeValue.trim()) {
+    return runtimeValue.trim();
+  }
+  const viteValue = (import.meta.env as any)?.[key];
+  if (typeof viteValue === 'string' && viteValue.trim()) {
+    return viteValue.trim();
+  }
+  return undefined;
+}
+
+function getLoginRedirectUrl(): string {
+  return getRuntimeConfigValue('VITE_APP_LOGIN_URL') || `${window.location.origin}/login`;
+}
+
+function useGlobalSsoLogout(): boolean {
+  return getRuntimeConfigValue('VITE_AUTHENTIK_GLOBAL_LOGOUT') === 'true';
+}
+
+function redirectAfterLogout(redirectTo?: string): void {
+  const targetUrl = redirectTo || getLoginRedirectUrl();
+  if (useGlobalSsoLogout()) {
+    const authentikBase = getAuthentikBaseUrl();
+    window.location.href = `${authentikBase}/if/session-end/?redirect_uri=${encodeURIComponent(targetUrl)}`;
+    return;
+  }
+  window.location.href = targetUrl;
+}
+
 function clearAllAuthStorage(): void {
   const authKeys = [
     'authentik_token',
@@ -50,12 +80,7 @@ export async function performSignOut(): Promise<void> {
       }
     }
 
-    // Redirect to Authentik's session-end page to invalidate the SSO cookie.
-    // Without this, the Authentik session cookie stays active and /login
-    // silently re-authenticates the user via OAuth.
-    const authentikBase = getAuthentikBaseUrl();
-    const postLogoutRedirect = `${window.location.origin}/login`;
-    window.location.href = `${authentikBase}/if/session-end/?redirect_uri=${encodeURIComponent(postLogoutRedirect)}`;
+    redirectAfterLogout();
 
     logger.info('User signed out successfully');
   } catch (error) {
@@ -63,11 +88,9 @@ export async function performSignOut(): Promise<void> {
 
     clearAllAuthStorage();
 
-    // Fallback: still try Authentik session-end
+    // Fallback: redirect to app login
     try {
-      const authentikBase = getAuthentikBaseUrl();
-      const postLogoutRedirect = `${window.location.origin}/login`;
-      window.location.href = `${authentikBase}/if/session-end/?redirect_uri=${encodeURIComponent(postLogoutRedirect)}`;
+      redirectAfterLogout();
     } catch {
       // Last resort: just go to login
       window.location.href = '/login';
@@ -84,16 +107,14 @@ export const signOutWithRedirect = async (redirectTo: string = '/'): Promise<voi
     await authentikAuthService.signOut();
     clearAllAuthStorage();
 
-    const authentikBase = getAuthentikBaseUrl();
     const postLogoutRedirect = redirectTo.startsWith('http') ? redirectTo : `${window.location.origin}${redirectTo}`;
-    window.location.href = `${authentikBase}/if/session-end/?redirect_uri=${encodeURIComponent(postLogoutRedirect)}`;
+    redirectAfterLogout(postLogoutRedirect);
   } catch (error) {
     logger.error('Sign out with redirect failed', { error: (error as Error).message });
     clearAllAuthStorage();
 
-    const authentikBase = getAuthentikBaseUrl();
     const postLogoutRedirect = redirectTo.startsWith('http') ? redirectTo : `${window.location.origin}${redirectTo}`;
-    window.location.href = `${authentikBase}/if/session-end/?redirect_uri=${encodeURIComponent(postLogoutRedirect)}`;
+    redirectAfterLogout(postLogoutRedirect);
   }
 };
 
@@ -117,11 +138,10 @@ export const forceSignOut = (redirectTo?: string): void => {
     logger.warn('Error during force sign out cleanup', { error: (error as Error).message });
   }
 
-  // Redirect to Authentik session-end to invalidate SSO cookie
+  // Redirect to app login (or global SSO logout if explicitly enabled)
   setTimeout(() => {
-    const authentikBase = getAuthentikBaseUrl();
-    const postLogoutRedirect = redirectTo || `${window.location.origin}/login`;
-    window.location.href = `${authentikBase}/if/session-end/?redirect_uri=${encodeURIComponent(postLogoutRedirect)}`;
+    const postLogoutRedirect = redirectTo || getLoginRedirectUrl();
+    redirectAfterLogout(postLogoutRedirect);
   }, 50);
 };
 

@@ -25,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
   const handleSignOut = async () => {
     try {
       await signOut();
-      window.location.href = 'https://identity.marcoby.com/if/flow/default-invalidation-flow/';
+      window.location.href = '/login';
     } catch {
       window.location.href = '/login';
     }
@@ -72,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
             {isSidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
           </Button>
 
-          <Link to="/" className="mr-1 shrink-0 md:mr-4 flex items-center gap-2 font-heading text-base md:text-lg tracking-tight">
+          <Link to="/chat" className="mr-1 shrink-0 md:mr-4 flex items-center gap-2 font-heading text-base md:text-lg tracking-tight">
             <span className="text-primary">Nexus</span>
           </Link>
 

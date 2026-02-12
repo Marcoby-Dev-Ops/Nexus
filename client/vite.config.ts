@@ -87,7 +87,6 @@ export default defineConfig(({ mode }) => {
         '@/domains/departments': resolve(__dirname, 'src/domains/departments'),
         '@/business': resolve(__dirname, 'src/business'),
         '@/archive': resolve(__dirname, 'src/archive'),
-        
       },
     },
     define: {
