@@ -25,8 +25,36 @@ The new routes will be available at:
 - `POST /api/openclaw/conversations/sync` - Sync a conversation
 - `GET /api/openclaw/conversations` - List conversations
 - `GET /api/openclaw/conversations/stream` - Real-time stream (SSE)
+- `GET /api/openclaw/tools/catalog` - Nexus tool catalog for OpenClaw
+- `POST /api/openclaw/tools/execute` - Execute Nexus integration tool action
 
 ## 🔌 API Usage
+
+### Discover Nexus Tool Catalog
+```bash
+curl -X GET "https://napi.marcoby.net/api/openclaw/tools/catalog" \
+  -H "X-OpenClaw-Api-Key: openclaw-default-key"
+```
+
+### Execute a Nexus Tool
+```bash
+curl -X POST "https://napi.marcoby.net/api/openclaw/tools/execute" \
+  -H "Content-Type: application/json" \
+  -H "X-OpenClaw-Api-Key: openclaw-default-key" \
+  -H "X-Nexus-User-Id: f85c26f2893f3221bf0beff64fd40c503340a1c14380b25138a43d69b32f7f57" \
+  -d '{
+    "tool": "nexus_get_integration_status",
+    "args": {}
+  }'
+```
+
+Available tool names:
+- `nexus_get_integration_status`
+- `nexus_resolve_email_provider`
+- `nexus_start_email_connection`
+- `nexus_connect_imap`
+- `nexus_test_integration_connection`
+- `nexus_disconnect_integration`
 
 ### Sync a Conversation from OpenClaw
 ```bash

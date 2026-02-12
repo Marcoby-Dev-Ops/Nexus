@@ -67,6 +67,32 @@ The `web_search` tool is automatically enabled in the Model-Way Framework for th
     }
     ```
 
+### Nexus Tool Bridge (for OpenClaw plugins)
+
+Use these endpoints from OpenClaw plugin/runtime to execute Nexus-native integration actions in a user-scoped way.
+
+- **Catalog**: `GET /api/openclaw/tools/catalog`
+- **Execute**: `POST /api/openclaw/tools/execute`
+- **Auth**: `X-OpenClaw-Api-Key: <OPENCLAW_API_KEY>`
+- **User Scope**: include `X-Nexus-User-Id: <nexus_user_id>`
+
+Example execute payload:
+
+```json
+{
+  "tool": "nexus_get_integration_status",
+  "args": {}
+}
+```
+
+Available tool names:
+- `nexus_get_integration_status`
+- `nexus_resolve_email_provider`
+- `nexus_start_email_connection`
+- `nexus_connect_imap`
+- `nexus_test_integration_connection`
+- `nexus_disconnect_integration`
+
 ## Model-Way Framework
 
 Nexus enforces a structured interaction model called the **Model-Way**. Every interaction is categorized into an **Intent** and a **Phase**.

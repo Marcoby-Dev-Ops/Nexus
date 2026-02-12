@@ -346,6 +346,49 @@ export const ChatPage: React.FC = () => {
     return entries;
   };
 
+  const getLiveIntegrationStatusMessage = useCallback(async (): Promise<string> => {
+    if (!user?.id) {
+      return 'I cannot check integration status because your session is not available. Please sign in again.';
+    }
+
+    const sessionResult = await authentikAuthService.getSession();
+    const session = sessionResult.data;
+    const canonicalUserId = resolveCanonicalUserId(user.id, session);
+    const accessToken = session?.session?.accessToken || session?.accessToken;
+
+    if (!canonicalUserId) {
+      return 'I cannot determine your account identity yet. Please refresh and try again.';
+    }
+
+    const response = await fetch(`/api/oauth/integrations/${encodeURIComponent(canonicalUserId)}`, {
+      credentials: 'include',
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(`Failed to load integrations (${response.status}): ${details}`);
+    }
+
+    const payload = await response.json();
+    const integrations = Array.isArray(payload?.integrations) ? payload.integrations : [];
+    const connected = integrations.filter((i: any) => {
+      const status = String(i?.status || '').toLowerCase();
+      return status === 'connected' || status === 'active';
+    });
+
+    if (!connected.length) {
+      return 'You currently do not have any connected integrations.';
+    }
+
+    const lines = connected.map((integration: any) => {
+      const name = integration.integrationName || integration.provider || 'Unknown';
+      const status = integration.status || 'connected';
+      return `- ${name}: ${status}`;
+    });
+    return `Live integration status for your account:\n${lines.join('\n')}`;
+  }, [user?.id]);
+
   const loadContextChips = useCallback(async () => {
     if (!user) return;
 
@@ -395,6 +438,13 @@ export const ChatPage: React.FC = () => {
       normalizedMessage.includes('connect outlook') ||
       normalizedMessage.includes('connect 365') ||
       normalizedMessage.includes('connect microsoft 365');
+    const asksIntegrationStatus =
+      normalizedMessage.includes('status of my integration') ||
+      normalizedMessage.includes('status of my integrations') ||
+      normalizedMessage.includes('what is my integration status') ||
+      normalizedMessage.includes('what integrations are connected') ||
+      normalizedMessage.includes('is microsoft connected') ||
+      normalizedMessage.includes('is 365 connected');
     const explicitEmailMatch = trimmedMessage.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
     const explicitEmail = explicitEmailMatch?.[0] || '';
 
@@ -523,6 +573,25 @@ export const ChatPage: React.FC = () => {
         flowConversationId,
         `Sure. Are you referring to \`${candidateEmail}\` or a different email address? Reply **yes** to confirm, or send a different email.`
       );
+      return;
+    }
+
+    if (asksIntegrationStatus) {
+      const flowConversationId = await ensureConversationForLocalFlow(trimmedMessage);
+      if (flowConversationId) {
+        await sendMessage(trimmedMessage, flowConversationId, [], { persist: false });
+      }
+      try {
+        const statusMessage = await getLiveIntegrationStatusMessage();
+        await postLocalAssistantMessage(flowConversationId, statusMessage);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to read integration status';
+        logger.error('Failed to fetch live integration status', { error: message });
+        await postLocalAssistantMessage(
+          flowConversationId,
+          `I could not load live integration status right now. ${message}`
+        );
+      }
       return;
     }
 

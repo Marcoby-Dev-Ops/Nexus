@@ -59,7 +59,8 @@ function buildOpenClawSessionId(userId, conversationId) {
 // OpenClaw configuration
 const agentRuntime = getAgentRuntime();
 const OPENCLAW_ENABLE_MODELWAY_TOOLS = process.env.OPENCLAW_ENABLE_MODELWAY_TOOLS !== 'false';
-const OPENCLAW_TOOLS_DEFAULT = [
+const OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS = process.env.OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS !== 'false';
+const OPENCLAW_TOOLS_BASE = [
     'web_search',
     'advanced_scrape',
     'summarize_strategy',
@@ -69,10 +70,23 @@ const OPENCLAW_TOOLS_DEFAULT = [
     'search_skills',
     'install_skill'
 ];
+const OPENCLAW_TOOLS_NEXUS_INTEGRATIONS = [
+    'nexus_get_integration_status',
+    'nexus_resolve_email_provider',
+    'nexus_start_email_connection',
+    'nexus_connect_imap',
+    'nexus_test_integration_connection',
+    'nexus_disconnect_integration'
+];
+const OPENCLAW_TOOLS_DEFAULT = OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS
+    ? [...OPENCLAW_TOOLS_BASE, ...OPENCLAW_TOOLS_NEXUS_INTEGRATIONS]
+    : OPENCLAW_TOOLS_BASE;
 const OPENCLAW_TOOLS_BY_INTENT = {
     [INTENT_TYPES.LEARN.id]: OPENCLAW_TOOLS_DEFAULT,
     [INTENT_TYPES.SOLVE.id]: OPENCLAW_TOOLS_DEFAULT,
-    [INTENT_TYPES.DECIDE.id]: ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills'],
+    [INTENT_TYPES.DECIDE.id]: OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS
+        ? ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills', 'nexus_get_integration_status', 'nexus_test_integration_connection']
+        : ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills'],
     [INTENT_TYPES.WRITE.id]: ['web_search', 'advanced_scrape', 'summarize_strategy']
 };
 const MAX_ATTACHMENT_CONTEXT_BYTES = 200 * 1024;
@@ -109,6 +123,7 @@ function buildModelWayInstructionBlock(intent, phase) {
         '- If the task requires external or current information, use web_search first.',
         '- If results are thin or blocked, use advanced_scrape for direct extraction.',
         '- For missing capability, use search_skills then install_skill before proposing custom implementation.',
+        '- For integration connect/status workflows, prefer Nexus tools: nexus_get_integration_status, nexus_resolve_email_provider, nexus_start_email_connection, nexus_connect_imap, nexus_test_integration_connection, nexus_disconnect_integration.',
         '- Include direct source links for external facts.'
     ].join('\n');
 }
@@ -304,6 +319,85 @@ async function fetchConversationHistory(conversationId, limit = 50) {
         return messages.slice(messages.length - limit);
     }
     return messages;
+}
+
+function normalizeIntegrationStatus(status) {
+    const normalized = String(status || '').toLowerCase().trim();
+    if (normalized === 'active' || normalized === 'connected') return 'connected';
+    if (!normalized) return 'unknown';
+    return normalized;
+}
+
+function toIsoStringOrNull(value) {
+    if (!value) return null;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed.toISOString();
+}
+
+async function buildIntegrationSystemContext(userId, jwtPayload) {
+    const result = await query(
+        `SELECT
+           ui.integration_name,
+           ui.status,
+           ui.last_sync_at,
+           ui.updated_at,
+           ot.expires_at,
+           CASE
+             WHEN ot.expires_at IS NOT NULL AND ot.expires_at <= NOW() THEN true
+             ELSE false
+           END AS token_expired
+         FROM user_integrations ui
+         LEFT JOIN oauth_tokens ot
+           ON ot.user_id = ui.user_id
+          AND ot.integration_slug = ui.integration_name
+         WHERE ui.user_id = $1
+         ORDER BY updated_at DESC
+         LIMIT 25`,
+        [userId],
+        jwtPayload
+    );
+
+    if (result.error) {
+        logger.warn('Failed to load integration context for chat prompt', {
+            userId,
+            error: result.error
+        });
+        return null;
+    }
+
+    const rows = result.data || [];
+
+    if (!rows.length) {
+        return [
+            'Nexus Integration Context (live backend state):',
+            '- No integrations are currently connected for this user.',
+            '- Supported email workflows: Microsoft 365 OAuth (`microsoft`), Google Workspace OAuth (`google_workspace`), and custom IMAP manual setup.'
+        ].join('\n');
+    }
+
+    const lines = rows.slice(0, 15).map((row) => {
+        const name = String(row.integration_name || 'unknown');
+        const status = row.token_expired
+            ? 'expired'
+            : normalizeIntegrationStatus(row.status);
+        const lastSync = toIsoStringOrNull(row.last_sync_at);
+        const updatedAt = toIsoStringOrNull(row.updated_at);
+        const expiresAt = toIsoStringOrNull(row.expires_at);
+        const statusDetails = [
+            lastSync ? `last_sync=${lastSync}` : 'last_sync=none',
+            updatedAt ? `updated_at=${updatedAt}` : 'updated_at=unknown',
+            expiresAt ? `token_expires=${expiresAt}` : 'token_expires=unknown'
+        ].join(', ');
+        return `- ${name}: ${status} (${statusDetails})`;
+    });
+
+    return [
+        'Nexus Integration Context (live backend state):',
+        ...lines,
+        '- OAuth credentials/tokens are stored server-side and are never exposed to the assistant model.',
+        '- If a user asks to connect email, first confirm the address, then route to provider-specific workflow (Microsoft, Google Workspace, or manual IMAP).'
+    ].join('\n');
 }
 
 function normalizeIncomingAttachments(attachments) {
@@ -937,6 +1031,20 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 error: contextError instanceof Error ? contextError.message : String(contextError)
             });
         }
+        try {
+            const integrationSystemContext = await buildIntegrationSystemContext(userId, req.user?.jwtPayload);
+            if (integrationSystemContext) {
+                contextSystemMessage = contextSystemMessage
+                    ? `${contextSystemMessage}\n\n${integrationSystemContext}`
+                    : integrationSystemContext;
+            }
+        } catch (integrationContextError) {
+            logger.warn('Failed to inject integration context into chat', {
+                userId,
+                conversationId,
+                error: integrationContextError instanceof Error ? integrationContextError.message : String(integrationContextError)
+            });
+        }
         const attachmentContext = await buildAttachmentContext(storedAttachments);
         if (attachmentContext) {
             contextSystemMessage = contextSystemMessage
@@ -1540,6 +1648,65 @@ router.get('/modelway/intents', authenticateToken, (req, res) => {
         phases: Object.values(PHASES),
         framework: 'Model-Way Framework v1.0'
     });
+});
+
+/**
+ * GET /api/ai/integrations/context
+ * Returns live integration context used for OpenClaw prompt injection.
+ */
+router.get('/integrations/context', authenticateToken, async (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    try {
+        const context = await buildIntegrationSystemContext(userId, req.user?.jwtPayload);
+        const integrationsResult = await query(
+            `SELECT
+               ui.integration_name,
+               ui.status,
+               ui.last_sync_at,
+               ui.updated_at,
+               ot.expires_at
+             FROM user_integrations ui
+             LEFT JOIN oauth_tokens ot
+               ON ot.user_id = ui.user_id
+              AND ot.integration_slug = ui.integration_name
+             WHERE ui.user_id = $1
+             ORDER BY ui.updated_at DESC`,
+            [userId],
+            req.user?.jwtPayload
+        );
+
+        if (integrationsResult.error) {
+            return res.status(500).json({ success: false, error: integrationsResult.error });
+        }
+
+        const integrations = (integrationsResult.data || []).map((row) => {
+            const expiresAt = toIsoStringOrNull(row.expires_at);
+            const isExpired = Boolean(expiresAt && Date.parse(expiresAt) <= Date.now());
+            return {
+                provider: row.integration_name,
+                status: isExpired ? 'expired' : normalizeIntegrationStatus(row.status),
+                lastSyncAt: toIsoStringOrNull(row.last_sync_at),
+                updatedAt: toIsoStringOrNull(row.updated_at),
+                tokenExpiresAt: expiresAt
+            };
+        });
+
+        return res.json({
+            success: true,
+            userId,
+            context,
+            integrations
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to load integration context'
+        });
+    }
 });
 
 /**

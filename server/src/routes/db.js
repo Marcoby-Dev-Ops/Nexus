@@ -210,8 +210,81 @@ function normalizeRecordKeys(record = {}) {
   }, {});
 }
 
+function isUserIntegrationsTable(table) {
+  return String(table || '').toLowerCase() === 'user_integrations';
+}
+
+function normalizeUserIntegrationsColumn(table, column = '') {
+  if (!isUserIntegrationsTable(table)) return column;
+  const normalized = String(column || '').trim();
+  return normalized.toLowerCase() === 'integration_slug' ? 'integration_name' : normalized;
+}
+
+function normalizeSelectColumns(table, columns = '*') {
+  if (!isUserIntegrationsTable(table)) {
+    return columns || '*';
+  }
+
+  const raw = String(columns || '*').trim();
+  if (!raw || raw === '*') return '*';
+
+  const mapped = raw
+    .split(',')
+    .map((column) => column.trim())
+    .filter(Boolean)
+    .map((column) => {
+      const directMatch = column.match(/^([a-zA-Z_][a-zA-Z0-9_]*\.)?integration_slug$/i);
+      if (directMatch) {
+        const prefix = directMatch[1] || '';
+        return `${prefix}integration_name AS integration_slug`;
+      }
+
+      const aliasMatch = column.match(
+        /^([a-zA-Z_][a-zA-Z0-9_]*\.)?integration_slug\s+as\s+([a-zA-Z_][a-zA-Z0-9_]*)$/i
+      );
+      if (aliasMatch) {
+        const prefix = aliasMatch[1] || '';
+        const alias = aliasMatch[2];
+        return `${prefix}integration_name AS ${alias}`;
+      }
+
+      return column;
+    });
+
+  return mapped.length > 0 ? mapped.join(', ') : '*';
+}
+
+function normalizeLegacyUserIntegrationsPayload(table, payload = {}) {
+  if (!isUserIntegrationsTable(table) || !payload || typeof payload !== 'object') {
+    return payload;
+  }
+
+  const next = { ...payload };
+  if (next.integration_slug !== undefined && next.integration_name === undefined) {
+    next.integration_name = next.integration_slug;
+  }
+  delete next.integration_slug;
+  return next;
+}
+
+function withLegacyUserIntegrationsAliases(table, rows) {
+  if (!isUserIntegrationsTable(table) || !Array.isArray(rows)) return rows;
+  return rows.map((row) => {
+    if (!row || typeof row !== 'object') return row;
+    if (row.integration_slug !== undefined) return row;
+    if (row.integration_name === undefined) return row;
+    return {
+      ...row,
+      integration_slug: row.integration_name
+    };
+  });
+}
+
 async function insertRecord(table, payload, userId, jwtPayload) {
-  const record = normalizeRecordKeys({ ...(payload || {}) });
+  const record = normalizeLegacyUserIntegrationsPayload(
+    table,
+    normalizeRecordKeys({ ...(payload || {}) })
+  );
 
   if (USER_SCOPED_TABLES.includes(table)) {
     record.user_id = userId;
@@ -273,7 +346,7 @@ router.get('/:table', authenticateToken, async (req, res) => {
     }
 
     // Build SELECT query
-    const selectColumns = columns || '*';
+    const selectColumns = normalizeSelectColumns(table, columns || '*');
     let sql = `SELECT ${selectColumns} FROM ${table}`;
     const params = [];
     let paramIndex = 1;
@@ -321,14 +394,15 @@ router.get('/:table', authenticateToken, async (req, res) => {
               // Handle order_by as ORDER BY clause, not a filter
               orderByClause = filterValue;
             } else {
-              filterConditions.push(`${filterKey} = $${paramIndex}`);
+              const normalizedFilterKey = normalizeUserIntegrationsColumn(table, filterKey);
+              filterConditions.push(`${normalizedFilterKey} = $${paramIndex}`);
               params.push(coerceValue(filterValue));
               paramIndex++;
             }
           });
         } else if (key.startsWith('filter[') && key.endsWith(']')) {
           // Support filter[user_id]=... style
-          const columnName = key.substring(7, key.length - 1);
+          const columnName = normalizeUserIntegrationsColumn(table, key.substring(7, key.length - 1));
 
           if (columnName === 'order_by') {
             // Handle order_by as ORDER BY clause, not a filter
@@ -339,7 +413,8 @@ router.get('/:table', authenticateToken, async (req, res) => {
             paramIndex++;
           }
         } else {
-          filterConditions.push(`${key} = $${paramIndex}`);
+          const normalizedFilterKey = normalizeUserIntegrationsColumn(table, key);
+          filterConditions.push(`${normalizedFilterKey} = $${paramIndex}`);
           params.push(coerceValue(value));
           paramIndex++;
         }
@@ -379,7 +454,7 @@ router.get('/:table', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.data,
+      data: withLegacyUserIntegrationsAliases(table, result.data || []),
       count: result.rowCount
     });
 
@@ -413,12 +488,13 @@ router.get('/:table/:id', authenticateToken, async (req, res) => {
   try {
     const { table, id } = req.params;
     const idColumnRaw = req.query.idColumn;
-    const idColumn = typeof idColumnRaw === 'string' ? idColumnRaw : 'id';
+    const requestedIdColumn = typeof idColumnRaw === 'string' ? idColumnRaw : 'id';
+    const idColumn = normalizeUserIntegrationsColumn(table, requestedIdColumn);
     const userId = req.user.id;
     const jwtPayload = req.user.jwtPayload || { sub: userId };
 
     // Validate idColumn to prevent SQL injection
-    const allowedIdColumns = ['id', 'user_id', 'integration_slug', 'email', 'username'];
+    const allowedIdColumns = ['id', 'user_id', 'integration_slug', 'integration_name', 'email', 'username'];
     if (!allowedIdColumns.includes(idColumn)) {
       throw createError(`Invalid idColumn: ${idColumn}`, 400);
     }
@@ -482,7 +558,7 @@ router.get('/:table/:id', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.data[0]
+      data: withLegacyUserIntegrationsAliases(table, [result.data[0]])[0]
     });
 
   } catch (error) {
@@ -539,7 +615,7 @@ router.post('/insert', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.data[0]
+      data: withLegacyUserIntegrationsAliases(table, [result.data[0]])[0]
     });
 
   } catch (error) {
@@ -584,7 +660,7 @@ router.post('/delete', authenticateToken, async (req, res) => {
     let paramIdx = 1;
 
     for (const [key, value] of entries) {
-      const column = key === 'idColumn' ? null : key;
+      const column = key === 'idColumn' ? null : normalizeUserIntegrationsColumn(table, key);
       if (!column) continue;
       conditions.push(`${column} = $${paramIdx++}`);
       params.push(value);
@@ -612,7 +688,10 @@ router.post('/delete', authenticateToken, async (req, res) => {
       throw createError(`Database delete failed: ${result.error}`, 500);
     }
 
-    res.json({ success: true, data: result.data?.[0] || null });
+    res.json({
+      success: true,
+      data: withLegacyUserIntegrationsAliases(table, result.data || [])[0] || null
+    });
   } catch (error) {
     logger.error('Database POST delete error:', error);
     res.status(error.status || 500).json({
@@ -648,9 +727,10 @@ router.post('/update', authenticateToken, async (req, res) => {
     }
 
     // Add updated_at timestamp
-    data.updated_at = new Date().toISOString();
+    const normalizedData = normalizeLegacyUserIntegrationsPayload(table, normalizeRecordKeys(data));
+    normalizedData.updated_at = new Date().toISOString();
 
-    const dataEntries = Object.entries(data);
+    const dataEntries = Object.entries(normalizedData);
     if (dataEntries.length === 0) {
       throw createError('No data provided to update', 400);
     }
@@ -666,7 +746,8 @@ router.post('/update', authenticateToken, async (req, res) => {
 
     Object.entries(filters).forEach(([key, value]) => {
       if (key === 'idColumn') return; // Skip metadata
-      conditions.push(`${key} = $${paramIdx++}`);
+      const normalizedFilterKey = normalizeUserIntegrationsColumn(table, key);
+      conditions.push(`${normalizedFilterKey} = $${paramIdx++}`);
       filterParams.push(value);
     });
 
@@ -710,7 +791,7 @@ router.post('/update', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.data[0]
+      data: withLegacyUserIntegrationsAliases(table, [result.data[0]])[0]
     });
 
   } catch (error) {
@@ -768,7 +849,7 @@ router.post('/:table', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.data[0]
+      data: withLegacyUserIntegrationsAliases(table, [result.data[0]])[0]
     });
 
   } catch (error) {
@@ -786,13 +867,14 @@ router.post('/:table', authenticateToken, async (req, res) => {
 router.put('/:table/:id', authenticateToken, async (req, res) => {
   try {
     const { table, id } = req.params;
-    const idColumn = req.query.idColumn || 'id';
+    const requestedIdColumn = req.query.idColumn || 'id';
+    const idColumn = normalizeUserIntegrationsColumn(table, requestedIdColumn);
     const data = req.body;
     const userId = req.user.id;
     const jwtPayload = req.user.jwtPayload || { sub: userId };
 
     // Validate idColumn to prevent SQL injection
-    const allowedIdColumns = ['id', 'user_id', 'integration_slug', 'email', 'username'];
+    const allowedIdColumns = ['id', 'user_id', 'integration_slug', 'integration_name', 'email', 'username'];
     if (!allowedIdColumns.includes(idColumn)) {
       throw createError(`Invalid idColumn: ${idColumn}`, 400);
     }
@@ -805,11 +887,12 @@ router.put('/:table/:id', authenticateToken, async (req, res) => {
     }
 
     // Add updated_at timestamp
-    data.updated_at = new Date().toISOString();
+    const normalizedData = normalizeLegacyUserIntegrationsPayload(table, normalizeRecordKeys(data));
+    normalizedData.updated_at = new Date().toISOString();
 
     // Build UPDATE query with user-based security
-    const columns = Object.keys(data);
-    const values = Object.values(data);
+    const columns = Object.keys(normalizedData);
+    const values = Object.values(normalizedData);
     const setClause = columns.map((col, index) => `${col} = $${index + 2}`).join(', ');
 
     let sql = `UPDATE ${table} SET ${setClause} WHERE ${idColumn} = $1`;
@@ -859,7 +942,7 @@ router.put('/:table/:id', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.data[0]
+      data: withLegacyUserIntegrationsAliases(table, [result.data[0]])[0]
     });
 
   } catch (error) {
@@ -878,7 +961,8 @@ router.delete('/:table/:id', authenticateToken, async (req, res) => {
   try {
     const { table, id } = req.params;
     const idColumnRaw = req.query.idColumn;
-    const idColumn = typeof idColumnRaw === 'string' ? idColumnRaw : 'id';
+    const requestedIdColumn = typeof idColumnRaw === 'string' ? idColumnRaw : 'id';
+    const idColumn = normalizeUserIntegrationsColumn(table, requestedIdColumn);
     const userId = req.user.id;
     const jwtPayload = req.user.jwtPayload || { sub: userId };
 
@@ -920,7 +1004,7 @@ router.delete('/:table/:id', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.data[0]
+      data: withLegacyUserIntegrationsAliases(table, [result.data[0]])[0]
     });
 
   } catch (error) {
@@ -949,26 +1033,34 @@ router.post('/:table/upsert', authenticateToken, async (req, res) => {
       throw createError(`Table '${table}' not allowed`, 400);
     }
 
+    const normalizedData = normalizeLegacyUserIntegrationsPayload(table, normalizeRecordKeys({ ...(data || {}) }));
+
     // Add user_id to data for user-scoped tables
     if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents',
       'user_activities', 'next_best_actions', 'user_action_executions',
       'user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
-      data.user_id = userId;
+      normalizedData.user_id = userId;
     }
 
     // Add timestamps
-    data.updated_at = new Date().toISOString();
-    if (!data.created_at) {
-      data.created_at = new Date().toISOString();
+    normalizedData.updated_at = new Date().toISOString();
+    if (!normalizedData.created_at) {
+      normalizedData.created_at = new Date().toISOString();
     }
 
     // Build UPSERT query with proper conflict resolution
-    const columns = Object.keys(data);
-    const values = Object.values(data);
+    const columns = Object.keys(normalizedData);
+    const values = Object.values(normalizedData);
     const placeholders = values.map((_, index) => `$${index + 1}`).join(', ');
 
     // Determine the correct conflict resolution based on table
     let conflictColumns = onConflict;
+    if (isUserIntegrationsTable(table)) {
+      conflictColumns = String(conflictColumns || 'id')
+        .split(',')
+        .map((column) => normalizeUserIntegrationsColumn(table, column.trim()))
+        .join(',');
+    }
     if (['user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases'].includes(table)) {
       if (table === 'user_onboarding_steps') {
         conflictColumns = 'user_id,step_id';
@@ -1017,7 +1109,7 @@ router.post('/:table/upsert', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.data[0]
+      data: withLegacyUserIntegrationsAliases(table, [result.data[0]])[0]
     });
 
   } catch (error) {
@@ -1071,7 +1163,8 @@ router.post('/:table/query', authenticateToken, async (req, res) => {
       const filterConditions = [];
 
       Object.entries(filter).forEach(([key, value]) => {
-        filterConditions.push(`${key} = $${paramIndex}`);
+        const normalizedFilterKey = normalizeUserIntegrationsColumn(table, key);
+        filterConditions.push(`${normalizedFilterKey} = $${paramIndex}`);
         params.push(value);
         paramIndex++;
       });
@@ -1101,7 +1194,7 @@ router.post('/:table/query', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.data,
+      data: withLegacyUserIntegrationsAliases(table, result.data || []),
       count: result.data?.length || 0
     });
 

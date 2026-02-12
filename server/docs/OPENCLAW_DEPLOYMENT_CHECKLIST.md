@@ -65,6 +65,17 @@ curl -X GET "https://napi.marcoby.net/api/openclaw/health" \
   -H "X-OpenClaw-Api-Key: openclaw-default-key"
 
 # Should return: {"success":true,"status":"healthy",...}
+
+# Test tool catalog endpoint
+curl -X GET "https://napi.marcoby.net/api/openclaw/tools/catalog" \
+  -H "X-OpenClaw-Api-Key: openclaw-default-key"
+
+# Test tool execution endpoint (requires Nexus user context)
+curl -X POST "https://napi.marcoby.net/api/openclaw/tools/execute" \
+  -H "Content-Type: application/json" \
+  -H "X-OpenClaw-Api-Key: openclaw-default-key" \
+  -H "X-Nexus-User-Id: openclaw-system-user" \
+  -d '{"tool":"nexus_get_integration_status","args":{}}'
 ```
 
 ## 🔧 Post-Deployment Configuration
@@ -75,6 +86,12 @@ Add to OpenClaw's environment:
 NEXUS_API_URL="https://napi.marcoby.net"
 OPENCLAW_API_KEY="openclaw-default-key"  # Must match Nexus .env
 NEXUS_USER_ID="openclaw-system-user"
+```
+
+### 1.1 Enable Nexus Integration Tool IDs in Nexus runtime
+Add to Nexus backend environment:
+```bash
+OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS="true"
 ```
 
 ### 2. Modify OpenClaw to Sync Conversations
@@ -99,6 +116,17 @@ await fetch(`${process.env.NEXUS_API_URL}/api/openclaw/conversations/sync`, {
   },
   body: JSON.stringify(conversationData)
 });
+```
+
+### 2.1 Configure OpenClaw plugin/tool-runtime calls to Nexus
+When OpenClaw executes Nexus tools, call:
+- `GET ${NEXUS_API_URL}/api/openclaw/tools/catalog`
+- `POST ${NEXUS_API_URL}/api/openclaw/tools/execute`
+
+Required headers:
+```text
+X-OpenClaw-Api-Key: <OPENCLAW_API_KEY>
+X-Nexus-User-Id: <effective_nexus_user_id>
 ```
 
 ### 3. Set Up Real-time Updates (Optional)

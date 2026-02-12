@@ -8,6 +8,7 @@ const tls = require('tls');
 const router = express.Router();
 const { logger } = require('../utils/logger');
 const userProfileService = require('../services/UserProfileService');
+const AuditService = require('../services/AuditService');
 const { query } = require('../database/connection');
 const { transaction } = require('../database/connection');
 const { optionalAuth } = require('../middleware/auth');
@@ -23,6 +24,47 @@ const PROVIDER_ALIASES = {
 function normalizeProvider(provider) {
   if (!provider) return provider;
   return PROVIDER_ALIASES[provider] || provider;
+}
+
+const SENSITIVE_ACTION_CONFIRMATION = process.env.REQUIRE_SENSITIVE_ACTION_CONFIRM === 'true';
+
+function toIsoStringOrNull(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
+}
+
+function deriveIntegrationStatus(row = {}) {
+  const rawStatus = String(row.status || '').toLowerCase();
+  const expiresAtIso = toIsoStringOrNull(row.expires_at);
+  const expiresAtMs = expiresAtIso ? Date.parse(expiresAtIso) : NaN;
+  const isExpired = Number.isFinite(expiresAtMs) && expiresAtMs <= Date.now();
+  if (isExpired) return 'expired';
+  if (rawStatus === 'active' || rawStatus === 'connected') return 'connected';
+  return rawStatus || 'unknown';
+}
+
+async function recordIntegrationAuditEvent(req, eventType, data = {}) {
+  const actorId = req.user?.id || null;
+  try {
+    await AuditService.recordEvent({
+      eventType,
+      objectType: 'integration',
+      objectId: data.integrationId || null,
+      actorId,
+      targetUserId: data.userId || actorId || null,
+      endpoint: req.originalUrl || req.path,
+      ip: req.ip,
+      userAgent: req.get('User-Agent') || null,
+      data
+    });
+  } catch (error) {
+    logger.warn('Failed to write integration audit event', {
+      eventType,
+      error: error?.message || String(error)
+    });
+  }
 }
 
 function getBrokerBaseUrl() {
@@ -599,6 +641,12 @@ router.get('/:provider/start', optionalAuth, async (req, res) => {
       authUrl.search = params.toString();
     }
 
+    await recordIntegrationAuditEvent(req, 'integration_connect_start', {
+      userId: effectiveUserId,
+      provider,
+      redirectUri: resolvedRedirectUri
+    });
+
     return res.json({
       authUrl: authUrl.toString(),
       state,
@@ -1166,11 +1214,24 @@ router.post('/:provider/callback', optionalAuth, async (req, res) => {
         userId,
         error: persistenceResult.error,
       });
+      await recordIntegrationAuditEvent(req, 'integration_connect_failed', {
+        userId,
+        provider,
+        reason: persistenceResult.error
+      });
       return res.status(500).json({
         error: 'Failed to persist integration credentials',
         details: persistenceResult.error,
       });
     }
+
+    await recordIntegrationAuditEvent(req, 'integration_connected', {
+      userId,
+      provider,
+      integrationId: persistenceResult.data?.integrationId || null,
+      externalAccountId,
+      tenantId
+    });
 
     return res.json({
       success: true,
@@ -1223,23 +1284,27 @@ router.get('/integrations/:userId', optionalAuth, async (req, res) => {
       [userId]
     );
 
-    const integrations = (result.data || []).map(row => ({
-      id: row.id,
-      userId: row.user_id,
-      provider: row.integration_name,
-      integrationName: row.catalog_integration_name || row.integration_name,
-      integrationType: 'oauth',
-      status: row.status === 'active' ? 'connected' : row.status,
-      connectedAt: row.created_at,
-      lastSyncAt: row.last_sync_at,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      accessToken: row.access_token || undefined,
-      refreshToken: row.refresh_token || undefined,
-      expiresAt: row.expires_at || undefined,
-      scopes: row.scope || undefined,
-      config: row.settings || {}
-    }));
+    const integrations = (result.data || []).map(row => {
+      const tokenExpiresAt = toIsoStringOrNull(row.expires_at);
+      return {
+        id: row.id,
+        userId: row.user_id,
+        provider: row.integration_name,
+        integrationName: row.catalog_integration_name || row.integration_name,
+        integrationSlug: row.integration_name,
+        integrationType: 'oauth',
+        status: deriveIntegrationStatus(row),
+        connectedAt: row.created_at,
+        lastSyncAt: row.last_sync_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        hasAccessToken: Boolean(row.access_token),
+        hasRefreshToken: Boolean(row.refresh_token),
+        tokenExpiresAt,
+        scopes: row.scope || undefined,
+        config: row.settings || {}
+      };
+    });
 
     res.json({ integrations });
   } catch (error) {
@@ -1255,7 +1320,7 @@ router.get('/integrations/:userId', optionalAuth, async (req, res) => {
 router.post('/disconnect/:integrationId', optionalAuth, async (req, res) => {
   try {
     const { integrationId } = req.params;
-    const { userId } = req.body; // Optional security check
+    const { userId, confirm } = req.body || {}; // Optional security check
 
     const existing = await query(
       'SELECT id, user_id, integration_name FROM user_integrations WHERE id = $1 LIMIT 1',
@@ -1272,11 +1337,24 @@ router.post('/disconnect/:integrationId', optionalAuth, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized for this integration' });
     }
 
+    if (SENSITIVE_ACTION_CONFIRMATION && confirm !== 'DISCONNECT') {
+      return res.status(400).json({
+        error: 'Confirmation required',
+        details: 'Set confirm="DISCONNECT" to proceed'
+      });
+    }
+
     await query(
       'DELETE FROM oauth_tokens WHERE user_id = $1 AND integration_slug = $2',
       [integration.user_id, integration.integration_name]
     );
     await query('DELETE FROM user_integrations WHERE id = $1', [integrationId]);
+
+    await recordIntegrationAuditEvent(req, 'integration_disconnected', {
+      integrationId,
+      userId: integration.user_id,
+      provider: integration.integration_name
+    });
 
     // Also clear from social links if applicable?
     // This is complex because we don't know which social link corresponds to this integration easily
@@ -1293,7 +1371,7 @@ router.post('/disconnect/:integrationId', optionalAuth, async (req, res) => {
  * POST /sync
  * Manual sync trigger
  */
-router.post('/sync', async (req, res) => {
+router.post('/sync', optionalAuth, async (req, res) => {
   try {
     const { integrationId, userId } = req.body;
     // Logic to trigger sync job would go here
@@ -1302,15 +1380,31 @@ router.post('/sync', async (req, res) => {
     let provider = null;
     if (integrationId) {
       const integrationResult = await query(
-        'SELECT integration_name FROM user_integrations WHERE id = $1 LIMIT 1',
+        'SELECT integration_name, user_id FROM user_integrations WHERE id = $1 LIMIT 1',
         [integrationId]
       );
-      provider = integrationResult?.data?.[0]?.integration_name || null;
+      const integration = integrationResult?.data?.[0] || null;
+      if (!integration) {
+        return res.status(404).json({ error: 'Integration not found' });
+      }
+      if (req.user?.id && integration.user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Not authorized for this integration' });
+      }
+      if (userId && integration.user_id !== userId) {
+        return res.status(403).json({ error: 'Not authorized for this integration' });
+      }
+      provider = integration.integration_name || null;
       await query(
         'UPDATE user_integrations SET last_sync_at = NOW() WHERE id = $1',
         [integrationId]
       );
     }
+
+    await recordIntegrationAuditEvent(req, 'integration_sync_triggered', {
+      integrationId: integrationId || null,
+      userId: req.user?.id || userId || null,
+      provider
+    });
 
     res.json({
       success: true,
@@ -1334,17 +1428,20 @@ router.post('/sync', async (req, res) => {
  * GET /sync/history/:integrationId
  * Simple history endpoint used by integration clients.
  */
-router.get('/sync/history/:integrationId', async (req, res) => {
+router.get('/sync/history/:integrationId', optionalAuth, async (req, res) => {
   try {
     const { integrationId } = req.params;
     const result = await query(
-      'SELECT id, integration_name, last_sync_at, updated_at FROM user_integrations WHERE id = $1 LIMIT 1',
+      'SELECT id, integration_name, user_id, last_sync_at, updated_at FROM user_integrations WHERE id = $1 LIMIT 1',
       [integrationId]
     );
 
     const record = result?.data?.[0];
     if (!record) {
       return res.json({ history: [] });
+    }
+    if (req.user?.id && record.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized for this integration' });
     }
 
     return res.json({
@@ -1366,7 +1463,7 @@ router.get('/sync/history/:integrationId', async (req, res) => {
  * POST /:provider/test
  * Validate connectivity with current access token.
  */
-router.post('/:provider/test', async (req, res) => {
+router.post('/:provider/test', optionalAuth, async (req, res) => {
   try {
     const provider = normalizeProvider(req.params.provider);
     const { accessToken } = req.body || {};
@@ -1396,6 +1493,11 @@ router.post('/:provider/test', async (req, res) => {
 
     if (!testResponse.ok) {
       const details = await testResponse.text().catch(() => '');
+      await recordIntegrationAuditEvent(req, 'integration_test_failed', {
+        provider,
+        userId: req.user?.id || null,
+        reason: details || `HTTP ${testResponse.status}`
+      });
       return res.status(400).json({
         connected: false,
         error: 'Connection test failed',
@@ -1403,9 +1505,87 @@ router.post('/:provider/test', async (req, res) => {
       });
     }
 
+    await recordIntegrationAuditEvent(req, 'integration_test_passed', {
+      provider,
+      userId: req.user?.id || null
+    });
     return res.json({ connected: true });
   } catch (error) {
     logger.error('OAuth connection test failed', { error: error?.message || String(error) });
+    return res.status(500).json({ connected: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /:provider/test-saved
+ * Validate connectivity using saved OAuth token for the authenticated user.
+ */
+router.post('/:provider/test-saved', optionalAuth, async (req, res) => {
+  try {
+    const provider = normalizeProvider(req.params.provider);
+    const requestedUserId = req.body?.userId;
+    const effectiveUserId = req.user?.id || requestedUserId;
+    if (!effectiveUserId) {
+      return res.status(400).json({ connected: false, error: 'userId is required' });
+    }
+    if (req.user?.id && requestedUserId && req.user.id !== requestedUserId) {
+      return res.status(403).json({ connected: false, error: 'userId does not match authenticated user' });
+    }
+
+    const tokenResult = await query(
+      `SELECT access_token
+       FROM oauth_tokens
+       WHERE user_id = $1
+         AND integration_slug = $2
+       LIMIT 1`,
+      [effectiveUserId, provider]
+    );
+    const accessToken = tokenResult?.data?.[0]?.access_token;
+    if (!accessToken) {
+      return res.status(404).json({ connected: false, error: 'No saved token for provider' });
+    }
+
+    let testResponse;
+    if (provider === 'microsoft') {
+      testResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    } else if (provider === 'hubspot') {
+      testResponse = await fetch(`https://api.hubapi.com/oauth/v1/access-tokens/${encodeURIComponent(accessToken)}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    } else if (provider === 'authentik') {
+      const cfg = getOAuthProviders().authentik;
+      testResponse = await fetch(cfg.userInfoUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    } else {
+      testResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    }
+
+    if (!testResponse.ok) {
+      const details = await testResponse.text().catch(() => '');
+      await recordIntegrationAuditEvent(req, 'integration_test_failed', {
+        provider,
+        userId: effectiveUserId,
+        reason: details || `HTTP ${testResponse.status}`
+      });
+      return res.status(400).json({
+        connected: false,
+        error: 'Connection test failed',
+        details,
+      });
+    }
+
+    await recordIntegrationAuditEvent(req, 'integration_test_passed', {
+      provider,
+      userId: effectiveUserId
+    });
+    return res.json({ connected: true });
+  } catch (error) {
+    logger.error('OAuth saved-token connection test failed', { error: error?.message || String(error) });
     return res.status(500).json({ connected: false, error: 'Internal server error' });
   }
 });
