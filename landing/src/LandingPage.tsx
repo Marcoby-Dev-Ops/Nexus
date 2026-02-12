@@ -160,47 +160,37 @@ export const LandingPage: React.FC = () => {
             <div>
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
-                Nexus AI Operating System
+                Built for practical teams
               </div>
 
               <h1 className="text-balance text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
-                Ignite Growth: AI-Powered Operations with Seamless Integrations.
+                One workspace for AI, context, and execution.
               </h1>
 
               <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
-                Nexus utilizes intelligent conversation, structured knowledge, and deep integrations to automate workflows across your entire tech stack.
+                Nexus helps your team turn questions into actions with connected tools and clear next steps.
               </p>
 
-              <div className="mt-9 flex flex-col gap-4 sm:flex-row">
+              <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
                 <Button asChild size="lg" className="h-12 px-8 text-base">
                   <a href={signupHref} className="inline-flex items-center gap-2">
-                    Start Your Free Trial
+                    Get Started
                     <ArrowRight className="h-4 w-4" />
                   </a>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base">
-                  <a href="#pricing" className="inline-flex items-center gap-2">
-                    View Pricing
-                  </a>
-                </Button>
+                <a href="#pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  View pricing
+                </a>
               </div>
 
               <div className="mt-8 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
                 <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2 flex items-center gap-2">
                   <Zap className="h-4 w-4 text-primary" />
-                  Instant CRM Sync
+                  Connect email and core apps
                 </div>
                 <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2 flex items-center gap-2">
                   <Database className="h-4 w-4 text-primary" />
-                  Unified Data Context
-                </div>
-                <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2 flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-primary" />
-                  Intelligent Automation
-                </div>
-                <div className="rounded-lg border border-border/70 bg-card/70 px-3 py-2 flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-primary" />
-                  Enterprise Security
+                  Keep context in one place
                 </div>
               </div>
             </div>
@@ -208,7 +198,12 @@ export const LandingPage: React.FC = () => {
             <div className="relative">
               <div className="rounded-2xl border border-border/70 bg-card/75 shadow-xl backdrop-blur">
                 <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 text-sm">
-                  <span className="font-medium">Nexus Workspace</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Nexus Workspace</span>
+                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                      Product Preview
+                    </span>
+                  </div>
                   <span className="inline-flex items-center gap-2 text-emerald-500">
                     <span className="h-2 w-2 rounded-full bg-emerald-500" />
                     System Healthy
@@ -219,28 +214,38 @@ export const LandingPage: React.FC = () => {
                   <div className="rounded-xl border border-primary/25 bg-primary/10 p-3">
                     <div className="flex items-center gap-2 text-sm font-medium text-primary">
                       <Bot className="h-4 w-4" />
-                      Marcoby is thinking
+                      Executive Assistant is thinking
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">Analyzing integration points with Salesforce and Slack...</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Analyzing connected integrations and preparing next actions...</p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        <Database className="h-3.5 w-3.5" />
-                        CRM Updates
+                      <div className="flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Database className="h-3.5 w-3.5" />
+                          Connected Data
+                        </div>
+                        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-500">
+                          Live
+                        </span>
                       </div>
                       <ul className="mt-2 space-y-1.5 text-sm">
-                        <li>1. Lead created: Acme Corp</li>
-                        <li>2. Opportunity moved to Closed-Won</li>
-                        <li>3. Contact updated: Jane Doe</li>
+                        <li>1. Salesforce lead activity</li>
+                        <li>2. Inbox triage and follow-up</li>
+                        <li>3. Calendar + task context</li>
                       </ul>
                     </div>
 
                     <div className="rounded-lg border border-border/70 bg-background/70 p-3">
-                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        <User className="h-3.5 w-3.5" />
-                        Identity Signal
+                      <div className="flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <User className="h-3.5 w-3.5" />
+                          Identity Signal
+                        </div>
+                        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-500">
+                          Coming Soon
+                        </span>
                       </div>
                       <p className="mt-2 text-sm">Voice: strategic, accurate</p>
                       <p className="mt-1 text-sm text-muted-foreground">Role: Growth Consultant</p>
@@ -250,16 +255,26 @@ export const LandingPage: React.FC = () => {
                   <div className="rounded-lg border border-border/70 bg-background/70 p-3 text-sm">
                     <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       <BarChart3 className="h-3.5 w-3.5" />
-                      Execution Loop
+                      Workflow Status
                     </div>
-                    <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                      {['Analyze', 'Connect', 'Sync', 'Report'].map((phase) => (
-                        <div key={phase} className="rounded-md bg-muted/60 px-2 py-1.5">
-                          {phase}
+                    <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                      {[
+                        { phase: 'Analyze', status: 'Live' },
+                        { phase: 'Connect', status: 'Live' },
+                        { phase: 'Sync', status: 'Live' },
+                        { phase: 'Report', status: 'Soon' }
+                      ].map((item) => (
+                        <div key={item.phase} className="rounded-md bg-muted/60 px-2 py-1.5 text-center">
+                          <div>{item.phase}</div>
+                          <div className={item.status === 'Live' ? 'text-emerald-500' : 'text-amber-500'}>{item.status}</div>
                         </div>
                       ))}
                     </div>
                   </div>
+
+                  <p className="text-[11px] text-muted-foreground">
+                    Preview reflects the current Nexus app shell and active capabilities. Features marked "Coming Soon" are on the roadmap.
+                  </p>
                 </div>
               </div>
             </div>
@@ -370,7 +385,7 @@ export const LandingPage: React.FC = () => {
             <div className="mb-12 max-w-3xl">
               <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">Nexus Integrations: Your Business, Connected</h2>
               <p className="mt-4 text-lg text-muted-foreground">
-                Connect your entire business ecosystem. Unify your tools, eliminate data silos, and automate cross-platform workflows.
+                Connect key business systems, centralize operational context, and run guided workflows from one workspace.
               </p>
             </div>
 
@@ -448,7 +463,7 @@ export const LandingPage: React.FC = () => {
           <div className="mx-auto w-full max-w-7xl px-6 py-20 text-center lg:px-8">
             <h2 className="text-3xl font-semibold tracking-tight md:text-5xl">Ready to Transform Your Business with AI?</h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
-              Join thousands of leaders who accelerate growth and automate operations with Nexus.
+              Start with your current workflows, then expand into deeper automation as your team grows.
             </p>
 
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
