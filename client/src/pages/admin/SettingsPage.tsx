@@ -28,7 +28,7 @@ const CompanyProfilePage = lazy(() => import('./CompanyProfilePage').then(m => (
 const UserProfilePage = lazy(() => import('./UserProfilePage').then(m => ({ default: m.UserProfilePage })));
 
 // Placeholder/Future components
-const TeamSettings = () => <div>Team & access management settings can be managed here.</div>;
+const TeamSettings = lazy(() => import('./TeamSettings'));
 
 // Section Wrappers for Consolidation
 const AccountSection = () => (

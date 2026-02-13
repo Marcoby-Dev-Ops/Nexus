@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -11,7 +11,7 @@ import { Label } from '@/shared/components/ui/Label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { useAuth } from '@/hooks/index';
 import { useIntegrations } from '@/hooks/integrations/useIntegrations';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { toast } from 'sonner';
 import {
   Network,
@@ -64,14 +64,15 @@ const IntegrationsSettings: React.FC = () => {
 
   const fetchIntegrationConfigs = async () => {
     try {
-      const { error: fetchError } = await supabase
-        .from('user_integrations')
-        .select('*')
-        .eq('user_id', user?.id);
+      const response = await selectData({
+        table: 'user_integrations',
+        filters: { user_id: user?.id }
+      });
 
-      if (fetchError) throw fetchError;
+      if (!response.success) throw new Error(response.error);
+      const configs = response.data || [];
 
-      const formattedConfigs: IntegrationConfig[] = (configs || []).map(config => ({
+      const formattedConfigs: IntegrationConfig[] = (configs as any[] || []).map((config: any) => ({
         id: config.id,
         name: config.integration_name || 'Unknown Integration',
         status: (config.status as 'connected' | 'disconnected' | 'error' | 'configuring') || 'disconnected',
@@ -88,10 +89,10 @@ const IntegrationsSettings: React.FC = () => {
 
       setIntegrationConfigs(formattedConfigs);
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching integration configs: ', error);
+
+
+      // eslint-disable-next-line no-console
+      console.error('Error fetching integration configs: ', error);
       toast.error('Failed to load integration configurations');
     }
   };
@@ -103,21 +104,18 @@ const IntegrationsSettings: React.FC = () => {
   const handleDisconnectIntegration = async (integrationId: string) => {
     try {
       setConfiguring(integrationId);
-      
-      const { error: deleteError } = await supabase
-        .from('user_integrations')
-        .delete()
-        .eq('id', integrationId);
 
-      if (deleteError) throw deleteError;
+      const response = await deleteOne('user_integrations', { id: integrationId });
+
+      if (!response.success) throw new Error(response.error);
 
       setIntegrationConfigs(prev => prev.filter(config => config.id !== integrationId));
       toast.success('Integration disconnected successfully');
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error disconnecting integration: ', error);
+
+
+      // eslint-disable-next-line no-console
+      console.error('Error disconnecting integration: ', error);
       toast.error('Failed to disconnect integration');
     } finally {
       setConfiguring(null);
@@ -127,10 +125,10 @@ const IntegrationsSettings: React.FC = () => {
   const handleTestConnection = async (integrationId: string) => {
     try {
       setConfiguring(integrationId);
-      
+
       // Simulate connection test
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       toast.success('Connection test successful');
     } catch (error) {
       toast.error('Connection test failed');
@@ -142,10 +140,10 @@ const IntegrationsSettings: React.FC = () => {
   const handleSyncNow = async (integrationId: string) => {
     try {
       setConfiguring(integrationId);
-      
+
       // Simulate sync operation
       await new Promise(resolve => setTimeout(resolve, 3000));
-      
+
       toast.success('Sync completed successfully');
       fetchIntegrationConfigs(); // Refresh data
     } catch (error) {
@@ -158,29 +156,26 @@ const IntegrationsSettings: React.FC = () => {
   const handleUpdateConfig = async (integrationId: string, newConfig: Record<string, any>) => {
     try {
       setConfiguring(integrationId);
-      
-      const { error: updateError } = await supabase
-        .from('user_integrations')
-        .update({ configuration: newConfig })
-        .eq('id', integrationId);
 
-      if (updateError) throw updateError;
+      const response = await updateOne('user_integrations', { id: integrationId }, { configuration: newConfig });
 
-      setIntegrationConfigs(prev => 
-        prev.map(config => 
-          config.id === integrationId 
+      if (!response.success) throw new Error(response.error);
+
+      setIntegrationConfigs(prev =>
+        prev.map(config =>
+          config.id === integrationId
             ? { ...config, config: newConfig }
             : config
         )
       );
-      
+
       toast.success('Configuration updated successfully');
       setShowConfigModal(false);
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error updating configuration: ', error);
+
+
+      // eslint-disable-next-line no-console
+      console.error('Error updating configuration: ', error);
       toast.error('Failed to update configuration');
     } finally {
       setConfiguring(null);
@@ -289,13 +284,13 @@ const IntegrationsSettings: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <Badge className={getStatusColor(integration.status)}>
                       {getStatusIcon(integration.status)}
                       {integration.status}
                     </Badge>
-                    
+
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -310,7 +305,7 @@ const IntegrationsSettings: React.FC = () => {
                         )}
                         Test
                       </Button>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -324,7 +319,7 @@ const IntegrationsSettings: React.FC = () => {
                         )}
                         Sync
                       </Button>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -336,7 +331,7 @@ const IntegrationsSettings: React.FC = () => {
                         <Settings className="w-4 h-4" />
                         Config
                       </Button>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -376,7 +371,7 @@ const IntegrationsSettings: React.FC = () => {
                   Close
                 </Button>
               </div>
-              
+
               <Tabs defaultValue="general" className="space-y-4">
                 <TabsList>
                   <TabsTrigger value="general">General</TabsTrigger>
@@ -384,7 +379,7 @@ const IntegrationsSettings: React.FC = () => {
                   <TabsTrigger value="permissions">Permissions</TabsTrigger>
                   <TabsTrigger value="advanced">Advanced</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="general" className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -410,7 +405,7 @@ const IntegrationsSettings: React.FC = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="integration-description">Description</Label>
                     <Input
@@ -422,11 +417,11 @@ const IntegrationsSettings: React.FC = () => {
                       })}
                     />
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="integration-active"
-                      checked={selectedIntegration.isActive}
+                      checked={!!selectedIntegration.isActive}
                       onCheckedChange={(checked) => setSelectedIntegration({
                         ...selectedIntegration,
                         isActive: checked
@@ -435,7 +430,7 @@ const IntegrationsSettings: React.FC = () => {
                     <Label htmlFor="integration-active">Active Integration</Label>
                   </div>
                 </TabsContent>
-                
+
                 <TabsContent value="sync" className="space-y-4">
                   <div>
                     <Label htmlFor="sync-frequency">Sync Frequency</Label>
@@ -454,14 +449,14 @@ const IntegrationsSettings: React.FC = () => {
                       <option value="weekly">Weekly</option>
                     </select>
                   </div>
-                  
+
                   <div className="text-sm text-muted-foreground">
                     <p>Last sync: {selectedIntegration.lastSync || 'Never'}</p>
                     <p>Next sync: {selectedIntegration.nextSync || 'Not scheduled'}</p>
                     <p>Data points: {selectedIntegration.dataPoints || 0}</p>
                   </div>
                 </TabsContent>
-                
+
                 <TabsContent value="permissions" className="space-y-4">
                   <div className="space-y-2">
                     <Label>Data Access Permissions</Label>
@@ -469,7 +464,7 @@ const IntegrationsSettings: React.FC = () => {
                       <div key={permission} className="flex items-center space-x-2">
                         <Switch
                           id={permission}
-                          checked={selectedIntegration.permissions?.includes(permission)}
+                          checked={!!selectedIntegration.permissions?.includes(permission)}
                           onCheckedChange={(checked) => {
                             const newPermissions = checked
                               ? [...(selectedIntegration.permissions || []), permission]
@@ -487,7 +482,7 @@ const IntegrationsSettings: React.FC = () => {
                     ))}
                   </div>
                 </TabsContent>
-                
+
                 <TabsContent value="advanced" className="space-y-4">
                   <div>
                     <Label htmlFor="api-key">API Key (if applicable)</Label>
@@ -505,7 +500,7 @@ const IntegrationsSettings: React.FC = () => {
                       })}
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="webhook-url">Webhook URL</Label>
                     <Input
@@ -523,7 +518,7 @@ const IntegrationsSettings: React.FC = () => {
                   </div>
                 </TabsContent>
               </Tabs>
-              
+
               <div className="flex justify-end gap-2 mt-6">
                 <Button variant="outline" onClick={() => setShowConfigModal(false)}>
                   Cancel

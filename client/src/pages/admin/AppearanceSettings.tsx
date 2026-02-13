@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Switch } from '@/shared/components/ui/Switch';
 import { Label } from '@/shared/components/ui/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
-import { useAuth } from '@/hooks/index';
-import { toast } from 'sonner';
-import { Palette, Monitor, Sun, Moon, MonitorIcon, Layout, Eye, RefreshCw, Save, Settings, Globe, Users, BarChart3, Calendar, Bell, CheckCircle2 } from 'lucide-react';
-interface AppearanceSettings {
+import { useUserPreferences } from '@/shared/hooks/useUserPreferences';
+import { useToast } from '@/shared/components/ui/use-toast';
+import { logger } from '@/shared/utils/logger';
+import { Palette, Monitor, Sun, Moon, MonitorIcon, Layout, Eye, RefreshCw, Save, Settings, Globe, Users, BarChart3, Calendar, Bell, CheckCircle2, Loader2 } from 'lucide-react';
+
+interface AppearanceSettingsState {
   theme: 'light' | 'dark' | 'system';
   colorScheme: 'green' | 'blue' | 'purple' | 'orange' | 'red';
   layout: 'default' | 'compact' | 'spacious';
@@ -22,7 +24,6 @@ interface AppearanceSettings {
   fontSize: 'small' | 'medium' | 'large';
   showAvatars: boolean;
   showIcons: boolean;
-  showAnimations: boolean;
 }
 
 interface LayoutPreview {
@@ -33,59 +34,67 @@ interface LayoutPreview {
   preview: string;
 }
 
+const DEFAULT_APPEARANCE_SETTINGS: AppearanceSettingsState = {
+  theme: 'system',
+  colorScheme: 'green',
+  layout: 'default',
+  sidebar: 'auto',
+  density: 'comfortable',
+  animations: true,
+  reducedMotion: false,
+  highContrast: false,
+  fontSize: 'medium',
+  showAvatars: true,
+  showIcons: true,
+};
+
 const AppearanceSettings: React.FC = () => {
-  const { user } = useAuth();
-  const [settings, setSettings] = useState<AppearanceSettings>({
-    theme: 'system',
-    colorScheme: 'green',
-    layout: 'default',
-    sidebar: 'auto',
-    density: 'comfortable',
-    animations: true,
-    reducedMotion: false,
-    highContrast: false,
-    fontSize: 'medium',
-    showAvatars: true,
-    showIcons: true,
-    showAnimations: true
-  });
-  const [loading, setLoading] = useState(false);
+  const { preferences, updatePreferences, loading, refreshPreferences } = useUserPreferences();
+  const { toast } = useToast();
+  const [settings, setSettings] = useState<AppearanceSettingsState>(DEFAULT_APPEARANCE_SETTINGS);
   const [saving, setSaving] = useState(false);
 
+  // Load settings from preferences
   useEffect(() => {
-    if (user?.id) {
-      fetchAppearanceSettings();
+    if (preferences) {
+      const extraSettings = preferences.preferences?.appearance_settings || {};
+      setSettings({
+        ...DEFAULT_APPEARANCE_SETTINGS,
+        theme: preferences.theme || 'system',
+        ...extraSettings,
+      });
     }
-  }, [user?.id]);
-
-  const fetchAppearanceSettings = async () => {
-    try {
-      setLoading(true);
-      
-      // Mock data for now - replace with actual API calls
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-    } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching appearance settings: ', error);
-      toast.error('Failed to load appearance settings');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [preferences]);
 
   const handleSaveSettings = async () => {
+    setSaving(true);
     try {
-      setSaving(true);
-      
-      // Simulate saving settings
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast.success('Appearance settings saved successfully');
+      const { theme, ...extraAppearance } = settings;
+
+      const result = await updatePreferences({
+        theme,
+        preferences: {
+          ...(preferences?.preferences || {}),
+          appearance_settings: extraAppearance,
+        },
+      });
+
+      if (result.success) {
+        toast({
+          title: 'Success',
+          description: 'Appearance settings saved successfully.',
+          variant: 'success',
+        });
+      } else {
+        throw new Error(result.error || 'Failed to save settings');
+      }
     } catch (error) {
-      toast.error('Failed to save appearance settings');
+      logger.error('Failed to save appearance settings', { error });
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to save settings',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
@@ -113,15 +122,6 @@ const AppearanceSettings: React.FC = () => {
 
   const handleFontSizeChange = (size: string) => {
     setSettings(prev => ({ ...prev, fontSize: size as any }));
-  };
-
-  const getThemeIcon = (theme: string) => {
-    switch (theme) {
-      case 'light': return <Sun className="w-4 h-4" />;
-      case 'dark': return <Moon className="w-4 h-4" />;
-      case 'system': return <MonitorIcon className="w-4 h-4" />;
-      default: return <MonitorIcon className="w-4 h-4" />;
-    }
   };
 
   const getColorSchemePreview = (scheme: string) => {
@@ -161,10 +161,9 @@ const AppearanceSettings: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-        </div>
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading settings...</span>
       </div>
     );
   }
@@ -172,7 +171,7 @@ const AppearanceSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm: flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-lg font-medium">Appearance & Theme</h3>
           <p className="text-sm text-muted-foreground">
@@ -180,14 +179,14 @@ const AppearanceSettings: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchAppearanceSettings}>
+          <Button variant="outline" onClick={refreshPreferences}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
           <Button onClick={handleSaveSettings} disabled={saving}>
             {saving ? (
               <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Saving...
               </>
             ) : (
@@ -246,19 +245,18 @@ const AppearanceSettings: React.FC = () => {
             {/* Color Scheme */}
             <div>
               <Label>Color Scheme</Label>
-              <div className="grid grid-cols-5 gap-3 mt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-2">
                 {['green', 'blue', 'purple', 'orange', 'red'].map((scheme) => (
                   <button
                     key={scheme}
                     onClick={() => handleColorSchemeChange(scheme)}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      settings.colorScheme === scheme
-                        ? 'border-primary ring-2 ring-primary/20'
-                        : 'border-border hover: border-primary/50'
-                    }`}
+                    className={`p-3 rounded-lg border-2 transition-all ${settings.colorScheme === scheme
+                        ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                      }`}
                   >
-                    <div className={`w-8 h-8 rounded-full ${getColorSchemePreview(scheme)} mb-2`} />
-                    <p className="text-xs font-medium capitalize">{scheme}</p>
+                    <div className={`w-8 h-8 rounded-full ${getColorSchemePreview(scheme)} mb-2 mx-auto`} />
+                    <p className="text-xs font-medium capitalize text-center">{scheme}</p>
                   </button>
                 ))}
               </div>
@@ -279,19 +277,18 @@ const AppearanceSettings: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Layout Preview */}
+          {/* Layout Selection */}
           <div className="space-y-4">
             <Label>Layout Style</Label>
-            <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {layoutPreviews.map((layout) => (
                 <button
                   key={layout.id}
                   onClick={() => handleLayoutChange(layout.id)}
-                  className={`p-4 border rounded-lg text-left transition-all ${
-                    settings.layout === layout.id
+                  className={`p-4 border rounded-lg text-left transition-all ${settings.layout === layout.id
                       ? 'border-primary bg-primary/5'
-                      : 'border-border hover: border-primary/50'
-                  }`}
+                      : 'border-border hover:border-primary/50'
+                    }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     {layout.icon}
@@ -459,8 +456,8 @@ const AppearanceSettings: React.FC = () => {
                 {settings.theme === 'system' ? 'System' : settings.theme}
               </Badge>
             </div>
-            
-            <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-3 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <BarChart3 className="w-4 h-4" />
@@ -468,7 +465,7 @@ const AppearanceSettings: React.FC = () => {
                 </div>
                 <p className="text-xs text-muted-foreground">Sample content preview</p>
               </div>
-              
+
               <div className="p-3 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="w-4 h-4" />
@@ -476,7 +473,7 @@ const AppearanceSettings: React.FC = () => {
                 </div>
                 <p className="text-xs text-muted-foreground">Sample content preview</p>
               </div>
-              
+
               <div className="p-3 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Bell className="w-4 h-4" />
@@ -488,56 +485,9 @@ const AppearanceSettings: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Accessibility */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Settings className="h-5 w-5 mr-2" />
-            Accessibility
-          </CardTitle>
-          <CardDescription>
-            Settings to improve accessibility and usability
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="p-4 border rounded-lg">
-              <h4 className="font-medium mb-2">Keyboard Navigation</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                Use keyboard shortcuts to navigate the interface
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex justify-between">
-                  <span>Open menu:</span>
-                  <kbd className="px-2 py-1 bg-muted rounded">Alt + M</kbd>
-                </div>
-                <div className="flex justify-between">
-                  <span>Search:</span>
-                  <kbd className="px-2 py-1 bg-muted rounded">Ctrl + K</kbd>
-                </div>
-                <div className="flex justify-between">
-                  <span>Settings:</span>
-                  <kbd className="px-2 py-1 bg-muted rounded">Ctrl + ,</kbd>
-                </div>
-                <div className="flex justify-between">
-                  <span>Help: </span>
-                  <kbd className="px-2 py-1 bg-muted rounded">F1</kbd>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-4 border rounded-lg">
-              <h4 className="font-medium mb-2">Screen Reader Support</h4>
-              <p className="text-sm text-muted-foreground">
-                All interface elements are properly labeled for screen readers
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
 
-export default AppearanceSettings; 
+export default AppearanceSettings;
+

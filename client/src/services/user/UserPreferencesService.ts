@@ -15,6 +15,7 @@ export interface UserPreferences {
   push_notifications: boolean;
   dashboard_layout?: Record<string, any>;
   sidebar_collapsed: boolean;
+  preferences?: Record<string, any>;
   created_at?: string;
   updated_at?: string;
 }
@@ -163,7 +164,7 @@ export class UserPreferencesService extends BaseService {
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         return this.createResponse(result.data);
       } else {
@@ -194,7 +195,7 @@ export class UserPreferencesService extends BaseService {
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         return this.createResponse(result.data);
       } else {

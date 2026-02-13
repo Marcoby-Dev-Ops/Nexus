@@ -6,7 +6,7 @@
  * Pillar: 5 (Speed & Performance) - Eliminates redundant page code
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -94,9 +94,9 @@ const ContentSection: React.FC<{ title: string; children: React.ReactNode; class
   </div>
 );
 
-const SimpleBarChart: React.FC<{ data: any }> = ({ _data }) => (
+const SimpleBarChart: React.FC<{ data: any }> = ({ data }) => (
   <div className="h-full flex items-end justify-center space-x-1">
-    <div className="text-xs text-muted-foreground">Chart placeholder</div>
+    <div className="text-xs text-muted-foreground">Chart placeholder for {data ? 'real data' : 'empty'}</div>
   </div>
 );
 
@@ -233,6 +233,7 @@ export const UnifiedAnalyticsPage: React.FC<{ config: AnalyticsConfig }> = ({ co
   const [activeTab, setActiveTab] = React.useState(config.tabs[0]?.id);
 
   const currentTab = config.tabs.find(t => t.id === activeTab);
+  const CurrentComponent = currentTab?.content;
 
   return (
     <DashboardLayout

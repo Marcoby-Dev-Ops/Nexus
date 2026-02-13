@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Mail, Shield, MoreHorizontal, Check, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
@@ -45,27 +45,27 @@ interface TeamRole {
 
 // Mock team roles (could be moved to service later)
 const teamRoles: TeamRole[] = [
-  { 
-    id: 'owner', 
-    name: 'Owner', 
+  {
+    id: 'owner',
+    name: 'Owner',
     description: 'Full access to all settings and billing',
     permissions: ['all']
   },
-  { 
-    id: 'admin', 
-    name: 'Admin', 
+  {
+    id: 'admin',
+    name: 'Admin',
     description: 'Can manage team members and most settings',
     permissions: ['manage_team', 'manage_settings', 'view_billing']
   },
-  { 
-    id: 'member', 
-    name: 'Member', 
+  {
+    id: 'member',
+    name: 'Member',
     description: 'Can use the application but cannot manage team settings',
     permissions: ['use_app', 'create_content']
   },
-  { 
-    id: 'guest', 
-    name: 'Guest', 
+  {
+    id: 'guest',
+    name: 'Guest',
     description: 'Limited access to specific features only',
     permissions: ['view_content']
   },
@@ -83,7 +83,7 @@ const teamRoles: TeamRole[] = [
 const TeamSettings: React.FC = () => {
   const { user } = useAuth();
   const { company } = useCompany();
-  
+
   // Use UserService for team member management
   const userService = useService('user');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -96,16 +96,16 @@ const TeamSettings: React.FC = () => {
   useEffect(() => {
     const fetchTeamMembers = async () => {
       if (!company?.id) return;
-      
+
       setIsLoadingTeam(true);
       try {
         const result = await userService.list({ company_id: company.id });
         if (result.success && result.data) {
           setTeamMembers(result.data);
         }
-              } catch (error) {
-          logger.error('Failed to fetch team members:', error);
-        } finally {
+      } catch (error) {
+        logger.error('Failed to fetch team members:', error);
+      } finally {
         setIsLoadingTeam(false);
       }
     };
@@ -131,7 +131,7 @@ const TeamSettings: React.FC = () => {
           company_id: company.id,
           status: 'invited'
         });
-        
+
         if (result.success) {
           // Reset form after successful invitation
           form.reset();
@@ -154,7 +154,7 @@ const TeamSettings: React.FC = () => {
 
   // Check if user is admin or owner
   const canManageTeam = user?.role === 'admin' || user?.role === 'owner';
-  
+
   // Handle role updates
   const handleRoleUpdate = async (memberId: string, newRole: string) => {
     setIsUpdatingRole(true);
@@ -168,11 +168,11 @@ const TeamSettings: React.FC = () => {
             setTeamMembers(refreshResult.data);
           }
         }
-              } else {
-          logger.error('Failed to update role:', result.error);
-        }
-      } catch (error) {
-        logger.error('Failed to update role:', error);
+      } else {
+        logger.error('Failed to update role:', result.error);
+      }
+    } catch (error) {
+      logger.error('Failed to update role:', error);
     } finally {
       setIsUpdatingRole(false);
     }
@@ -181,7 +181,7 @@ const TeamSettings: React.FC = () => {
   // Handle member removal
   const handleRemoveMember = async (memberId: string) => {
     if (!confirm('Are you sure you want to remove this team member?')) return;
-    
+
     setIsRemoving(true);
     try {
       const result = await userService.delete(memberId);
@@ -193,11 +193,11 @@ const TeamSettings: React.FC = () => {
             setTeamMembers(refreshResult.data);
           }
         }
-              } else {
-          logger.error('Failed to remove member:', result.error);
-        }
-      } catch (error) {
-        logger.error('Failed to remove member:', error);
+      } else {
+        logger.error('Failed to remove member:', result.error);
+      }
+    } catch (error) {
+      logger.error('Failed to remove member:', error);
     } finally {
       setIsRemoving(false);
     }
@@ -241,9 +241,9 @@ const TeamSettings: React.FC = () => {
         <h2 className="text-2xl font-bold">Team Management</h2>
         <p className="text-muted-foreground">Manage your team members and their access</p>
       </div>
-      
+
       <Separator />
-      
+
       {/* Invite Team Members */}
       <Card>
         <CardHeader>
@@ -265,8 +265,8 @@ const TeamSettings: React.FC = () => {
               />
               {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
             </div>
-            <Select 
-              value={form.watch('role')} 
+            <Select
+              value={form.watch('role')}
               onValueChange={(value) => form.setValue('role', value as 'admin' | 'member' | 'guest')}
               disabled={!canManageTeam || isSubmitting}
             >
@@ -285,7 +285,7 @@ const TeamSettings: React.FC = () => {
           </form>
         </CardContent>
       </Card>
-      
+
       {/* Team Members List */}
       <Card>
         <CardHeader>
@@ -308,13 +308,13 @@ const TeamSettings: React.FC = () => {
                     <p className="text-sm text-muted-foreground">{member.email}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
                     <div className="flex items-center space-x-2">
                       <Badge variant={member.role === 'admin' ? 'default' : 'outline'}>
-                        {member.role === 'admin' ? 'Admin' : 
-                         member.role === 'owner' ? 'Owner' : 'Member'}
+                        {member.role === 'admin' ? 'Admin' :
+                          member.role === 'owner' ? 'Owner' : 'Member'}
                       </Badge>
                       {member.status === 'invited' && (
                         <Badge variant="outline" className="border-amber-500 text-amber-500">
@@ -326,7 +326,7 @@ const TeamSettings: React.FC = () => {
                       Last active: {member.lastActive}
                     </p>
                   </div>
-                  
+
                   {canManageTeam && member.id.toString() !== user?.id && (
                     <div className="flex items-center space-x-1">
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleRoleUpdate(member.id, 'admin')}>
@@ -346,7 +346,7 @@ const TeamSettings: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Role Permissions */}
       <Card>
         <CardHeader>
@@ -373,7 +373,7 @@ const TeamSettings: React.FC = () => {
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">{role.description}</p>
-                
+
                 <div className="grid grid-cols-2 md: grid-cols-4 gap-2 mt-3">
                   {[
                     { permission: 'View content', owner: true, admin: true, member: true, guest: true },

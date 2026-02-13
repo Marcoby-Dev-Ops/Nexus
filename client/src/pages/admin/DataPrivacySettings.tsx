@@ -1,12 +1,88 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Switch } from '@/shared/components/ui/Switch';
 import { Label } from '@/shared/components/ui/Label';
 import { Separator } from '@/shared/components/ui/Separator';
-import { Download, Trash2, Eye, Shield } from 'lucide-react';
+import { Download, Trash2, Eye, Shield, Loader2 } from 'lucide-react';
+import { useUserPreferences } from '@/shared/hooks/useUserPreferences';
+import { useToast } from '@/shared/components/ui/use-toast';
+import { logger } from '@/shared/utils/logger';
+
+interface PrivacySettingsState {
+  collectAnalytics: boolean;
+  marketingCommunications: boolean;
+  thirdPartySharing: boolean;
+}
+
+const DEFAULT_PRIVACY_SETTINGS: PrivacySettingsState = {
+  collectAnalytics: true,
+  marketingCommunications: true,
+  thirdPartySharing: true,
+};
 
 const DataPrivacySettings: React.FC = () => {
+  const { preferences, updatePreferences, loading } = useUserPreferences();
+  const { toast } = useToast();
+  const [settings, setSettings] = useState<PrivacySettingsState>(DEFAULT_PRIVACY_SETTINGS);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load settings from preferences
+  useEffect(() => {
+    if (preferences?.preferences?.privacy_settings) {
+      setSettings({
+        ...DEFAULT_PRIVACY_SETTINGS,
+        ...preferences.preferences.privacy_settings,
+      });
+    }
+  }, [preferences]);
+
+  const handleToggle = async (key: keyof PrivacySettingsState, value: boolean) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+
+    setIsSaving(true);
+    try {
+      const result = await updatePreferences({
+        preferences: {
+          ...(preferences?.preferences || {}),
+          privacy_settings: newSettings,
+        },
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update privacy settings');
+      }
+    } catch (error) {
+      logger.error('Failed to update privacy settings', { error, key, value });
+      toast({
+        title: 'Error',
+        description: 'Failed to update privacy settings. Please try again.',
+        variant: 'destructive',
+      });
+      // Revert local state on error
+      setSettings(settings);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleExportData = () => {
+    toast({
+      title: 'Data Export Started',
+      description: 'Your data is being prepared for export. You will receive an email once it is ready.',
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading settings...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -29,7 +105,7 @@ const DataPrivacySettings: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleExportData}>
               <Download className="mr-2 h-4 w-4" />
               Export All Data
             </Button>
@@ -55,11 +131,16 @@ const DataPrivacySettings: React.FC = () => {
                   Allow us to collect anonymous usage data to improve the service
                 </p>
               </div>
-              <Switch id="analytics" defaultChecked />
+              <Switch
+                id="analytics"
+                checked={settings.collectAnalytics}
+                onCheckedChange={(val) => handleToggle('collectAnalytics', val)}
+                disabled={isSaving}
+              />
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="marketing">Marketing Communications</Label>
@@ -67,11 +148,16 @@ const DataPrivacySettings: React.FC = () => {
                   Receive updates about new features and improvements
                 </p>
               </div>
-              <Switch id="marketing" defaultChecked />
+              <Switch
+                id="marketing"
+                checked={settings.marketingCommunications}
+                onCheckedChange={(val) => handleToggle('marketingCommunications', val)}
+                disabled={isSaving}
+              />
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="third-party">Third-party Integrations</Label>
@@ -79,7 +165,12 @@ const DataPrivacySettings: React.FC = () => {
                   Allow data sharing with connected services
                 </p>
               </div>
-              <Switch id="third-party" defaultChecked />
+              <Switch
+                id="third-party"
+                checked={settings.thirdPartySharing}
+                onCheckedChange={(val) => handleToggle('thirdPartySharing', val)}
+                disabled={isSaving}
+              />
             </div>
           </CardContent>
         </Card>
@@ -110,4 +201,5 @@ const DataPrivacySettings: React.FC = () => {
   );
 };
 
-export default DataPrivacySettings; 
+export default DataPrivacySettings;
+

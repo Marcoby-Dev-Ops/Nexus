@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { 
-  Card, CardContent, CardDescription, CardHeader, CardTitle 
+import React, { useState, useEffect } from 'react';
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -56,7 +56,7 @@ interface Invoice {
 const BillingSettings: React.FC = () => {
   const { user } = useAuth();
   const { plan } = useSubscription();
-  
+
   // Use BillingService directly
   const billingService = useService('billing');
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
@@ -73,7 +73,7 @@ const BillingSettings: React.FC = () => {
   useEffect(() => {
     const fetchBillingData = async () => {
       if (!user?.id) return;
-      
+
       const filters = {
         user_id: user.id,
         company_id: (user as any)?.company?.id
@@ -86,9 +86,9 @@ const BillingSettings: React.FC = () => {
         if (subscriptionsResult.success && subscriptionsResult.data) {
           setSubscriptions(subscriptionsResult.data);
         }
-              } catch (error) {
-          logger.error('Failed to fetch subscriptions:', error);
-        } finally {
+      } catch (error) {
+        logger.error('Failed to fetch subscriptions:', error);
+      } finally {
         setIsLoadingSubscriptions(false);
       }
 
@@ -99,9 +99,9 @@ const BillingSettings: React.FC = () => {
         if (paymentMethodsResult.success && paymentMethodsResult.data) {
           setPaymentMethods(paymentMethodsResult.data);
         }
-              } catch (error) {
-          logger.error('Failed to fetch payment methods:', error);
-        } finally {
+      } catch (error) {
+        logger.error('Failed to fetch payment methods:', error);
+      } finally {
         setIsLoadingPaymentMethods(false);
       }
 
@@ -112,21 +112,21 @@ const BillingSettings: React.FC = () => {
         if (invoicesResult.success && invoicesResult.data) {
           setInvoices(invoicesResult.data);
         }
-              } catch (error) {
-          logger.error('Failed to fetch invoices:', error);
-        } finally {
+      } catch (error) {
+        logger.error('Failed to fetch invoices:', error);
+      } finally {
         setIsLoadingInvoices(false);
       }
     };
 
     fetchBillingData();
   }, [user?.id, user?.company?.id, billingService]);
-  
+
   const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
   const [showUsageDetails, setShowUsageDetails] = useState(false);
 
   // Get current subscription
-  const currentSubscription = subscriptions?.find((sub: any) => 
+  const currentSubscription = subscriptions?.find((sub: any) =>
     sub.status === 'active' || sub.status === 'trialing'
   );
 
@@ -180,7 +180,7 @@ const BillingSettings: React.FC = () => {
         plan_id: newPlan,
         status: 'active'
       });
-      
+
       if (result.success) {
         toast.success(`Successfully upgraded to ${newPlan} plan`);
         // Refresh billing data
@@ -229,7 +229,7 @@ const BillingSettings: React.FC = () => {
         exp_year: paymentData.expiryYear,
         is_default: paymentData.isDefault || false
       });
-      
+
       if (result.success) {
         toast.success('Payment method added successfully');
         setShowAddPaymentMethod(false);
@@ -372,14 +372,14 @@ const BillingSettings: React.FC = () => {
                   </div>
 
                   <div className="flex space-x-2">
-                    <Button 
+                    <Button
                       onClick={() => handleUpgradePlan('pro')}
                       disabled={billingInfo.plan === 'pro' || billingInfo.plan === 'enterprise' || isUpdatingSubscription}
                     >
                       <Sparkles className="h-4 w-4 mr-2" />
                       Upgrade to Pro
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={handleCancelSubscription}
                       disabled={billingInfo.plan === 'free' || isUpdatingSubscription}
@@ -419,7 +419,7 @@ const BillingSettings: React.FC = () => {
                         {billingInfo.usage.aiRequests.toLocaleString()} / {billingInfo.usage.aiRequestsLimit.toLocaleString()}
                       </p>
                       <div className="w-32 bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className={`h-2 rounded-full ${getUsageColor(getUsagePercentage(billingInfo.usage.aiRequests, billingInfo.usage.aiRequestsLimit))}`}
                           style={{ width: `${getUsagePercentage(billingInfo.usage.aiRequests, billingInfo.usage.aiRequestsLimit)}%` }}
                         />
@@ -437,7 +437,7 @@ const BillingSettings: React.FC = () => {
                         {billingInfo.usage.storageUsed}GB / {billingInfo.usage.storageLimit}GB
                       </p>
                       <div className="w-32 bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className={`h-2 rounded-full ${getUsageColor(getUsagePercentage(billingInfo.usage.storageUsed, billingInfo.usage.storageLimit))}`}
                           style={{ width: `${getUsagePercentage(billingInfo.usage.storageUsed, billingInfo.usage.storageLimit)}%` }}
                         />
@@ -455,7 +455,7 @@ const BillingSettings: React.FC = () => {
                         {billingInfo.usage.integrations} / {billingInfo.usage.integrationsLimit}
                       </p>
                       <div className="w-32 bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className={`h-2 rounded-full ${getUsageColor(getUsagePercentage(billingInfo.usage.integrations, billingInfo.usage.integrationsLimit))}`}
                           style={{ width: `${getUsagePercentage(billingInfo.usage.integrations, billingInfo.usage.integrationsLimit)}%` }}
                         />
@@ -515,7 +515,7 @@ const BillingSettings: React.FC = () => {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         {method.isDefault && (
                           <Badge variant="secondary">Default</Badge>
@@ -523,8 +523,8 @@ const BillingSettings: React.FC = () => {
                         <Button variant="outline" size="sm">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleRemovePaymentMethod(method.id)}
                         >
@@ -569,7 +569,7 @@ const BillingSettings: React.FC = () => {
                           {new Date(invoice.date).toLocaleDateString()}
                         </p>
                       </div>
-                      
+
                       <div className="flex items-center gap-3">
                         <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
                           {invoice.status}
@@ -609,7 +609,7 @@ const BillingSettings: React.FC = () => {
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2 mt-1">
-                      <div 
+                      <div
                         className="bg-primary h-2 rounded-full transition-all"
                         style={{ width: `${getUsagePercentage(billingInfo?.usage.aiRequests || 0, billingInfo?.usage.aiRequestsLimit || 1)}%` }}
                       />
@@ -626,7 +626,7 @@ const BillingSettings: React.FC = () => {
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2 mt-1">
-                      <div 
+                      <div
                         className="bg-primary h-2 rounded-full transition-all"
                         style={{ width: `${getUsagePercentage(billingInfo?.usage.storageUsed || 0, billingInfo?.usage.storageLimit || 1)}%` }}
                       />
@@ -643,7 +643,7 @@ const BillingSettings: React.FC = () => {
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2 mt-1">
-                      <div 
+                      <div
                         className="bg-primary h-2 rounded-full transition-all"
                         style={{ width: `${getUsagePercentage(billingInfo?.usage.integrations || 0, billingInfo?.usage.integrationsLimit || 1)}%` }}
                       />
@@ -667,13 +667,13 @@ const BillingSettings: React.FC = () => {
                   <XCircle className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="card-number">Card Number</Label>
                   <Input id="card-number" placeholder="1234 5678 9012 3456" />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="expiry">Expiry Date</Label>
@@ -684,13 +684,13 @@ const BillingSettings: React.FC = () => {
                     <Input id="cvc" placeholder="123" />
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="name">Cardholder Name</Label>
                   <Input id="name" placeholder="John Doe" />
                 </div>
               </div>
-              
+
               <div className="flex justify-end gap-2 mt-6">
                 <Button variant="outline" onClick={() => setShowAddPaymentMethod(false)}>
                   Cancel
