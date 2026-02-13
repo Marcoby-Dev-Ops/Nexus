@@ -14,6 +14,7 @@ const {
   shouldSwitchPrompt
 } = require('./promptManager');
 const { getAgentConfig } = require('../config/agentCatalog');
+const { ALL_TOOLS } = require('../config/agentTools');
 
 // Initialize conversation history using local database
 let conversationHistoryEnabled = true;
@@ -142,6 +143,18 @@ Your communication style is ${agent.style}. You should:
 - Explain your reasoning when making recommendations
 
 IMPORTANT: You are helping business owners and entrepreneurs who may not have formal business education. Make your advice approachable and easy to understand.`;
+
+  // Add tool/capability awareness so the agent knows what it can do
+  if (ALL_TOOLS && ALL_TOOLS.length > 0) {
+    const toolList = ALL_TOOLS.map(t => `- ${t.name}: ${t.description}`).join('\n');
+    systemPrompt += `
+
+AVAILABLE CAPABILITIES:
+You have access to the following tools and can use them to take action on behalf of the user:
+${toolList}
+
+IMPORTANT: You CAN take action. When a user asks you to do something (clone a repo, run a command, search the web, create a file, etc.), use your available tools to do it. Do NOT tell the user you lack access or cannot perform actions — you are an agentic assistant with real execution capabilities. If a specific action is truly outside your tools, explain what alternative approach you can take instead.`;
+  }
 
   // Add business health context if available
   if (businessHealth && Object.keys(businessHealth).length > 0) {

@@ -15,11 +15,13 @@
  */
 
 const TOOLS_OPENCLAW_NATIVE = [
-    { id: 'web_search', name: 'Web Search', description: 'Query the live internet for facts and research', provider: 'openclaw' },
-    { id: 'advanced_scrape', name: 'Advanced Scrape', description: 'Deeply extract data from specific URLs', provider: 'openclaw' },
-    { id: 'summarize_strategy', name: 'Summarize Strategy', description: 'Synthesize complex information into high-level strategy', provider: 'openclaw' },
-    { id: 'create_skill', name: 'Create Skill', description: 'Generate and test new automated capabilities', provider: 'openclaw' },
-    { id: 'implement_action', name: 'Implement Action', description: 'Execute specific system commands or code', provider: 'openclaw' },
+    { id: 'web_search', name: 'Web Search', description: 'Query the live internet for facts, research, and up-to-date information', provider: 'openclaw' },
+    { id: 'advanced_scrape', name: 'Advanced Scrape', description: 'Deeply extract and parse data from specific URLs and web pages', provider: 'openclaw' },
+    { id: 'summarize_strategy', name: 'Summarize Strategy', description: 'Synthesize complex information into high-level strategy and actionable plans', provider: 'openclaw' },
+    { id: 'create_skill', name: 'Create Skill', description: 'Generate, write, and test new automated capabilities and scripts', provider: 'openclaw' },
+    { id: 'implement_action', name: 'Implement Action', description: 'Execute shell commands, run code, manage files and directories, use git (clone, commit, push), install packages, and perform system operations', provider: 'openclaw' },
+    { id: 'file_operations', name: 'File Operations', description: 'Read, write, create, edit, and delete files and directories in the workspace', provider: 'openclaw' },
+    { id: 'code_execution', name: 'Code Execution', description: 'Run scripts and code in multiple languages (Python, Node.js, bash, etc.) with full output capture', provider: 'openclaw' },
     { id: 'list_skills', name: 'List Skills', description: 'Browse the current library of automated skills', provider: 'openclaw' },
     { id: 'search_skills', name: 'Search Skills', description: 'Find specific skills for a task', provider: 'openclaw' },
     { id: 'install_skill', name: 'Install Skill', description: 'Add new skills from external registries (ClawHub)', provider: 'openclaw' }
