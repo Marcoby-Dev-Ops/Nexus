@@ -2,7 +2,8 @@ import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
 import { z } from 'zod';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/database';
+import { selectData, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
+
 // Base Integration Schema
 export const IntegrationSchema = z.object({
   id: z.string(),
@@ -66,23 +67,27 @@ export abstract class IntegrationBaseService extends BaseService implements Crud
    * Get a single integration by ID
    */
   async get(id: string): Promise<ServiceResponse<Integration>> {
-    return this.executeDbOperation(async () => {
-      const { data, error } = await this.supabase
-        .from('integrations')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) throw error;
-      return { data: IntegrationSchema.parse(data), error: null };
-    }, `get integration ${id}`);
+    try {
+      this.logger.info(`Getting integration ${id}`);
+      const { data, error, success } = await selectOne<Integration>('integrations', { id });
+
+      if (!success) {
+        return this.handleError(error || 'Integration not found', `Failed to get integration ${id}`);
+      }
+
+      const validated = IntegrationSchema.parse(data);
+      return this.createResponse(validated);
+    } catch (error) {
+      return this.handleError(error, `Failed to get integration ${id}`);
+    }
   }
 
   /**
    * Create a new integration
    */
   async create(data: Partial<Integration>): Promise<ServiceResponse<Integration>> {
-    return this.executeDbOperation(async () => {
+    try {
+      this.logger.info(`Creating ${this.integrationType} integration`);
       const integrationData = {
         ...data,
         type: this.integrationType,
@@ -92,84 +97,87 @@ export abstract class IntegrationBaseService extends BaseService implements Crud
         updatedAt: new Date().toISOString(),
       };
 
-      const { data: result, error } = await this.supabase
-        .from('integrations')
-        .insert(integrationData)
-        .select()
-        .single();
+      const { data: created, error, success } = await insertOne<Integration>('integrations', integrationData);
 
-      if (error) throw error;
-      return { data: IntegrationSchema.parse(result), error: null };
-    }, `create ${this.integrationType} integration`);
+      if (!success) {
+        return this.handleError(error || 'Failed to create integration', `Failed to create ${this.integrationType} integration`);
+      }
+
+      const validatedData = IntegrationSchema.parse(created);
+      return this.createResponse(validatedData);
+    } catch (error) {
+      return this.handleError(error, `Failed to create ${this.integrationType} integration`);
+    }
   }
 
   /**
    * Update an existing integration
    */
   async update(id: string, data: Partial<Integration>): Promise<ServiceResponse<Integration>> {
-    return this.executeDbOperation(async () => {
+    try {
+      this.logger.info(`Updating integration ${id}`);
       const updateData = {
         ...data,
         updatedAt: new Date().toISOString(),
       };
 
-      const { data: result, error } = await this.supabase
-        .from('integrations')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data: updated, error, success } = await updateOne<Integration>('integrations', { id }, updateData);
 
-      if (error) throw error;
-      return { data: IntegrationSchema.parse(result), error: null };
-    }, `update integration ${id}`);
+      if (!success) {
+        return this.handleError(error || 'Failed to update integration', `Failed to update integration ${id}`);
+      }
+
+      const validatedData = IntegrationSchema.parse(updated);
+      return this.createResponse(validatedData);
+    } catch (error) {
+      return this.handleError(error, `Failed to update integration ${id}`);
+    }
   }
 
   /**
    * Delete an integration
    */
   async delete(id: string): Promise<ServiceResponse<boolean>> {
-    return this.executeDbOperation(async () => {
-      const { error } = await this.supabase
-        .from('integrations')
-        .delete()
-        .eq('id', id);
+    try {
+      this.logger.info(`Deleting integration ${id}`);
+      const { error, success } = await deleteOne('integrations', { id });
 
-      if (error) throw error;
-      return { data: true, error: null };
-    }, `delete integration ${id}`);
+      if (!success) {
+        return this.handleError(error || 'Failed to delete integration', `Failed to delete integration ${id}`);
+      }
+
+      return this.createResponse(true);
+    } catch (error) {
+      return this.handleError(error, `Failed to delete integration ${id}`);
+    }
   }
 
   /**
    * List integrations with optional filters
    */
   async list(filters?: Record<string, any>): Promise<ServiceResponse<Integration[]>> {
-    return this.executeDbOperation(async () => {
-      let query = this.supabase
-        .from('integrations')
-        .select('*')
-        .eq('type', this.integrationType)
-        .order('createdAt', { ascending: false });
+    try {
+      this.logger.info(`Listing ${this.integrationType} integrations`);
+      const filterParams: Record<string, any> = {
+        type: this.integrationType,
+        ...filters
+      };
 
-      // Apply additional filters
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            if (Array.isArray(value)) {
-              query = query.in(key, value);
-            } else {
-              query = query.eq(key, value);
-            }
-          }
-        });
+      const { data, error, success } = await selectData<Integration>({
+        table: 'integrations',
+        filters: filterParams,
+        orderBy: [{ column: 'createdAt', ascending: false }]
+      });
+
+      if (!success) {
+        return this.handleError(error || 'Failed to list integrations', `Failed to list ${this.integrationType} integrations`);
       }
 
-      const { data, error } = await query;
-
-      if (error) throw error;
       const validatedData = data?.map(item => IntegrationSchema.parse(item)) || [];
-      return { data: validatedData, error: null };
-    }, `list ${this.integrationType} integrations`);
+      return this.createResponse(validatedData);
+    } catch (error) {
+      return this.handleError(error, `Failed to list ${this.integrationType} integrations`);
+    }
   }
 
   /**
@@ -224,53 +232,53 @@ export abstract class IntegrationBaseService extends BaseService implements Crud
     errorCount: number;
     lastError: string | null;
   }>> {
-    return this.executeDbOperation(async () => {
-      const { data: integration, error } = await this.supabase
-        .from('integrations')
-        .select('status, lastSync, dataCount, errorCount')
-        .eq('id', integrationId)
-        .single();
+    try {
+      this.logger.info(`Getting status for integration ${integrationId}`);
+      const { data: integration, error, success } = await selectOne<any>('integrations', { id: integrationId });
 
-      if (error) throw error;
+      if (!success || !integration) {
+        return this.handleError(error || 'Integration not found', `Failed to get status for integration ${integrationId}`);
+      }
 
-      return {
-        data: {
-          status: integration.status,
-          lastSync: integration.lastSync,
-          dataCount: integration.dataCount || 0,
-          errorCount: integration.errorCount || 0,
-          lastError: await this.getLastError(integrationId),
-        },
-        error: null
-      };
-    }, `get status for integration ${integrationId}`);
+      return this.createResponse({
+        status: integration.status,
+        lastSync: integration.lastSync,
+        dataCount: integration.dataCount || 0,
+        errorCount: integration.errorCount || 0,
+        lastError: await this.getLastError(integrationId),
+      });
+    } catch (error) {
+      return this.handleError(error, `Failed to get status for integration ${integrationId}`);
+    }
   }
 
   /**
    * Update integration status
    */
   protected async updateStatus(
-    integrationId: string, 
-    status: Integration['status'], 
+    integrationId: string,
+    status: Integration['status'],
     metadata?: Partial<Integration>
   ): Promise<ServiceResponse<Integration>> {
-    return this.executeDbOperation(async () => {
+    try {
+      this.logger.info(`Updating status for integration ${integrationId}`);
       const updateData = {
         status,
         updatedAt: new Date().toISOString(),
         ...metadata
       };
 
-      const { data: result, error } = await this.supabase
-        .from('integrations')
-        .update(updateData)
-        .eq('id', integrationId)
-        .select()
-        .single();
+      const { data: updated, error, success } = await updateOne<Integration>('integrations', { id: integrationId }, updateData);
 
-      if (error) throw error;
-      return { data: IntegrationSchema.parse(result), error: null };
-    }, `update status for integration ${integrationId}`);
+      if (!success) {
+        return this.handleError(error || 'Failed to update status', `Failed to update status for integration ${integrationId}`);
+      }
+
+      const validatedData = IntegrationSchema.parse(updated);
+      return this.createResponse(validatedData);
+    } catch (error) {
+      return this.handleError(error, `Failed to update status for integration ${integrationId}`);
+    }
   }
 
   /**
@@ -278,19 +286,18 @@ export abstract class IntegrationBaseService extends BaseService implements Crud
    */
   private async getLastError(integrationId: string): Promise<string | null> {
     try {
-      const { data, error } = await this.supabase
-        .from('integration_errors')
-        .select('error_message')
-        .eq('integration_id', integrationId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      const { data, error, success } = await selectData<any>({
+        table: 'integration_errors',
+        filters: { integration_id: integrationId },
+        orderBy: [{ column: 'created_at', ascending: false }],
+        limit: 1
+      });
 
-      if (error || !data) {
+      if (!success || !data || data.length === 0) {
         return null;
       }
 
-      return data.error_message;
+      return data[0].error_message;
     } catch (error) {
       this.logger.warn('Failed to get last error for integration:', error);
       return null;
@@ -301,16 +308,18 @@ export abstract class IntegrationBaseService extends BaseService implements Crud
    * Log integration error
    */
   protected async logError(integrationId: string, error: string): Promise<void> {
-    await this.executeDbOperation(async () => {
-      const { error: updateError } = await this.supabase
-        .from('integrations')
-        .update({
-          errorCount: this.supabase.raw('error_count + 1'),
-          updatedAt: new Date().toISOString(),
-        })
-        .eq('id', integrationId);
+    try {
+      // Get current error count first since we don't have atomic increment in the simple API client
+      const { data: integration } = await selectOne<any>('integrations', { id: integrationId });
+      const currentErrorCount = integration?.errorCount || 0;
 
-      if (updateError) throw updateError;
-    }, `log error for integration ${integrationId}`);
+      await updateOne('integrations', { id: integrationId }, {
+        errorCount: currentErrorCount + 1,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      this.logger.error(`Failed to log error for integration ${integrationId}:`, error);
+    }
   }
-} 
+}
+

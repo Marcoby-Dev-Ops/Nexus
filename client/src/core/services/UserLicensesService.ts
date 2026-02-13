@@ -57,10 +57,10 @@ export class UserLicensesService extends BaseService {
     try {
       this.logger.info('Getting user license', { id });
 
-      const { data, error } = await selectOne(this.config.tableName, { id });
+      const { data, error, success } = await selectOne<UserLicense>(this.config.tableName, { id });
 
-      if (error) {
-        return this.handleError(error, 'Failed to get user license');
+      if (!success) {
+        return this.handleError(error || 'License not found', 'Failed to get user license');
       }
 
       const validated = this.config.schema.parse(data);
@@ -78,14 +78,14 @@ export class UserLicensesService extends BaseService {
       this.logger.info('Creating user license', { user_id: data.user_id, license_type: data.license_type });
 
       const validated = this.config.createSchema.parse(data);
-      
-      const { data: created, error } = await insertOne(this.config.tableName, {
+
+      const { data: created, error, success } = await insertOne<UserLicense>(this.config.tableName, {
         ...validated,
         issued_at: new Date().toISOString(),
       });
 
-      if (error) {
-        return this.handleError(error, 'Failed to create user license');
+      if (!success) {
+        return this.handleError(error || 'Failed to create license', 'Failed to create user license');
       }
 
       const validatedCreated = this.config.schema.parse(created);
@@ -102,10 +102,10 @@ export class UserLicensesService extends BaseService {
     try {
       this.logger.info('Updating user license', { id });
 
-      const { data: updated, error } = await updateOne(this.config.tableName, id, data);
+      const { data: updated, error, success } = await updateOne<UserLicense>(this.config.tableName, { id }, data);
 
-      if (error) {
-        return this.handleError(error, 'Failed to update user license');
+      if (!success) {
+        return this.handleError(error || 'Failed to update license', 'Failed to update user license');
       }
 
       const validated = this.config.schema.parse(updated);
@@ -122,10 +122,10 @@ export class UserLicensesService extends BaseService {
     try {
       this.logger.info('Deleting user license', { id });
 
-      const { error } = await deleteOne(this.config.tableName, id);
+      const { error, success } = await deleteOne(this.config.tableName, { id });
 
-      if (error) {
-        return this.handleError(error, 'Failed to delete user license');
+      if (!success) {
+        return this.handleError(error || 'Failed to delete license', 'Failed to delete user license');
       }
 
       return this.createResponse(true);
@@ -150,10 +150,16 @@ export class UserLicensesService extends BaseService {
       if (filters?.user_id) filterParams.user_id = filters.user_id;
       if (filters?.license_type) filterParams.license_type = filters.license_type;
 
-      const { data, error } = await selectData(this.config.tableName, '*', filterParams);
+      const { data, error, success } = await selectData<UserLicense>({
+        table: this.config.tableName,
+        filters: filterParams,
+        orderBy: [{ column: 'issued_at', ascending: false }],
+        limit: filters?.limit || this.config.defaultLimit,
+        offset: filters?.offset
+      });
 
-      if (error) {
-        return this.handleError(error, 'Failed to list user licenses');
+      if (!success) {
+        return this.handleError(error || 'Failed to list licenses', 'Failed to list user licenses');
       }
 
       const validated = z.array(this.config.schema).parse(data);
@@ -170,24 +176,22 @@ export class UserLicensesService extends BaseService {
     try {
       this.logger.info('Getting current license', { user_id });
 
-      const { data, error } = await this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .eq('user_id', user_id)
-        .is('expires_at', null)
-        .order('issued_at.desc')
-        .limit(1)
-        .single();
+      const { data, error, success } = await selectData<UserLicense>({
+        table: this.config.tableName,
+        filters: { user_id, expires_at: null },
+        orderBy: [{ column: 'issued_at', ascending: false }],
+        limit: 1
+      });
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No rows returned
-          return this.createResponse(null);
-        }
-        return this.handleError(error, 'Failed to get current license');
+      if (!success) {
+        return this.handleError(error || 'Failed to get current license', 'Failed to get current license');
       }
 
-      const validated = this.config.schema.parse(data);
+      if (!data || data.length === 0) {
+        return this.createResponse(null);
+      }
+
+      const validated = this.config.schema.parse(data[0]);
       return this.createResponse(validated);
     } catch (error) {
       return this.handleError(error, 'Failed to get current license');
@@ -210,18 +214,17 @@ export class UserLicensesService extends BaseService {
     try {
       this.logger.info('Checking active license', { user_id });
 
-      const { data, error } = await this.supabase
-        .from(this.config.tableName)
-        .select('id')
-        .eq('user_id', user_id)
-        .is('expires_at', null)
-        .limit(1);
+      const { data, error, success } = await selectData<UserLicense>({
+        table: this.config.tableName,
+        filters: { user_id, expires_at: null },
+        limit: 1
+      });
 
-      if (error) {
-        return this.handleError(error, 'Failed to check active license');
+      if (!success) {
+        return this.handleError(error || 'Failed to check active license', 'Failed to check active license');
       }
 
-      return this.createResponse(data.length > 0);
+      return this.createResponse(!!data && data.length > 0);
     } catch (error) {
       return this.handleError(error, 'Failed to check active license');
     }
@@ -234,24 +237,22 @@ export class UserLicensesService extends BaseService {
     try {
       this.logger.info('Getting license by type', { user_id, license_type });
 
-      const { data, error } = await this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .eq('user_id', user_id)
-        .eq('license_type', license_type)
-        .order('issued_at.desc')
-        .limit(1)
-        .single();
+      const { data, error, success } = await selectData<UserLicense>({
+        table: this.config.tableName,
+        filters: { user_id, license_type },
+        orderBy: [{ column: 'issued_at', ascending: false }],
+        limit: 1
+      });
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No rows returned
-          return this.createResponse(null);
-        }
-        return this.handleError(error, 'Failed to get license by type');
+      if (!success) {
+        return this.handleError(error || 'Failed to get license by type', 'Failed to get license by type');
       }
 
-      const validated = this.config.schema.parse(data);
+      if (!data || data.length === 0) {
+        return this.createResponse(null);
+      }
+
+      const validated = this.config.schema.parse(data[0]);
       return this.createResponse(validated);
     } catch (error) {
       return this.handleError(error, 'Failed to get license by type');

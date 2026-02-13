@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BaseService, type ServiceResponse } from './BaseService';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 // ============================================================================
@@ -56,14 +56,10 @@ export class ChatUsageTrackingService extends BaseService {
     try {
       this.logger.info('Getting chat usage record', { id });
 
-      const { data, error } = await this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error, success } = await selectOne<ChatUsageTracking>(this.config.tableName, { id });
 
-      if (error) {
-        return this.handleError(error, 'Failed to get chat usage record');
+      if (!success) {
+        return this.handleError(error || 'Record not found', 'Failed to get chat usage record');
       }
 
       const validated = this.config.schema.parse(data);
@@ -81,15 +77,11 @@ export class ChatUsageTrackingService extends BaseService {
       this.logger.info('Creating chat usage record', { user_id: data.user_id, date: data.date });
 
       const validated = this.config.createSchema.parse(data);
-      
-      const { data: created, error } = await this.supabase
-        .from(this.config.tableName)
-        .insert(validated)
-        .select()
-        .single();
 
-      if (error) {
-        return this.handleError(error, 'Failed to create chat usage record');
+      const { data: created, error, success } = await insertOne<ChatUsageTracking>(this.config.tableName, validated);
+
+      if (!success) {
+        return this.handleError(error || 'Failed to create record', 'Failed to create chat usage record');
       }
 
       const validatedCreated = this.config.schema.parse(created);
@@ -106,15 +98,10 @@ export class ChatUsageTrackingService extends BaseService {
     try {
       this.logger.info('Updating chat usage record', { id });
 
-      const { data: updated, error } = await this.supabase
-        .from(this.config.tableName)
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data: updated, error, success } = await updateOne<ChatUsageTracking>(this.config.tableName, { id }, data);
 
-      if (error) {
-        return this.handleError(error, 'Failed to update chat usage record');
+      if (!success) {
+        return this.handleError(error || 'Failed to update record', 'Failed to update chat usage record');
       }
 
       const validated = this.config.schema.parse(updated);
@@ -131,13 +118,10 @@ export class ChatUsageTrackingService extends BaseService {
     try {
       this.logger.info('Deleting chat usage record', { id });
 
-      const { error } = await this.supabase
-        .from(this.config.tableName)
-        .delete()
-        .eq('id', id);
+      const { error, success } = await deleteOne(this.config.tableName, { id });
 
-      if (error) {
-        return this.handleError(error, 'Failed to delete chat usage record');
+      if (!success) {
+        return this.handleError(error || 'Failed to delete record', 'Failed to delete chat usage record');
       }
 
       return this.createResponse(true);
@@ -160,42 +144,26 @@ export class ChatUsageTrackingService extends BaseService {
     try {
       this.logger.info('Listing chat usage records', { filters });
 
-      let query = this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .order('date', { ascending: false });
+      const queryFilters: Record<string, any> = {};
+      if (filters?.user_id) queryFilters.user_id = filters.user_id;
+      if (filters?.org_id) queryFilters.org_id = filters.org_id;
 
-      // Apply filters
-      if (filters?.user_id) {
-        query = query.eq('user_id', filters.user_id);
-      }
+      // Note: Simple api-client doesn't have complex GTE/LTE yet in filters object
+      // but we can pass them as params if the backend supports it.
+      // For now, following current api-client capabilities which mostly handle equality.
+      if (filters?.date_from) queryFilters.date_from = filters.date_from;
+      if (filters?.date_to) queryFilters.date_to = filters.date_to;
 
-      if (filters?.org_id) {
-        query = query.eq('org_id', filters.org_id);
-      }
+      const { data, error, success } = await selectData<ChatUsageTracking>({
+        table: this.config.tableName,
+        filters: queryFilters,
+        orderBy: [{ column: 'date', ascending: false }],
+        limit: filters?.limit || this.config.defaultLimit,
+        offset: filters?.offset
+      });
 
-      if (filters?.date_from) {
-        query = query.gte('date', filters.date_from);
-      }
-
-      if (filters?.date_to) {
-        query = query.lte('date', filters.date_to);
-      }
-
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
-      } else {
-        query = query.limit(this.config.defaultLimit);
-      }
-
-      if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || this.config.defaultLimit) - 1);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        return this.handleError(error, 'Failed to list chat usage records');
+      if (!success) {
+        return this.handleError(error || 'Failed to list records', 'Failed to list chat usage records');
       }
 
       const validated = z.array(this.config.schema).parse(data);
@@ -235,24 +203,22 @@ export class ChatUsageTrackingService extends BaseService {
     try {
       this.logger.info('Getting total usage', { user_id, org_id });
 
-      let query = this.supabase
-        .from(this.config.tableName)
-        .select('usage_count')
-        .eq('user_id', user_id);
-
+      const filters: Record<string, any> = { user_id };
       if (org_id) {
-        query = query.eq('org_id', org_id);
-      } else {
-        query = query.is('org_id', null);
+        filters.org_id = org_id;
       }
 
-      const { data, error } = await query;
+      const { data, error, success } = await selectData<ChatUsageTracking>({
+        table: this.config.tableName,
+        columns: 'usage_count',
+        filters
+      });
 
-      if (error) {
-        return this.handleError(error, 'Failed to get total usage');
+      if (!success) {
+        return this.handleError(error || 'Failed to fetch usage', 'Failed to get total usage');
       }
 
-      const totalUsage = data.reduce((sum, record) => sum + (record.usage_count || 0), 0);
+      const totalUsage = (data || []).reduce((sum: number, record: ChatUsageTracking) => sum + (record.usage_count || 0), 0);
       return this.createResponse(totalUsage);
     } catch (error) {
       return this.handleError(error, 'Failed to get total usage');
@@ -267,37 +233,23 @@ export class ChatUsageTrackingService extends BaseService {
       this.logger.info('Incrementing usage', { user_id, date, org_id });
 
       // First, try to get existing record
-      let query = this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .eq('user_id', user_id)
-        .eq('date', date);
-
+      const filters: Record<string, any> = { user_id, date };
       if (org_id) {
-        query = query.eq('org_id', org_id);
-      } else {
-        query = query.is('org_id', null);
+        filters.org_id = org_id;
       }
 
-      const { data: existing, error: selectError } = await query.single();
+      const { data: existing, success } = await selectOne<ChatUsageTracking>(this.config.tableName, filters);
 
-      if (selectError && selectError.code !== 'PGRST116') {
-        return this.handleError(selectError, 'Failed to check existing usage record');
-      }
-
-      if (existing) {
+      if (success && existing) {
         // Update existing record
-        const { data: updated, error: updateError } = await this.supabase
-          .from(this.config.tableName)
-          .update({
-            usage_count: (existing.usage_count || 0) + 1,
-          })
-          .eq('id', existing.id)
-          .select()
-          .single();
+        const { data: updated, error: updateError, success: updateSuccess } = await updateOne<ChatUsageTracking>(
+          this.config.tableName,
+          { id: existing.id },
+          { usage_count: (existing.usage_count || 0) + 1 }
+        );
 
-        if (updateError) {
-          return this.handleError(updateError, 'Failed to update usage record');
+        if (!updateSuccess) {
+          return this.handleError(updateError || 'Failed to update', 'Failed to update usage record');
         }
 
         const validated = this.config.schema.parse(updated);

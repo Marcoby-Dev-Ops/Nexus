@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BaseService, type ServiceResponse } from './BaseService';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 // ============================================================================
@@ -60,14 +60,10 @@ export class PersonalThoughtsService extends BaseService {
     try {
       this.logger.info('Getting personal thought', { id });
 
-      const { data, error } = await this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error, success } = await selectOne<PersonalThought>(this.config.tableName, { id });
 
-      if (error) {
-        return this.handleError(error, 'Failed to get personal thought');
+      if (!success) {
+        return this.handleError(error || 'Thought not found', 'Failed to get personal thought');
       }
 
       const validated = this.config.schema.parse(data);
@@ -85,19 +81,15 @@ export class PersonalThoughtsService extends BaseService {
       this.logger.info('Creating personal thought', { userid: data.userid });
 
       const validated = this.config.createSchema.parse(data);
-      
-      const { data: created, error } = await this.supabase
-        .from(this.config.tableName)
-        .insert({
-          ...validated,
-          createdat: new Date().toISOString(),
-          updatedat: new Date().toISOString(),
-        })
-        .select()
-        .single();
 
-      if (error) {
-        return this.handleError(error, 'Failed to create personal thought');
+      const { data: created, error, success } = await insertOne<PersonalThought>(this.config.tableName, {
+        ...validated,
+        createdat: new Date().toISOString(),
+        updatedat: new Date().toISOString(),
+      });
+
+      if (!success) {
+        return this.handleError(error || 'Failed to create thought', 'Failed to create personal thought');
       }
 
       const validatedCreated = this.config.schema.parse(created);
@@ -114,18 +106,17 @@ export class PersonalThoughtsService extends BaseService {
     try {
       this.logger.info('Updating personal thought', { id });
 
-      const { data: updated, error } = await this.supabase
-        .from(this.config.tableName)
-        .update({
+      const { data: updated, error, success } = await updateOne<PersonalThought>(
+        this.config.tableName,
+        { id },
+        {
           ...data,
           updatedat: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .select()
-        .single();
+        }
+      );
 
-      if (error) {
-        return this.handleError(error, 'Failed to update personal thought');
+      if (!success) {
+        return this.handleError(error || 'Failed to update thought', 'Failed to update personal thought');
       }
 
       const validated = this.config.schema.parse(updated);
@@ -142,13 +133,10 @@ export class PersonalThoughtsService extends BaseService {
     try {
       this.logger.info('Deleting personal thought', { id });
 
-      const { error } = await this.supabase
-        .from(this.config.tableName)
-        .delete()
-        .eq('id', id);
+      const { error, success } = await deleteOne(this.config.tableName, { id });
 
-      if (error) {
-        return this.handleError(error, 'Failed to delete personal thought');
+      if (!success) {
+        return this.handleError(error || 'Failed to delete thought', 'Failed to delete personal thought');
       }
 
       return this.createResponse(true);
@@ -170,38 +158,21 @@ export class PersonalThoughtsService extends BaseService {
     try {
       this.logger.info('Listing personal thoughts', { filters });
 
-      let query = this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .order('createdat', { ascending: false });
+      const queryFilters: Record<string, any> = {};
+      if (filters?.userid) queryFilters.userid = filters.userid;
+      if (filters?.company_id) queryFilters.company_id = filters.company_id;
+      if (filters?.tags && filters.tags.length > 0) queryFilters.tags = filters.tags;
 
-      // Apply filters
-      if (filters?.userid) {
-        query = query.eq('userid', filters.userid);
-      }
+      const { data, error, success } = await selectData<PersonalThought>({
+        table: this.config.tableName,
+        filters: queryFilters,
+        orderBy: [{ column: 'createdat', ascending: false }],
+        limit: filters?.limit || this.config.defaultLimit,
+        offset: filters?.offset
+      });
 
-      if (filters?.company_id) {
-        query = query.eq('company_id', filters.company_id);
-      }
-
-      if (filters?.tags && filters.tags.length > 0) {
-        query = query.overlaps('tags', filters.tags);
-      }
-
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
-      } else {
-        query = query.limit(this.config.defaultLimit);
-      }
-
-      if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || this.config.defaultLimit) - 1);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        return this.handleError(error, 'Failed to list personal thoughts');
+      if (!success) {
+        return this.handleError(error || 'Failed to list thoughts', 'Failed to list personal thoughts');
       }
 
       const validated = z.array(this.config.schema).parse(data);
@@ -222,31 +193,19 @@ export class PersonalThoughtsService extends BaseService {
     try {
       this.logger.info('Searching personal thoughts', { query, filters });
 
-      let dbQuery = this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .ilike('content', `%${query}%`)
-        .order('createdat', { ascending: false });
+      const queryFilters: Record<string, any> = {};
+      if (filters?.userid) queryFilters.userid = filters.userid;
+      if (filters?.company_id) queryFilters.company_id = filters.company_id;
 
-      // Apply filters
-      if (filters?.userid) {
-        dbQuery = dbQuery.eq('userid', filters.userid);
-      }
+      const { data, error, success } = await selectData<PersonalThought>({
+        table: this.config.tableName,
+        filters: { ...queryFilters, search: query },
+        orderBy: [{ column: 'createdat', ascending: false }],
+        limit: filters?.limit || this.config.defaultLimit
+      });
 
-      if (filters?.company_id) {
-        dbQuery = dbQuery.eq('company_id', filters.company_id);
-      }
-
-      if (filters?.limit) {
-        dbQuery = dbQuery.limit(filters.limit);
-      } else {
-        dbQuery = dbQuery.limit(this.config.defaultLimit);
-      }
-
-      const { data, error } = await dbQuery;
-
-      if (error) {
-        return this.handleError(error, 'Failed to search personal thoughts');
+      if (!success) {
+        return this.handleError(error || 'Failed to search thoughts', 'Failed to search personal thoughts');
       }
 
       const validated = z.array(this.config.schema).parse(data);

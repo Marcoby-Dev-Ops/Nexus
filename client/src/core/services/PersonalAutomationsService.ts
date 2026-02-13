@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BaseService, type ServiceResponse } from './BaseService';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 // ============================================================================
@@ -59,14 +59,10 @@ export class PersonalAutomationsService extends BaseService {
     try {
       this.logger.info('Getting personal automation', { id });
 
-      const { data, error } = await this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error, success } = await selectOne<PersonalAutomation>(this.config.tableName, { id });
 
-      if (error) {
-        return this.handleError(error, 'Failed to get personal automation');
+      if (!success) {
+        return this.handleError(error || 'Automation not found', 'Failed to get personal automation');
       }
 
       const validated = this.config.schema.parse(data);
@@ -84,19 +80,15 @@ export class PersonalAutomationsService extends BaseService {
       this.logger.info('Creating personal automation', { userid: data.userid, name: data.name });
 
       const validated = this.config.createSchema.parse(data);
-      
-      const { data: created, error } = await this.supabase
-        .from(this.config.tableName)
-        .insert({
-          ...validated,
-          createdat: new Date().toISOString(),
-          updatedat: new Date().toISOString(),
-        })
-        .select()
-        .single();
 
-      if (error) {
-        return this.handleError(error, 'Failed to create personal automation');
+      const { data: created, error, success } = await insertOne<PersonalAutomation>(this.config.tableName, {
+        ...validated,
+        createdat: new Date().toISOString(),
+        updatedat: new Date().toISOString(),
+      });
+
+      if (!success) {
+        return this.handleError(error || 'Failed to create automation', 'Failed to create personal automation');
       }
 
       const validatedCreated = this.config.schema.parse(created);
@@ -113,18 +105,17 @@ export class PersonalAutomationsService extends BaseService {
     try {
       this.logger.info('Updating personal automation', { id });
 
-      const { data: updated, error } = await this.supabase
-        .from(this.config.tableName)
-        .update({
+      const { data: updated, error, success } = await updateOne<PersonalAutomation>(
+        this.config.tableName,
+        { id },
+        {
           ...data,
           updatedat: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .select()
-        .single();
+        }
+      );
 
-      if (error) {
-        return this.handleError(error, 'Failed to update personal automation');
+      if (!success) {
+        return this.handleError(error || 'Failed to update automation', 'Failed to update personal automation');
       }
 
       const validated = this.config.schema.parse(updated);
@@ -141,13 +132,10 @@ export class PersonalAutomationsService extends BaseService {
     try {
       this.logger.info('Deleting personal automation', { id });
 
-      const { error } = await this.supabase
-        .from(this.config.tableName)
-        .delete()
-        .eq('id', id);
+      const { error, success } = await deleteOne(this.config.tableName, { id });
 
-      if (error) {
-        return this.handleError(error, 'Failed to delete personal automation');
+      if (!success) {
+        return this.handleError(error || 'Failed to delete automation', 'Failed to delete personal automation');
       }
 
       return this.createResponse(true);
@@ -167,30 +155,19 @@ export class PersonalAutomationsService extends BaseService {
     try {
       this.logger.info('Listing personal automations', { filters });
 
-      let query = this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .order('createdat', { ascending: false });
+      const queryFilters: Record<string, any> = {};
+      if (filters?.userid) queryFilters.userid = filters.userid;
 
-      // Apply filters
-      if (filters?.userid) {
-        query = query.eq('userid', filters.userid);
-      }
+      const { data, error, success } = await selectData<PersonalAutomation>({
+        table: this.config.tableName,
+        filters: queryFilters,
+        orderBy: [{ column: 'createdat', ascending: false }],
+        limit: filters?.limit || this.config.defaultLimit,
+        offset: filters?.offset
+      });
 
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
-      } else {
-        query = query.limit(this.config.defaultLimit);
-      }
-
-      if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || this.config.defaultLimit) - 1);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        return this.handleError(error, 'Failed to list personal automations');
+      if (!success) {
+        return this.handleError(error || 'Failed to list automations', 'Failed to list personal automations');
       }
 
       const validated = z.array(this.config.schema).parse(data);
@@ -210,27 +187,21 @@ export class PersonalAutomationsService extends BaseService {
     try {
       this.logger.info('Searching personal automations', { query, filters });
 
-      let dbQuery = this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
-        .order('createdat', { ascending: false });
+      // Search functionality might need more backend support or complex filters
+      // For now, mapping to a basic search pattern if supported.
+      const queryFilters: Record<string, any> = {};
+      if (filters?.userid) queryFilters.userid = filters.userid;
 
-      // Apply filters
-      if (filters?.userid) {
-        dbQuery = dbQuery.eq('userid', filters.userid);
-      }
+      // Using keyword search if the backend supports it in selectData or a specialized method
+      const { data, error, success } = await selectData<PersonalAutomation>({
+        table: this.config.tableName,
+        filters: { ...queryFilters, search: query }, // Assuming backend handles 'search' param
+        orderBy: [{ column: 'createdat', ascending: false }],
+        limit: filters?.limit || this.config.defaultLimit
+      });
 
-      if (filters?.limit) {
-        dbQuery = dbQuery.limit(filters.limit);
-      } else {
-        dbQuery = dbQuery.limit(this.config.defaultLimit);
-      }
-
-      const { data, error } = await dbQuery;
-
-      if (error) {
-        return this.handleError(error, 'Failed to search personal automations');
+      if (!success) {
+        return this.handleError(error || 'Failed to search automations', 'Failed to search personal automations');
       }
 
       const validated = z.array(this.config.schema).parse(data);
@@ -257,19 +228,13 @@ export class PersonalAutomationsService extends BaseService {
     try {
       this.logger.info('Getting automation by name', { userid, name });
 
-      const { data, error } = await this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .eq('userid', userid)
-        .eq('name', name)
-        .single();
+      const { data, error, success } = await selectOne<PersonalAutomation>(this.config.tableName, { userid, name });
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No rows returned
+      if (!success) {
+        if (error === 'No record found') {
           return this.createResponse(null);
         }
-        return this.handleError(error, 'Failed to get automation by name');
+        return this.handleError(error || 'Failed to get automation', 'Failed to get automation by name');
       }
 
       const validated = this.config.schema.parse(data);

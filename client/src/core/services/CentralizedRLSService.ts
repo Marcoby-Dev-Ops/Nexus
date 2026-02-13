@@ -1,5 +1,5 @@
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
-import { BaseService } from './BaseService';
+import { callRPC } from '@/lib/api-client';
+import { BaseService, type ServiceResponse } from './BaseService';
 
 export interface PolicyTemplate {
   name: string;
@@ -83,13 +83,13 @@ export class CentralizedRLSService extends BaseService {
    */
   async getTablePolicyInfo(): Promise<ServiceResponse<TablePolicyInfo[]>> {
     try {
-      const { data, error } = await this.supabase.rpc('get_table_policy_info');
-      
-      if (error) {
-        throw error;
+      const { data, error, success } = await callRPC<TablePolicyInfo[]>('get_table_policy_info', {});
+
+      if (!success) {
+        throw new Error(error || 'Failed to execute RPC');
       }
 
-      return this.createResponse(data);
+      return this.createResponse(data || []);
     } catch (error) {
       return this.handleError(error, 'Failed to get table policy info');
     }
@@ -100,13 +100,13 @@ export class CentralizedRLSService extends BaseService {
    */
   async getPolicySummary(): Promise<ServiceResponse<PolicySummary[]>> {
     try {
-      const { data, error } = await this.supabase.rpc('list_policy_summary');
-      
-      if (error) {
-        throw error;
+      const { data, error, success } = await callRPC<PolicySummary[]>('list_policy_summary', {});
+
+      if (!success) {
+        throw new Error(error || 'Failed to execute RPC');
       }
 
-      return this.createResponse(data);
+      return this.createResponse(data || []);
     } catch (error) {
       return this.handleError(error, 'Failed to get policy summary');
     }
@@ -117,13 +117,13 @@ export class CentralizedRLSService extends BaseService {
    */
   async validatePolicyCoverage(): Promise<ServiceResponse<PolicyCoverage[]>> {
     try {
-      const { data, error } = await this.supabase.rpc('validate_policy_coverage');
-      
-      if (error) {
-        throw error;
+      const { data, error, success } = await callRPC<PolicyCoverage[]>('validate_policy_coverage', {});
+
+      if (!success) {
+        throw new Error(error || 'Failed to execute RPC');
       }
 
-      return this.createResponse(data);
+      return this.createResponse(data || []);
     } catch (error) {
       return this.handleError(error, 'Failed to validate policy coverage');
     }
@@ -134,14 +134,14 @@ export class CentralizedRLSService extends BaseService {
    */
   async applyUserLevelPolicies(tableName: string): Promise<ServiceResponse<void>> {
     try {
-      const { error } = await supabase.rpc('apply_user_level_policies', { table_name: tableName });
-      
-      if (error) {
-        throw error;
+      const { error, success } = await callRPC('apply_user_level_policies', { table_name: tableName });
+
+      if (!success) {
+        throw new Error(error || 'Failed to execute RPC');
       }
 
       this.logger.info(`Applied user-level policies to table: ${tableName}`);
-      return this.createResponse();
+      return this.createResponse(undefined);
     } catch (error) {
       return this.handleError(error, `Failed to apply user-level policies to ${tableName}`);
     }
@@ -152,14 +152,14 @@ export class CentralizedRLSService extends BaseService {
    */
   async applyCompanyLevelPolicies(tableName: string): Promise<ServiceResponse<void>> {
     try {
-      const { error } = await supabase.rpc('apply_company_level_policies', { table_name: tableName });
-      
-      if (error) {
-        throw error;
+      const { error, success } = await callRPC('apply_company_level_policies', { table_name: tableName });
+
+      if (!success) {
+        throw new Error(error || 'Failed to execute RPC');
       }
 
       this.logger.info(`Applied company-level policies to table: ${tableName}`);
-      return this.createResponse();
+      return this.createResponse(undefined);
     } catch (error) {
       return this.handleError(error, `Failed to apply company-level policies to ${tableName}`);
     }
@@ -170,14 +170,14 @@ export class CentralizedRLSService extends BaseService {
    */
   async applyHybridPolicies(tableName: string): Promise<ServiceResponse<void>> {
     try {
-      const { error } = await supabase.rpc('apply_hybrid_policies', { table_name: tableName });
-      
-      if (error) {
-        throw error;
+      const { error, success } = await callRPC('apply_hybrid_policies', { table_name: tableName });
+
+      if (!success) {
+        throw new Error(error || 'Failed to execute RPC');
       }
 
       this.logger.info(`Applied hybrid policies to table: ${tableName}`);
-      return this.createResponse();
+      return this.createResponse(undefined);
     } catch (error) {
       return this.handleError(error, `Failed to apply hybrid policies to ${tableName}`);
     }
@@ -188,14 +188,14 @@ export class CentralizedRLSService extends BaseService {
    */
   async applyReadOnlyPolicies(tableName: string): Promise<ServiceResponse<void>> {
     try {
-      const { error } = await supabase.rpc('apply_readonly_policies', { table_name: tableName });
-      
-      if (error) {
-        throw error;
+      const { error, success } = await callRPC('apply_readonly_policies', { table_name: tableName });
+
+      if (!success) {
+        throw new Error(error || 'Failed to execute RPC');
       }
 
       this.logger.info(`Applied read-only policies to table: ${tableName}`);
-      return this.createResponse();
+      return this.createResponse(undefined);
     } catch (error) {
       return this.handleError(error, `Failed to apply read-only policies to ${tableName}`);
     }
@@ -206,17 +206,17 @@ export class CentralizedRLSService extends BaseService {
    */
   async applyPoliciesToNewTable(tableName: string, policyType: string): Promise<ServiceResponse<void>> {
     try {
-      const { error } = await supabase.rpc('apply_policies_to_new_table', { 
-        table_name: tableName, 
-        policy_type: policyType 
+      const { error, success } = await callRPC('apply_policies_to_new_table', {
+        table_name: tableName,
+        policy_type: policyType
       });
-      
-      if (error) {
-        throw error;
+
+      if (!success) {
+        throw new Error(error || 'Failed to execute RPC');
       }
 
       this.logger.info(`Applied ${policyType} policies to new table: ${tableName}`);
-      return this.createResponse();
+      return this.createResponse(undefined);
     } catch (error) {
       return this.handleError(error, `Failed to apply policies to new table ${tableName}`);
     }
@@ -228,14 +228,14 @@ export class CentralizedRLSService extends BaseService {
   async migrateToCentralizedSystem(): Promise<ServiceResponse<void>> {
     try {
       // Execute the migration script
-      const { error } = await supabase.rpc('migrate_to_centralized_rls');
-      
-      if (error) {
-        throw error;
+      const { error, success } = await callRPC('migrate_to_centralized_rls', {});
+
+      if (!success) {
+        throw new Error(error || 'Failed to execute RPC');
       }
 
       this.logger.info('Successfully migrated to centralized RLS system');
-      return this.createResponse();
+      return this.createResponse(undefined);
     } catch (error) {
       return this.handleError(error, 'Failed to migrate to centralized RLS system');
     }
@@ -251,9 +251,10 @@ export class CentralizedRLSService extends BaseService {
         throw new Error('Failed to validate policy coverage');
       }
 
-      const tablesNeedingAttention = coverageResult.data?.filter(
+      // Need to cast to TablePolicyInfo[] if the types don't match perfectly
+      const tablesNeedingAttention = (coverageResult.data as any[])?.filter(
         table => table.status === 'missing' || table.status === 'partial' || table.status === 'error'
-      ) || [];
+      ) as TablePolicyInfo[] || [];
 
       return this.createResponse(tablesNeedingAttention);
     } catch (error) {
@@ -286,7 +287,7 @@ export class CentralizedRLSService extends BaseService {
       const totalTables = tableInfo.data?.length || 0;
       const tablesWithRLS = tableInfo.data?.filter(t => t.rlsEnabled).length || 0;
       const totalPolicies = policySummary.data?.length || 0;
-      
+
       const completeCoverage = coverage.data?.filter(t => t.status === 'complete').length || 0;
       const partialCoverage = coverage.data?.filter(t => t.status === 'partial').length || 0;
       const missingCoverage = coverage.data?.filter(t => t.status === 'missing').length || 0;
@@ -351,7 +352,7 @@ export class CentralizedRLSService extends BaseService {
       }
 
       this.logger.info(`Fixed policies for table ${tableName} using ${policyType} policies`);
-      return this.createResponse();
+      return this.createResponse(undefined);
     } catch (error) {
       return this.handleError(error, `Failed to fix policies for table ${tableName}`);
     }
