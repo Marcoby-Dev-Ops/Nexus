@@ -320,24 +320,19 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                     )}>
                       <Bot className="h-5 w-5 text-white" />
                     </div>
-                    <div className="space-y-2 overflow-hidden w-full max-w-2xl">
+                      <div className="space-y-2 overflow-hidden w-full max-w-2xl">
                       <div className="min-h-[20px] p-4 rounded-xl bg-card/95 border border-border/70 shadow-sm text-sm">
                         <div className="flex items-center justify-between gap-3">
-                          <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-foreground/90">
-                            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                            Live Run
+                          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-blue-500 dark:text-blue-300 leading-relaxed">
+                            <Brain className="w-3 h-3" />
+                            <span>{statusLabel}</span>
                           </div>
                           <span className="text-xs font-medium text-muted-foreground">
                             {formatDuration(streamingElapsedSeconds)}
                           </span>
                         </div>
-
-                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-blue-500 dark:text-blue-300 leading-relaxed">
-                          <Brain className="w-3 h-3" />
-                          <span>{statusLabel}</span>
-                        </div>
                         {statusDetail && (
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground leading-relaxed">
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground leading-relaxed">
                             <Database className="w-3 h-3" />
                             <span>{statusDetail}</span>
                           </div>
