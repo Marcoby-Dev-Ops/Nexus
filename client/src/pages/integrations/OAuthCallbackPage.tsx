@@ -93,14 +93,14 @@ export const OAuthCallbackPage: React.FC = () => {
         return;
       }
 
-      // Complete OAuth flow
-      if (!(code && state && storedState && storedProvider && callbackUserId)) {
+      // Complete OAuth flow – need at least code + state from the URL
+      if (!(code && state)) {
         const payload: OAuthHandoffPayload = {
           type: 'nexus:oauth:completed',
           provider: storedProvider,
           status: 'failed',
           errorCode: 'INVALID_CALLBACK',
-          error: 'Invalid OAuth callback parameters',
+          error: 'Missing code or state in OAuth callback URL',
           conversationId: storedConversationId
         };
         setStatus('error');
@@ -109,7 +109,15 @@ export const OAuthCallbackPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`/api/oauth/${storedProvider}/callback`, {
+      // When sessionStorage has provider info (UI-initiated flow) use the
+      // provider-specific endpoint; otherwise fall back to the provider-agnostic
+      // endpoint which resolves provider from the server-side oauthStates map.
+      const hasSessionInfo = !!(storedState && storedProvider && callbackUserId);
+      const callbackUrl = hasSessionInfo
+        ? `/api/oauth/${storedProvider}/callback`
+        : '/api/oauth/callback';
+
+      const response = await fetch(callbackUrl, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -119,7 +127,7 @@ export const OAuthCallbackPage: React.FC = () => {
         body: JSON.stringify({
           code,
           state,
-          userId: callbackUserId,
+          ...(callbackUserId ? { userId: callbackUserId } : {}),
           redirectUri: `${window.location.origin}/integrations/oauth/callback`
         })
       });
@@ -141,12 +149,18 @@ export const OAuthCallbackPage: React.FC = () => {
         return;
       }
 
+      // Use server-returned provider when sessionStorage had nothing
+      const resolvedProvider = (result.provider || storedProvider || 'unknown') as OAuthProvider;
+      if (!storedProvider && resolvedProvider) {
+        setOauthState(prev => ({ ...prev, provider: resolvedProvider }));
+      }
+
       setStatus('success');
       setMessage(result.message || 'Integration connected successfully!');
 
       const payload: OAuthHandoffPayload = {
         type: 'nexus:oauth:completed',
-        provider: result.provider || storedProvider,
+        provider: resolvedProvider,
         status: 'connected',
         integrationId: result.integrationId || null,
         connectedAt: result.connectedAt || null,

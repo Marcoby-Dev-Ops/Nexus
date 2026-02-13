@@ -49,6 +49,8 @@ export interface ConnectorMetadata {
   features: string[];
   configSchema: any;
   webhookSupported: boolean;
+  category?: string;
+  isPopular?: boolean;
   rateLimits: {
     requestsPerSecond: number;
     burstSize: number;
@@ -343,130 +345,130 @@ export class ConnectorRegistry {
       },
     });
 
-                 // Register GitHub connector
-             this.registerConnector({
-               id: CONNECTOR_TYPES.GITHUB,
-               name: 'GitHub',
-               description: 'Development platform and version control system',
-               version: '1.0.0',
-               icon: '/icons/github.svg',
-               authType: 'oauth2',
-               scopes: [
-                 'repo',
-                 'user',
-                 'read:org',
-                 'write:org',
-                 'admin:org',
-               ],
-               features: [
-                 'repository_sync',
-                 'issue_sync',
-                 'pull_request_sync',
-                 'user_sync',
-                 'commit_sync',
-                 'webhook_support',
-               ],
-               configSchema: {
-                 syncRepositories: { type: 'boolean', default: true },
-                 syncIssues: { type: 'boolean', default: true },
-                 syncPullRequests: { type: 'boolean', default: true },
-                 syncUsers: { type: 'boolean', default: true },
-                 syncCommits: { type: 'boolean', default: false },
-                 repositoryLimit: { type: 'number', min: 1, max: 100, default: 50 },
-                 issueLimit: { type: 'number', min: 1, max: 100, default: 50 },
-                 includePrivate: { type: 'boolean', default: true },
-                 includeForks: { type: 'boolean', default: false },
-               },
-               webhookSupported: true,
-               rateLimits: {
-                 requestsPerSecond: 5,
-                 burstSize: 20,
-               },
-             });
+    // Register GitHub connector
+    this.registerConnector({
+      id: CONNECTOR_TYPES.GITHUB,
+      name: 'GitHub',
+      description: 'Development platform and version control system',
+      version: '1.0.0',
+      icon: '/icons/github.svg',
+      authType: 'oauth2',
+      scopes: [
+        'repo',
+        'user',
+        'read:org',
+        'write:org',
+        'admin:org',
+      ],
+      features: [
+        'repository_sync',
+        'issue_sync',
+        'pull_request_sync',
+        'user_sync',
+        'commit_sync',
+        'webhook_support',
+      ],
+      configSchema: {
+        syncRepositories: { type: 'boolean', default: true },
+        syncIssues: { type: 'boolean', default: true },
+        syncPullRequests: { type: 'boolean', default: true },
+        syncUsers: { type: 'boolean', default: true },
+        syncCommits: { type: 'boolean', default: false },
+        repositoryLimit: { type: 'number', min: 1, max: 100, default: 50 },
+        issueLimit: { type: 'number', min: 1, max: 100, default: 50 },
+        includePrivate: { type: 'boolean', default: true },
+        includeForks: { type: 'boolean', default: false },
+      },
+      webhookSupported: true,
+      rateLimits: {
+        requestsPerSecond: 5,
+        burstSize: 20,
+      },
+    });
 
-             // Register Shopify connector
-             this.registerConnector({
-               id: CONNECTOR_TYPES.SHOPIFY,
-               name: 'Shopify',
-               description: 'E-commerce platform for online stores and retail point-of-sale systems',
-               version: '1.0.0',
-               icon: '/icons/shopify.svg',
-               authType: 'oauth2',
-               scopes: [
-                 'read_products',
-                 'write_products',
-                 'read_orders',
-                 'write_orders',
-                 'read_customers',
-                 'write_customers',
-                 'read_inventory',
-                 'write_inventory',
-               ],
-               features: [
-                 'product_sync',
-                 'order_sync',
-                 'customer_sync',
-                 'inventory_sync',
-                 'webhook_support',
-               ],
-               configSchema: {
-                 syncProducts: { type: 'boolean', default: true },
-                 syncOrders: { type: 'boolean', default: true },
-                 syncCustomers: { type: 'boolean', default: true },
-                 syncInventory: { type: 'boolean', default: true },
-                 productLimit: { type: 'number', min: 1, max: 250, default: 50 },
-                 orderLimit: { type: 'number', min: 1, max: 250, default: 50 },
-                 customerLimit: { type: 'number', min: 1, max: 250, default: 50 },
-                 includeDraft: { type: 'boolean', default: false },
-               },
-               webhookSupported: true,
-               rateLimits: {
-                 requestsPerSecond: 2,
-                 burstSize: 40,
-               },
-             });
+    // Register Shopify connector
+    this.registerConnector({
+      id: CONNECTOR_TYPES.SHOPIFY,
+      name: 'Shopify',
+      description: 'E-commerce platform for online stores and retail point-of-sale systems',
+      version: '1.0.0',
+      icon: '/icons/shopify.svg',
+      authType: 'oauth2',
+      scopes: [
+        'read_products',
+        'write_products',
+        'read_orders',
+        'write_orders',
+        'read_customers',
+        'write_customers',
+        'read_inventory',
+        'write_inventory',
+      ],
+      features: [
+        'product_sync',
+        'order_sync',
+        'customer_sync',
+        'inventory_sync',
+        'webhook_support',
+      ],
+      configSchema: {
+        syncProducts: { type: 'boolean', default: true },
+        syncOrders: { type: 'boolean', default: true },
+        syncCustomers: { type: 'boolean', default: true },
+        syncInventory: { type: 'boolean', default: true },
+        productLimit: { type: 'number', min: 1, max: 250, default: 50 },
+        orderLimit: { type: 'number', min: 1, max: 250, default: 50 },
+        customerLimit: { type: 'number', min: 1, max: 250, default: 50 },
+        includeDraft: { type: 'boolean', default: false },
+      },
+      webhookSupported: true,
+      rateLimits: {
+        requestsPerSecond: 2,
+        burstSize: 40,
+      },
+    });
 
-             // Register Zoom connector
-             this.registerConnector({
-               id: CONNECTOR_TYPES.ZOOM,
-               name: 'Zoom',
-               description: 'Video conferencing and online meeting platform',
-               version: '1.0.0',
-               icon: '/icons/zoom.svg',
-               authType: 'oauth2',
-               scopes: [
-                 'meeting:read',
-                 'meeting:write',
-                 'webinar:read',
-                 'webinar:write',
-                 'user:read',
-                 'user:write',
-                 'recording:read',
-                 'recording:write',
-               ],
-               features: [
-                 'meeting_sync',
-                 'webinar_sync',
-                 'user_sync',
-                 'recording_sync',
-                 'webhook_support',
-               ],
-               configSchema: {
-                 syncUsers: { type: 'boolean', default: true },
-                 syncMeetings: { type: 'boolean', default: true },
-                 syncWebinars: { type: 'boolean', default: true },
-                 syncRecordings: { type: 'boolean', default: true },
-                 userLimit: { type: 'number', min: 1, max: 300, default: 50 },
-                 meetingLimit: { type: 'number', min: 1, max: 300, default: 50 },
-                 webinarLimit: { type: 'number', min: 1, max: 300, default: 50 },
-                 includeDeleted: { type: 'boolean', default: false },
-               },
-               webhookSupported: true,
-               rateLimits: {
-                 requestsPerSecond: 10,
-                 burstSize: 100,
-               },
-             });
+    // Register Zoom connector
+    this.registerConnector({
+      id: CONNECTOR_TYPES.ZOOM,
+      name: 'Zoom',
+      description: 'Video conferencing and online meeting platform',
+      version: '1.0.0',
+      icon: '/icons/zoom.svg',
+      authType: 'oauth2',
+      scopes: [
+        'meeting:read',
+        'meeting:write',
+        'webinar:read',
+        'webinar:write',
+        'user:read',
+        'user:write',
+        'recording:read',
+        'recording:write',
+      ],
+      features: [
+        'meeting_sync',
+        'webinar_sync',
+        'user_sync',
+        'recording_sync',
+        'webhook_support',
+      ],
+      configSchema: {
+        syncUsers: { type: 'boolean', default: true },
+        syncMeetings: { type: 'boolean', default: true },
+        syncWebinars: { type: 'boolean', default: true },
+        syncRecordings: { type: 'boolean', default: true },
+        userLimit: { type: 'number', min: 1, max: 300, default: 50 },
+        meetingLimit: { type: 'number', min: 1, max: 300, default: 50 },
+        webinarLimit: { type: 'number', min: 1, max: 300, default: 50 },
+        includeDeleted: { type: 'boolean', default: false },
+      },
+      webhookSupported: true,
+      rateLimits: {
+        requestsPerSecond: 10,
+        burstSize: 100,
+      },
+    });
 
     logger.info('Connector registry initialized', {
       connectorCount: this.connectors.size,
@@ -617,22 +619,22 @@ export function initializeConnectors(): void {
   const quickbooksConnector = new QuickBooksConnector();
   ConnectorFactory.register(quickbooksConnector);
 
-             // Register GitHub connector
-           const githubConnector = new GitHubConnector();
-           ConnectorFactory.register(githubConnector);
+  // Register GitHub connector
+  const githubConnector = new GitHubConnector();
+  ConnectorFactory.register(githubConnector);
 
-           // Register Shopify connector
-           const shopifyConnector = new ShopifyConnector();
-           ConnectorFactory.register(shopifyConnector);
+  // Register Shopify connector
+  const shopifyConnector = new ShopifyConnector();
+  ConnectorFactory.register(shopifyConnector);
 
-           // Register Zoom connector
-           const zoomConnector = new ZoomConnector();
-           ConnectorFactory.register(zoomConnector);
+  // Register Zoom connector
+  const zoomConnector = new ZoomConnector();
+  ConnectorFactory.register(zoomConnector);
 
   // TODO: Register other connectors as they are implemented
   // const salesforceConnector = new SalesforceConnector();
   // ConnectorFactory.register(salesforceConnector);
-  
+
   // const googleConnector = new GoogleConnector();
   // ConnectorFactory.register(googleConnector);
 

@@ -5,11 +5,11 @@ import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Input } from '@/shared/components/ui/Input';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
-import { 
+import {
   ArrowLeft,
-  Search, 
-  Building2, 
-  Mail, 
+  Search,
+  Building2,
+  Mail,
   Calendar,
   HardDrive,
   MessageSquare,
@@ -38,7 +38,7 @@ import { useAuth } from '@/hooks/index';
 import { adapterRegistry, type AdapterMetadata } from '@/core/adapters/adapterRegistry';
 import { IntegrationService } from '@/core/integrations';
 import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData as select, selectOne, insertOne, updateOne, callEdgeFunction } from '@/lib/api-client';
 import { database } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 import { HUBSPOT_REQUIRED_SCOPES } from '@/services/integrations/hubspot/constants';
@@ -79,10 +79,10 @@ const IntegrationMarketplacePage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
+
   // Initialize services
   // Using consolidated integration service
-  
+
   // State management
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -111,14 +111,14 @@ const IntegrationMarketplacePage: React.FC = () => {
     try {
       const integrations: MarketplaceIntegration[] = [];
       const seenIds = new Set<string>(); // Track seen integration IDs to prevent duplicates
-      
+
       // Get integrations from old adapter registry
       const adapters = adapterRegistry.getAll();
-      
+
       // Get integrations from new connector registry
       const integrationService = IntegrationService.getInstance();
       const connectors = integrationService.getAvailableConnectors();
-      
+
       // Helper function to create icon based on integration name
       const getIcon = (integrationName: string) => {
         switch (integrationName.toLowerCase()) {
@@ -318,7 +318,7 @@ const IntegrationMarketplacePage: React.FC = () => {
 
 
 
-    // Fetch connected integrations
+  // Fetch connected integrations
   const fetchConnectedIntegrations = useCallback(async () => {
     if (!user?.id) {
       setConnectedIntegrations([]);
@@ -333,7 +333,7 @@ const IntegrationMarketplacePage: React.FC = () => {
         setConnectedIntegrations([]);
         return;
       }
-      
+
       const { data, error } = await select(
         'user_integrations',
         'integration_name, status',
@@ -344,7 +344,7 @@ const IntegrationMarketplacePage: React.FC = () => {
         logger.error('Error fetching connected integrations:', error);
         setConnectedIntegrations([]);
       } else {
-        const connectedNames = (data || []).map(integration => 
+        const connectedNames = (data || []).map(integration =>
           integration.integration_name.toLowerCase()
         );
         setConnectedIntegrations(connectedNames);
@@ -374,7 +374,7 @@ const IntegrationMarketplacePage: React.FC = () => {
         }
         return false;
       });
-      
+
       return {
         ...integration,
         isConnected,
@@ -393,8 +393,8 @@ const IntegrationMarketplacePage: React.FC = () => {
   // Filter integrations based on search and category
   const filteredIntegrations = marketplaceIntegrationsWithStatus.filter(integration => {
     const matchesSearch = integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         integration.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         integration.provider.toLowerCase().includes(searchTerm.toLowerCase());
+      integration.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      integration.provider.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || integration.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -454,7 +454,7 @@ const IntegrationMarketplacePage: React.FC = () => {
 
         window.location.href = startData.authUrl;
       } catch (error) {
-        logger.error('Microsoft auth redirect failed', { 
+        logger.error('Microsoft auth redirect failed', {
           error: error instanceof Error ? error.message : error,
           errorStack: error instanceof Error ? error.stack : undefined,
           errorType: typeof error,
@@ -473,7 +473,7 @@ const IntegrationMarketplacePage: React.FC = () => {
       if (!configResponse.ok) {
         throw new Error('Failed to get Google configuration from server.');
       }
-      
+
       const config = await configResponse.json();
       const { clientId, redirectUri } = config;
       const oauth = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -494,12 +494,12 @@ const IntegrationMarketplacePage: React.FC = () => {
     if (integration.id === 'hubspot') {
       if (authInProgress) return;
       setAuthInProgress(true);
-      
+
       try {
         // Get current session
         const sessionResult = await authentikAuthService.getSession();
         const session = sessionResult.data;
-        
+
         if (!session) {
           throw new Error('No valid session found. Please log in again.');
         }
@@ -509,22 +509,22 @@ const IntegrationMarketplacePage: React.FC = () => {
         if (!configResponse.ok) {
           throw new Error('Failed to get HubSpot configuration from server.');
         }
-        
+
         const config = await configResponse.json();
         const { clientId, redirectUri } = config;
-        
+
         if (!clientId) {
           throw new Error('HubSpot credentials not configured.');
         }
-        
+
         // Create state parameter with user ID and timestamp for security
-        const hubspotState = btoa(JSON.stringify({ 
+        const hubspotState = btoa(JSON.stringify({
           timestamp: Date.now(),
           service: 'hubspot',
           userId: session.user.id,
           returnTo: window.location.href
         }));
-        
+
         // Create HubSpot OAuth URL
         const authUrl = new URL('https://app.hubspot.com/oauth/authorize');
         authUrl.search = new URLSearchParams({
@@ -534,7 +534,7 @@ const IntegrationMarketplacePage: React.FC = () => {
           state: hubspotState
         }).toString();
 
-        logger.info('Initiating HubSpot OAuth flow', { 
+        logger.info('Initiating HubSpot OAuth flow', {
           clientId: clientId ? '***' : 'missing',
           redirectUri,
           hasState: !!hubspotState
@@ -542,7 +542,7 @@ const IntegrationMarketplacePage: React.FC = () => {
 
         // Redirect to HubSpot OAuth
         window.location.href = authUrl.toString();
-        
+
       } catch (error) {
         logger.error('HubSpot OAuth initiation failed', { error });
         setAuthInProgress(false);
@@ -554,12 +554,12 @@ const IntegrationMarketplacePage: React.FC = () => {
     if (integration.id === 'google_analytics') {
       if (authInProgress) return;
       setAuthInProgress(true);
-      
+
       try {
         // Get current session
         const sessionResult = await authentikAuthService.getSession();
         const session = sessionResult.data;
-        
+
         if (!session) {
           throw new Error('No valid session found. Please log in again.');
         }
@@ -570,24 +570,24 @@ const IntegrationMarketplacePage: React.FC = () => {
         if (!configResponse.ok) {
           throw new Error('Failed to get Google Analytics configuration from server.');
         }
-        
+
         const config = await configResponse.json();
         const { clientId } = config;
-        
+
         if (!clientId) {
           throw new Error('Google client ID not configured.');
         }
 
         // Configure OAuth settings - redirect to frontend callback page
         const redirectUri = `${window.location.origin}/integrations/google-analytics/callback`;
-        
+
         // Create state parameter with user ID and timestamp for security
-        const googleState = btoa(JSON.stringify({ 
+        const googleState = btoa(JSON.stringify({
           timestamp: Date.now(),
           service: 'google_analytics',
           userId: session.user.id
         }));
-        
+
         // Create Google Analytics OAuth URL
         const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
         authUrl.search = new URLSearchParams({
@@ -600,7 +600,7 @@ const IntegrationMarketplacePage: React.FC = () => {
           state: googleState
         }).toString();
 
-        logger.info('Initiating Google Analytics OAuth flow', { 
+        logger.info('Initiating Google Analytics OAuth flow', {
           clientId: clientId ? '***' : 'missing',
           redirectUri,
           hasState: !!googleState
@@ -608,7 +608,7 @@ const IntegrationMarketplacePage: React.FC = () => {
 
         // Redirect to Google Analytics OAuth
         window.location.href = authUrl.toString();
-        
+
       } catch (error) {
         logger.error('Google Analytics OAuth initiation failed', { error });
         setAuthInProgress(false);
@@ -629,10 +629,10 @@ const IntegrationMarketplacePage: React.FC = () => {
 
     try {
       setLoading(true);
-      
+
       // For demo purposes, use mock credentials
       const mockCredentials = getMockCredentials(integration.id);
-      
+
       const { data: result, error } = await consolidatedIntegrationService.connectVendor(
         integration.id,
         mockCredentials,
@@ -674,82 +674,73 @@ const IntegrationMarketplacePage: React.FC = () => {
 
     try {
       setLoading(true);
-      
+
+      // Resolve the canonical user ID (same as connect/fetch flows)
+      const sessionResult = await authentikAuthService.getSession();
+      const session = sessionResult.data;
+      const canonicalUserId = resolveCanonicalUserId(user.id, session);
+      if (!canonicalUserId) {
+        throw new Error('Unable to resolve authenticated user identity.');
+      }
+      const accessToken = session?.session?.accessToken || session?.accessToken;
+
       logger.info(`Attempting to disconnect ${integration.name} (ID: ${integration.id})`);
-      
-      // Check what integrations exist for this user
-      logger.info(`Checking database for integration: ${integration.id} for user: ${user.id}`);
-      
-      // Check what's in the integrations table (master list)
-      const { data: allIntegrations, error: integrationsError } = await select('integrations', '*');
-      logger.info(`All available integrations:`, { allIntegrations, integrationsError });
-      
-      // Check what's in user_integrations table (now consolidated with OAuth data)
-      const { data: allUserIntegrations, error: allIntegrationsError } = await select('user_integrations', '*', { 
-        user_id: user.id 
-      });
-      
-      logger.info(`All user integrations:`, { allUserIntegrations, allIntegrationsError });
-      
-      // Search for the specific integration in user_integrations using integration_slug
-      const { data: integrationRecords, error: findError } = await select('user_integrations', '*', { 
-        user_id: user.id, 
-        integration_name: integration.id 
+
+      // Find the user_integrations record so we have its DB id for the server endpoint
+      const { data: allUserIntegrations } = await select('user_integrations', '*', {
+        user_id: canonicalUserId
       });
 
-      logger.info(`Integration search result:`, { integrationRecords, findError });
+      let userIntegration = (allUserIntegrations || []).find(record => {
+        const recordName = (record.integration_name || '').toLowerCase().replace(/\s+/g, '_');
+        const recordSlug = (record.integration_slug || '').toLowerCase().replace(/\s+/g, '_');
+        const targetAliases = getIntegrationAliasSet(integration.id);
+        return targetAliases.has(recordName) || targetAliases.has(recordSlug);
+      });
 
-      if (findError) {
-        throw new Error(`Failed to find integration: ${JSON.stringify(findError)}`);
+      if (!userIntegration) {
+        // Fallback: exact match on integration_name
+        const { data: fallbackRecords } = await select('user_integrations', '*', {
+          user_id: canonicalUserId,
+          integration_name: integration.id
+        });
+
+        if (!fallbackRecords || fallbackRecords.length === 0) {
+          throw new Error(`Integration ${integration.name} not found for user.`);
+        }
+        userIntegration = fallbackRecords[0];
       }
 
-      if (!integrationRecords || integrationRecords.length === 0) {
-        logger.info(`Integration ${integration.name} not found in user_integrations table`);
-        logger.info(`This integration was never properly connected.`);
-        throw new Error(`Integration ${integration.name} not found for user. Check the console for database contents.`);
+      // Use the server disconnect endpoint which cleans up both
+      // user_integrations and oauth_tokens, and records an audit event.
+      const integrationId = userIntegration.id;
+      const response = await fetch(`/api/oauth/disconnect/${integrationId}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+        },
+        body: JSON.stringify({
+          userId: canonicalUserId,
+          confirm: 'DISCONNECT'
+        })
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || body.details || `Server returned ${response.status}`);
       }
-
-      // Delete the integration using its ID
-      const integrationId = integrationRecords[0].id;
-      logger.info(`Attempting to delete integration with ID: ${integrationId}`);
-      
-      const { data: deleteData, error: deleteError } = await deleteOne('user_integrations', integrationId);
-
-      logger.info(`Delete result:`, { deleteData, deleteError });
-
-      if (deleteError) {
-        throw new Error(`Delete failed: ${JSON.stringify(deleteError)}`);
-      }
-
-      logger.info(`Successfully deleted integration:`, deleteData);
-
-      // OAuth tokens are now stored directly in user_integrations table
-      // No separate cleanup needed since we're deleting the entire integration record
-      logger.info(`OAuth tokens will be cleaned up automatically with the integration record`);
 
       // Refresh connected integrations
       await fetchConnectedIntegrations();
-      
+
       logger.info(`Successfully disconnected ${integration.name}`);
-      // Show success message
       alert(`Successfully disconnected ${integration.name}`);
-      
+
     } catch (error) {
-      // Enhanced error logging to capture more details
       const errorMessage = error instanceof Error ? error.message : String(error);
-      const errorStack = error instanceof Error ? error.stack : undefined;
-      const errorDetails = {
-        message: errorMessage,
-        stack: errorStack,
-        error: error,
-        integrationName: integration.name,
-        integrationId: integration.id,
-        userId: user?.id
-      };
-      
-      logger.error(`Failed to disconnect ${integration.name}:`, errorDetails);
-      console.error('Disconnect error details:', errorDetails);
-      
+      logger.error(`Failed to disconnect ${integration.name}:`, { error: errorMessage, integrationId: integration.id });
       alert(`Failed to disconnect ${integration.name}: ${errorMessage}`);
     } finally {
       setLoading(false);
@@ -771,9 +762,9 @@ const IntegrationMarketplacePage: React.FC = () => {
   const getActionButton = (integration: MarketplaceIntegration) => {
     if (integration.isConnected) {
       return (
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="w-full"
           onClick={() => handleIntegrationSelect(integration)}
         >
@@ -783,9 +774,9 @@ const IntegrationMarketplacePage: React.FC = () => {
       );
     }
     return (
-      <Button 
-        variant="default" 
-        size="sm" 
+      <Button
+        variant="default"
+        size="sm"
         className="w-full"
         disabled={authInProgress}
         onClick={() => handleIntegrationSelect(integration)}
@@ -845,7 +836,7 @@ const IntegrationMarketplacePage: React.FC = () => {
     if (!user?.id) {
       return;
     }
-    
+
     fetchConnectedIntegrations();
   }, [user?.id, fetchConnectedIntegrations]);
 
@@ -893,207 +884,207 @@ const IntegrationMarketplacePage: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/integrations')}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back to Integrations</span>
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Integration Marketplace</h1>
-                <p className="text-sm text-muted-foreground">
-                  Connect your business tools with our universal adapter system
-                </p>
+        {/* Header */}
+        <div className="border-b border-border bg-card">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/integrations')}
+                  className="flex items-center space-x-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back to Integrations</span>
+                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">Integration Marketplace</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Connect your business tools with our universal adapter system
+                  </p>
+                </div>
+              </div>
+
+              {/* View Mode Toggle */}
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-            
-            {/* View Mode Toggle */}
-            <div className="flex items-center space-x-2">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Search and Filters */}
-        <div className="mb-8 space-y-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search integrations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          {/* Category Filter */}
-          <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category}
-              </Button>
-            ))}
           </div>
         </div>
 
-        {/* Integration Grid */}
-        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-          {filteredIntegrations.map((integration) => (
-            <Card key={integration.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    {integration.icon}
-                    <div>
-                      <CardTitle className="text-lg">{integration.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{integration.provider}</p>
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Search and Filters */}
+          <div className="mb-8 space-y-4">
+            <div className="flex items-center space-x-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search integrations..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex items-center space-x-2 overflow-x-auto pb-2">
+              {categories.map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Integration Grid */}
+          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+            {filteredIntegrations.map((integration) => (
+              <Card key={integration.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      {integration.icon}
+                      <div>
+                        <CardTitle className="text-lg">{integration.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{integration.provider}</p>
+                      </div>
+                    </div>
+                    {getConnectionBadge(integration)}
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">{integration.description}</p>
+
+                  {/* Features */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Key Features:</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {integration.features.slice(0, 3).map((feature, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {feature}
+                        </Badge>
+                      ))}
+                      {integration.features.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{integration.features.length - 3} more
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  {getConnectionBadge(integration)}
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">{integration.description}</p>
-                
-                {/* Features */}
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Key Features:</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {integration.features.slice(0, 3).map((feature, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {feature}
-                      </Badge>
-                    ))}
-                    {integration.features.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{integration.features.length - 3} more
-                      </Badge>
+
+                  {/* Integration Details */}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center space-x-4">
+                      <span className={`px-2 py-1 rounded-full ${getDifficultyColor(integration.difficulty)}`}>
+                        {integration.difficulty}
+                      </span>
+                      <span>Setup: {integration.setupTime}</span>
+                    </div>
+                    {integration.isPopular && (
+                      <div className="flex items-center space-x-1">
+                        <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                        <span>Popular</span>
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* Integration Details */}
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center space-x-4">
-                    <span className={`px-2 py-1 rounded-full ${getDifficultyColor(integration.difficulty)}`}>
-                      {integration.difficulty}
-                    </span>
-                    <span>Setup: {integration.setupTime}</span>
+                  {/* Action Button */}
+                  <div className="pt-2">
+                    {getActionButton(integration)}
                   </div>
-                  {integration.isPopular && (
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                      <span>Popular</span>
-                    </div>
-                  )}
-                </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-                {/* Action Button */}
-                <div className="pt-2">
-                  {getActionButton(integration)}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {/* Empty State */}
+          {filteredIntegrations.length === 0 && (
+            <div className="text-center py-12">
+              <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No integrations found</h3>
+              <p className="text-muted-foreground">
+                Try adjusting your search terms or category filter.
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Empty State */}
-        {filteredIntegrations.length === 0 && (
-          <div className="text-center py-12">
-            <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">No integrations found</h3>
-            <p className="text-muted-foreground">
-              Try adjusting your search terms or category filter.
-            </p>
+        {/* Setup Modal */}
+        {showSetup && selectedIntegration && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center space-x-3 mb-4">
+                {selectedIntegration.icon}
+                <div>
+                  <h3 className="text-lg font-semibold">Connect {selectedIntegration.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Set up your {selectedIntegration.name} integration
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-medium mb-2">Integration Details</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Category:</span>
+                      <span>{selectedIntegration.category}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Difficulty:</span>
+                      <span>{selectedIntegration.difficulty}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Setup Time:</span>
+                      <span>{selectedIntegration.setupTime}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleSetupCancel}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => handleConnectIntegration(selectedIntegration)}
+                    disabled={loading || authInProgress}
+                    className="flex-1"
+                  >
+                    {loading ? 'Connecting...' : 'Connect'}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
-      </div>
-
-      {/* Setup Modal */}
-      {showSetup && selectedIntegration && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center space-x-3 mb-4">
-              {selectedIntegration.icon}
-              <div>
-                <h3 className="text-lg font-semibold">Connect {selectedIntegration.name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  Set up your {selectedIntegration.name} integration
-                </p>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-medium mb-2">Integration Details</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Category:</span>
-                    <span>{selectedIntegration.category}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Difficulty:</span>
-                    <span>{selectedIntegration.difficulty}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Setup Time:</span>
-                    <span>{selectedIntegration.setupTime}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={handleSetupCancel}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => handleConnectIntegration(selectedIntegration)}
-                  disabled={loading || authInProgress}
-                  className="flex-1"
-                >
-                  {loading ? 'Connecting...' : 'Connect'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       </div>
     </ErrorBoundary>
   );

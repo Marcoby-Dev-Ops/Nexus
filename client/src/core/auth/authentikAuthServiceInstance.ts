@@ -20,6 +20,7 @@ export interface AuthUser {
   lastName?: string;
   groups?: string[];
   attributes?: Record<string, any>;
+  instance_urls?: string[]; // Added for multi-instance support
 }
 
 export interface AuthSession {
@@ -539,6 +540,7 @@ class AuthentikAuthService extends BaseService {
           lastName: userData.family_name || undefined,
           groups: userData.groups || [],
           attributes: userData.attributes || {},
+          instance_urls: userData.attributes?.instance_urls || [],
         },
         session: {
           accessToken: tokenData.access_token,

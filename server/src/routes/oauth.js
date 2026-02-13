@@ -1043,7 +1043,7 @@ router.post('/refresh', async (req, res) => {
  * POST /:provider/callback
  * Handles OAuth callback, exchanges code for token, and syncs user profile
  */
-router.post('/:provider/callback', optionalAuth, async (req, res) => {
+async function oauthProviderCallbackHandler(req, res) {
   try {
     const correlationId = getCorrelationId(req);
     const provider = normalizeProvider(req.params.provider);
@@ -1363,7 +1363,52 @@ router.post('/:provider/callback', optionalAuth, async (req, res) => {
     logger.error('OAuth callback error', { error: error.message });
     res.status(500).json({ error: 'Internal server error', errorCode: 'INTERNAL_ERROR' });
   }
+}
+
+/**
+ * POST /callback
+ * Provider-agnostic OAuth callback handler.
+ *
+ * This exists because some OAuth flows are initiated outside the Integrations UI
+ * (e.g. via assistant/tooling) and therefore do not have browser sessionStorage
+ * populated with provider/userId. We resolve provider + user from the server-side
+ * oauthStates map using the `state` value.
+ */
+router.post('/callback', optionalAuth, async (req, res) => {
+  try {
+    const state = req.body?.state;
+    if (!state) {
+      return res.status(400).json({
+        success: false,
+        error: 'State parameter is required',
+        errorCode: 'STATE_REQUIRED',
+        status: 'failed',
+        correlationId: getCorrelationId(req),
+      });
+    }
+
+    const oauthState = oauthStates.get(state);
+    if (!oauthState || oauthState.expiresAt < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid or expired OAuth state',
+        errorCode: 'INVALID_STATE',
+        status: 'failed',
+        correlationId: getCorrelationId(req),
+      });
+    }
+
+    // Route to the provider-specific callback handler by injecting params.
+    req.params = req.params || {};
+    req.params.provider = oauthState.integrationSlug;
+    return oauthProviderCallbackHandler(req, res);
+  } catch (error) {
+    logger.error('OAuth generic callback error', { error: error?.message || String(error) });
+    return res.status(500).json({ error: 'Internal server error', errorCode: 'INTERNAL_ERROR' });
+  }
 });
+
+router.post('/:provider/callback', optionalAuth, oauthProviderCallbackHandler);
 
 
 

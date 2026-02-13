@@ -17,8 +17,15 @@ export default function AuthentikAuthCallback() {
   const [error, setError] = useState<string | null>(null);
   const [isNewUser, setIsNewUser] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
+  const [showSiloSelector, setShowSiloSelector] = useState(false);
+  const [availableSilos, setAvailableSilos] = useState<string[]>([]);
   const hasProcessed = useRef(false);
-  const { refreshAuth } = useAuthentikAuth();
+  const { refreshAuth, user } = useAuthentikAuth();
+  const handleSiloSelect = (siloUrl: string) => {
+    const normalizedUrl = siloUrl.startsWith('http') ? siloUrl : `https://${siloUrl}`;
+    logger.info('🔍 [MarcobyIAMCallback] User selected silo, redirecting...', { siloUrl: normalizedUrl });
+    window.location.href = normalizedUrl;
+  };
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -94,10 +101,20 @@ export default function AuthentikAuthCallback() {
         try {
           const attributes = result.data.user?.attributes;
           const userInstanceUrl = attributes?.instance_url || attributes?.nexus_instance_url;
+          const instanceUrls = result.data.user?.instance_urls || [];
 
+          // MULTI-INSTANCE HUB (Microsoft 365 style)
+          if (instanceUrls.length > 1) {
+            logger.info('🔍 [MarcobyIAMCallback] Multiple instances detected, showing Silo Hub', { count: instanceUrls.length });
+            setAvailableSilos(instanceUrls);
+            setShowSiloSelector(true);
+            setProcessing(false);
+            return;
+          }
+
+          // Single Instance Auto-Bounce
           if (userInstanceUrl) {
             const currentOrigin = window.location.origin;
-            // Ensure instanceUrl is a full URL or at least has a protocol
             const normalizedInstanceUrl = userInstanceUrl.startsWith('http') ? userInstanceUrl : `https://${userInstanceUrl}`;
 
             if (!normalizedInstanceUrl.includes(currentOrigin)) {
@@ -184,6 +201,58 @@ export default function AuthentikAuthCallback() {
           >
             Try Again
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show silo selector hub
+  if (showSiloSelector) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
+        <div className="max-w-2xl w-full">
+          <div className="text-center mb-10">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground mb-4">Workspace Hub</h1>
+            <p className="text-muted-foreground text-lg">Select the instance you would like to enter.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {availableSilos.map((silo, index) => (
+              <button
+                key={index}
+                onClick={() => handleSiloSelect(silo)}
+                className="group relative bg-card hover:bg-accent border border-border rounded-2xl p-8 text-left transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </div>
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground">
+                      {silo.split('.')[0].charAt(0).toUpperCase() + silo.split('.')[0].slice(1)}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">Client Workspace</p>
+                  </div>
+                </div>
+                <div className="text-sm font-mono text-muted-foreground group-hover:text-primary transition-colors">
+                  {silo}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              You are signed in as <span className="text-foreground font-semibold">{user?.email}</span>
+            </p>
+          </div>
         </div>
       </div>
     );
