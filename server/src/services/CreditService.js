@@ -41,7 +41,7 @@ class CreditService {
       const checkSql = `SELECT id FROM ${this.tables.subscriptions} WHERE user_id = $1`;
       const existing = await query(checkSql, [userId]);
 
-      if (existing.rows && existing.rows.length > 0) {
+      if (existing.data && existing.data.length > 0) {
         return { exists: true };
       }
 
@@ -86,7 +86,7 @@ class CreditService {
    */
   async getUserStatus(userId) {
     if (!userId) return null;
-    
+
     try {
       // Get Subscription and Plan details
       const subSql = `
@@ -96,12 +96,12 @@ class CreditService {
         WHERE s.user_id = $1
       `;
       const subRes = await query(subSql, [userId]);
-      const subscription = subRes.rows[0] || null;
+      const subscription = subRes.data[0] || null;
 
       // Get Credit Balance
       const creditSql = `SELECT balance_cents FROM ${this.tables.credits} WHERE user_id = $1`;
       const creditRes = await query(creditSql, [userId]);
-      const balance = creditRes.rows[0]?.balance_cents || 0;
+      const balance = creditRes.data?.[0]?.balance_cents || 0;
 
       return {
         subscription,
@@ -117,7 +117,7 @@ class CreditService {
   _canRunInference(subscription, balance) {
     // If enterprise (unlimited), always yes
     if (subscription?.monthly_credit_allowance === -1) return true;
-    
+
     // If balance is positive, yes
     if (balance > 0) return true;
 
@@ -154,38 +154,38 @@ class CreditService {
     // Check if unlimited first
     const status = await this.getUserStatus(userId);
     if (status?.subscription?.monthly_credit_allowance === -1) {
-        // Log transaction but don't deduct? Or log 0 deduction?
-        // Let's log it for audit but not change balance if we want "infinite balance" semantics,
-        // OR we just let the balance go negative?
-        // Better: Don't deduct from wallet for Enterprise, just log usage in standard usage table.
-        // But the user requested "credits".
-        // Let's assume even Enterprise consumes credits, but they get a monthly refill of a huge amount?
-        // No, -1 flag is safer.
-        return;
+      // Log transaction but don't deduct? Or log 0 deduction?
+      // Let's log it for audit but not change balance if we want "infinite balance" semantics,
+      // OR we just let the balance go negative?
+      // Better: Don't deduct from wallet for Enterprise, just log usage in standard usage table.
+      // But the user requested "credits".
+      // Let's assume even Enterprise consumes credits, but they get a monthly refill of a huge amount?
+      // No, -1 flag is safer.
+      return;
     }
 
     const client = await query('BEGIN'); // Start transaction (assuming query supports tx wrapper or we just do sequentially)
     // Note: The 'query' import might not support transaction objects directly like 'pg' pool.
     // I'll assume simple sequential execution for now or single atomic update.
-    
+
     try {
-        const updateSql = `
+      const updateSql = `
             UPDATE ${this.tables.credits}
             SET balance_cents = balance_cents - $1, updated_at = NOW()
             WHERE user_id = $2
             RETURNING balance_cents
         `;
-        await query(updateSql, [costCents, userId]);
+      await query(updateSql, [costCents, userId]);
 
-        const txnSql = `
+      const txnSql = `
             INSERT INTO ${this.tables.transactions} 
             (user_id, amount_cents, transaction_type, description, reference_id, created_at)
             VALUES ($1, $2, 'usage', $3, $4, NOW())
         `;
-        await query(txnSql, [userId, -costCents, description, transactionRef]);
+      await query(txnSql, [userId, -costCents, description, transactionRef]);
     } catch (err) {
-        logger.error('Failed to deduct credits:', err);
-        // Don't throw, just log. We don't want to crash the request after it succeeded.
+      logger.error('Failed to deduct credits:', err);
+      // Don't throw, just log. We don't want to crash the request after it succeeded.
     }
   }
 }
