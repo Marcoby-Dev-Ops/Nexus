@@ -1,6 +1,7 @@
 import { BaseService } from '@/core/services/BaseService';
+import { selectData, selectOne } from '@/lib/api-client';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import type { IntegrationBaseService} from './IntegrationBaseService';
+import type { IntegrationBaseService } from './IntegrationBaseService';
 import { type Integration, type IntegrationConfig } from './IntegrationBaseService';
 import { z } from 'zod';
 
@@ -73,16 +74,18 @@ export class IntegrationRegistryService extends BaseService {
    */
   async getIntegrationsByCategory(category: string): Promise<ServiceResponse<IntegrationRegistry[]>> {
     return this.executeDbOperation(async () => {
-      const { data, error } = await this.supabase
-        .from('integration_registry')
-        .select('*')
-        .eq('category', category)
-        .eq('isActive', true)
-        .order('name');
+      const { data, success, error } = await selectData<any>({
+        table: 'integration_registry',
+        filters: {
+          category,
+          isActive: true
+        },
+        orderBy: [{ column: 'name', ascending: true }]
+      });
 
-      if (error) throw error;
+      if (!success) throw new Error(error || 'Failed to fetch integrations by category');
       const validatedData = data?.map(item => IntegrationRegistrySchema.parse(item)) || [];
-      return { data: validatedData, error: null };
+      return { data: validatedData, error: null, success: true };
     }, `get integrations by category ${category}`);
   }
 
@@ -91,16 +94,18 @@ export class IntegrationRegistryService extends BaseService {
    */
   async getPopularIntegrations(): Promise<ServiceResponse<IntegrationRegistry[]>> {
     return this.executeDbOperation(async () => {
-      const { data, error } = await this.supabase
-        .from('integration_registry')
-        .select('*')
-        .eq('isPopular', true)
-        .eq('isActive', true)
-        .order('name');
+      const { data, success, error } = await selectData<any>({
+        table: 'integration_registry',
+        filters: {
+          isPopular: true,
+          isActive: true
+        },
+        orderBy: [{ column: 'name', ascending: true }]
+      });
 
-      if (error) throw error;
+      if (!success) throw new Error(error || 'Failed to fetch popular integrations');
       const validatedData = data?.map(item => IntegrationRegistrySchema.parse(item)) || [];
-      return { data: validatedData, error: null };
+      return { data: validatedData, error: null, success: true };
     }, 'get popular integrations');
   }
 
@@ -109,14 +114,14 @@ export class IntegrationRegistryService extends BaseService {
    */
   async getCategories(): Promise<ServiceResponse<IntegrationCategory[]>> {
     return this.executeDbOperation(async () => {
-      const { data, error } = await this.supabase
-        .from('integration_categories')
-        .select('*')
-        .order('name');
+      const { data, success, error } = await selectData<any>({
+        table: 'integration_categories',
+        orderBy: [{ column: 'name', ascending: true }]
+      });
 
-      if (error) throw error;
+      if (!success) throw new Error(error || 'Failed to fetch integration categories');
       const validatedData = data?.map(item => IntegrationCategorySchema.parse(item)) || [];
-      return { data: validatedData, error: null };
+      return { data: validatedData, error: null, success: true };
     }, 'get integration categories');
   }
 
@@ -125,16 +130,26 @@ export class IntegrationRegistryService extends BaseService {
    */
   async searchIntegrations(query: string): Promise<ServiceResponse<IntegrationRegistry[]>> {
     return this.executeDbOperation(async () => {
-      const { data, error } = await this.supabase
-        .from('integration_registry')
-        .select('*')
-        .eq('isActive', true)
-        .or(`name.ilike.%${query}%,description.ilike.%${query}%,platform.ilike.%${query}%`)
-        .order('name');
+      // Note: Standard API client doesn't support complex OR/ILIKE filters yet
+      // We'll fetch all active integrations and filter client-side for now
+      // This is a temporary measure until the backend supports advanced searching
+      const { data, success, error } = await selectData<any>({
+        table: 'integration_registry',
+        filters: { isActive: true },
+        orderBy: [{ column: 'name', ascending: true }]
+      });
 
-      if (error) throw error;
-      const validatedData = data?.map(item => IntegrationRegistrySchema.parse(item)) || [];
-      return { data: validatedData, error: null };
+      if (!success) throw new Error(error || 'Failed to search integrations');
+
+      const lowerQuery = query.toLowerCase();
+      const filtered = (data || []).filter(item =>
+        item.name?.toLowerCase().includes(lowerQuery) ||
+        item.description?.toLowerCase().includes(lowerQuery) ||
+        item.platform?.toLowerCase().includes(lowerQuery)
+      );
+
+      const validatedData = filtered.map(item => IntegrationRegistrySchema.parse(item));
+      return { data: validatedData, error: null, success: true };
     }, `search integrations with query: ${query}`);
   }
 
@@ -143,17 +158,19 @@ export class IntegrationRegistryService extends BaseService {
    */
   async getIntegrationMetadata(type: string): Promise<ServiceResponse<IntegrationRegistry | null>> {
     return this.executeDbOperation(async () => {
-      const { data, error } = await this.supabase
-        .from('integration_registry')
-        .select('*')
-        .eq('type', type)
-        .eq('isActive', true)
-        .single();
+      const { data, success, error } = await selectOne<any>('integration_registry', {
+        type: type,
+        isActive: true
+      });
 
-      if (error) throw error;
-      return { 
-        data: data ? IntegrationRegistrySchema.parse(data) : null, 
-        error: null 
+      if (!success && error && !error.includes('No record found')) {
+        throw new Error(error);
+      }
+
+      return {
+        data: data ? IntegrationRegistrySchema.parse(data) : null,
+        error: null,
+        success: true
       };
     }, `get metadata for integration type ${type}`);
   }
@@ -191,13 +208,9 @@ export class IntegrationRegistryService extends BaseService {
   }>> {
     return this.executeDbOperation(async () => {
       // Get integration details
-      const { data: integration, error } = await this.supabase
-        .from('integrations')
-        .select('*')
-        .eq('id', integrationId)
-        .single();
+      const { data: integration, success, error } = await selectOne<any>('integrations', { id: integrationId });
 
-      if (error) throw error;
+      if (!success) throw new Error(error || 'Integration not found');
 
       const integrationService = this.getIntegration(integration.type);
       if (!integrationService) {
@@ -220,13 +233,9 @@ export class IntegrationRegistryService extends BaseService {
   }>> {
     return this.executeDbOperation(async () => {
       // Get integration details
-      const { data: integration, error } = await this.supabase
-        .from('integrations')
-        .select('*')
-        .eq('id', integrationId)
-        .single();
+      const { data: integration, success, error } = await selectOne<any>('integrations', { id: integrationId });
 
-      if (error) throw error;
+      if (!success) throw new Error(error || 'Integration not found');
 
       const integrationService = this.getIntegration(integration.type);
       if (!integrationService) {
@@ -249,11 +258,12 @@ export class IntegrationRegistryService extends BaseService {
     categories: Record<string, number>;
   }>> {
     return this.executeDbOperation(async () => {
-      const { data: integrations, error } = await this.supabase
-        .from('integrations')
-        .select('status, type');
+      const { data: integrations, success, error } = await selectData<any>({
+        table: 'integrations',
+        columns: 'status, type'
+      });
 
-      if (error) throw error;
+      if (!success) throw new Error(error || 'Failed to fetch integration stats');
 
       const stats = {
         totalIntegrations: integrations?.length || 0,
@@ -273,7 +283,7 @@ export class IntegrationRegistryService extends BaseService {
         });
       }
 
-      return { data: stats, error: null };
+      return { data: stats, error: null, success: true };
     }, 'get integration statistics');
   }
 
@@ -282,11 +292,12 @@ export class IntegrationRegistryService extends BaseService {
    */
   private async calculateTotalDataPoints(): Promise<number> {
     try {
-      const { data, error } = await this.supabase
-        .from('integration_data')
-        .select('id', { count: 'exact' });
+      const { data, success, error } = await selectData<any>({
+        table: 'integration_data',
+        columns: 'id'
+      });
 
-      if (error) {
+      if (!success) {
         this.logger.warn('Failed to calculate total data points:', error);
         return 0;
       }

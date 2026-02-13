@@ -1,6 +1,7 @@
 import { IntegrationBaseService, type IntegrationConfig, type TestConnectionResult, type SyncResult } from '../core/IntegrationBaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { DataMappingService } from '../core/DataMappingService';
+import { selectData as select, selectOne, upsertOne } from '@/lib/database';
 import { z } from 'zod';
 
 // PayPal Transaction Schema
@@ -63,53 +64,56 @@ export class PayPalIntegrationService extends IntegrationBaseService {
   async testConnection(integrationId: string): Promise<ServiceResponse<TestConnectionResult>> {
     return this.executeDbOperation(async () => {
       // Get integration details
-      const { data: integration, error } = await this.supabase
-        .from('integrations')
-        .select('*')
-        .eq('id', integrationId)
-        .single();
+      const { data: integration, success, error } = await selectOne<any>(
+        'integrations',
+        { id: integrationId }
+      );
 
-      if (error) throw error;
+      if (!success || !integration) throw new Error(error || 'Integration not found');
 
-      try {
-        // Test PayPal API connection
-        const response = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Basic ${btoa(`${integration.credentials?.clientId}:${integration.credentials?.clientSecret}`)}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: 'grant_type=client_credentials',
-        });
-
-        if (!response.ok) {
-          throw new Error(`PayPal API error: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        return {
-          data: {
-            success: true,
-            details: {
-              apiVersion: 'v1',
-              environment: integration.credentials?.environment || 'sandbox',
-              tokenType: data.token_type,
+      return (async (): Promise<ServiceResponse<TestConnectionResult>> => {
+        try {
+          // Test PayPal API connection
+          const response = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Basic ${btoa(`${integration.credentials?.clientId}:${integration.credentials?.clientSecret}`)}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
             },
-          },
-          error: null,
-        };
-      } catch (error) {
-        await this.logError(integrationId, error instanceof Error ? error.message : 'Unknown error');
-        
-        return {
-          data: {
-            success: false,
-            error: error instanceof Error ? error.message : 'Failed to connect to PayPal',
-          },
-          error: null,
-        };
-      }
+            body: 'grant_type=client_credentials',
+          });
+
+          if (!response.ok) {
+            throw new Error(`PayPal API error: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+
+          return {
+            data: {
+              success: true,
+              details: {
+                apiVersion: 'v1',
+                environment: integration.credentials?.environment || 'sandbox',
+                tokenType: data.token_type,
+              },
+            },
+            error: null,
+            success: true
+          };
+        } catch (error) {
+          await this.logError(integrationId, error instanceof Error ? error.message : 'Unknown error');
+
+          return {
+            data: {
+              success: false,
+              error: error instanceof Error ? error.message : 'Failed to connect to PayPal',
+            },
+            error: null,
+            success: true
+          };
+        }
+      })();
     }, `test PayPal connection for integration ${integrationId}`);
   }
 
@@ -124,13 +128,12 @@ export class PayPalIntegrationService extends IntegrationBaseService {
 
       try {
         // Get integration details
-        const { data: integration, error } = await this.supabase
-          .from('integrations')
-          .select('*')
-          .eq('id', integrationId)
-          .single();
+        const { data: integration, success, error } = await selectOne<any>(
+          'integrations',
+          { id: integrationId }
+        );
 
-        if (error) throw error;
+        if (!success || !integration) throw new Error(error || 'Integration not found');
 
         // Sync transactions
         const transactionsResult = await this.syncTransactions(integration);
@@ -154,10 +157,11 @@ export class PayPalIntegrationService extends IntegrationBaseService {
             lastSync: new Date().toISOString(),
           },
           error: null,
+          success: true
         };
       } catch (error) {
         await this.logError(integrationId, error instanceof Error ? error.message : 'Unknown error');
-        
+
         return {
           data: {
             success: false,
@@ -167,6 +171,7 @@ export class PayPalIntegrationService extends IntegrationBaseService {
             lastSync: new Date().toISOString(),
           },
           error: null,
+          success: true
         };
       }
     }, `sync PayPal data for integration ${integrationId}`);
@@ -201,7 +206,7 @@ export class PayPalIntegrationService extends IntegrationBaseService {
     return this.executeDbOperation(async () => {
       // Update integration status
       await this.updateStatus(integrationId, 'disconnected');
-      return { data: true, error: null };
+      return { data: true, error: null, success: true };
     }, `disconnect PayPal integration ${integrationId}`);
   }
 
@@ -235,6 +240,7 @@ export class PayPalIntegrationService extends IntegrationBaseService {
           optionalFields: ['environment', 'refreshToken'],
         },
         error: null,
+        success: true
       };
     }, 'get PayPal metadata');
   }
@@ -277,6 +283,7 @@ export class PayPalIntegrationService extends IntegrationBaseService {
           warnings,
         },
         error: null,
+        success: true
       };
     }, `validate PayPal config`);
   }
@@ -292,28 +299,29 @@ export class PayPalIntegrationService extends IntegrationBaseService {
     return this.executeDbOperation(async () => {
       try {
         // Get integration details
-        const { data: integration, error } = await this.supabase
-          .from('integrations')
-          .select('*')
-          .eq('id', integrationId)
-          .single();
+        const { data: integration, success, error } = await selectOne<any>(
+          'integrations',
+          { id: integrationId }
+        );
 
-        if (error) throw error;
+        if (!success || !integration) throw new Error(error || 'Integration not found');
 
         // Get transactions for analytics
-        const { data: transactions, error: transactionsError } = await this.supabase
-          .from('integration_data')
-          .select('*')
-          .eq('integration_id', integrationId)
-          .eq('entity_type', 'transaction');
+        const { data: transactions, success: transSuccess, error: transactionsError } = await select<any>({
+          table: 'integration_data',
+          filters: {
+            integration_id: integrationId,
+            entity_type: 'transaction'
+          }
+        });
 
-        if (transactionsError) throw transactionsError;
+        if (!transSuccess) throw new Error(transactionsError);
 
         const analytics = this.calculateAnalytics(transactions || [], params);
-        return { data: PayPalAnalyticsSchema.parse(analytics), error: null };
+        return { data: PayPalAnalyticsSchema.parse(analytics), error: null, success: true };
       } catch (error) {
         this.logger.error('Error getting PayPal analytics:', error);
-        return { data: null, error: 'Failed to get PayPal analytics' };
+        return { data: null, error: 'Failed to get PayPal analytics', success: false };
       }
     }, `get PayPal analytics for integration ${integrationId}`);
   }
@@ -356,17 +364,19 @@ export class PayPalIntegrationService extends IntegrationBaseService {
           }
 
           // Store in internal database
-          const { error } = await this.supabase
-            .from('integration_data')
-            .upsert({
+          const { success: upsertSuccess, error: upsertError } = await upsertOne(
+            'integration_data',
+            {
               integration_id: integration.id,
               entity_type: 'transaction',
               external_id: transaction.transaction_info.transaction_id,
               data: transformedTransaction.data,
               synced_at: new Date().toISOString(),
-            });
+            },
+            'integration_id,entity_type,external_id'
+          );
 
-          if (error) throw error;
+          if (!upsertSuccess) throw new Error(upsertError);
           recordsProcessed++;
         } catch (error) {
           this.logger.error(`Failed to sync transaction ${transaction.transaction_info?.transaction_id}:`, error);
@@ -375,9 +385,9 @@ export class PayPalIntegrationService extends IntegrationBaseService {
 
       return { recordsProcessed, errors: [] };
     } catch (error) {
-      return { 
-        recordsProcessed: 0, 
-        errors: [error instanceof Error ? error.message : 'Unknown error'] 
+      return {
+        recordsProcessed: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error']
       };
     }
   }
@@ -409,8 +419,8 @@ export class PayPalIntegrationService extends IntegrationBaseService {
    */
   private getBaseUrl(credentials: any): string {
     const environment = credentials.environment || 'sandbox';
-    return environment === 'live' 
-      ? 'https://api-m.paypal.com' 
+    return environment === 'live'
+      ? 'https://api-m.paypal.com'
       : 'https://api-m.sandbox.paypal.com';
   }
 
@@ -481,7 +491,7 @@ export class PayPalIntegrationService extends IntegrationBaseService {
     transactions.forEach(transaction => {
       const date = new Date(transaction.data.date || transaction.created_at);
       const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
+
       if (!monthlyData[month]) {
         monthlyData[month] = { revenue: 0, transactions: 0 };
       }

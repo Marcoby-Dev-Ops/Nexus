@@ -88,8 +88,9 @@ export class SalesforceStyleDataService extends BaseService {
               error: 'Insufficient permissions to access this object',
               totalSize: 0,
               done: true,
-            },
+            } as QueryResult<T>,
             error: null,
+            success: true
           };
         }
 
@@ -97,55 +98,58 @@ export class SalesforceStyleDataService extends BaseService {
         const sharingQuery = await salesforcePermissions.applySharingRules(where, userId, objectName);
 
         // 3. Build the final query
-        let query = this.supabase
-          .from(objectName)
-          .select(fields.join(','));
-
-        // Apply where clause with sharing rules
+        const filters: Record<string, any> = {};
         if (sharingQuery) {
-          // Parse and apply the sharing query
-          // This is a simplified version - in a real implementation, you'd parse the SQL
-          query = query.eq('user_id', userId); // Basic owner-based sharing
+          filters.user_id = userId; // Basic owner-based sharing
         }
 
-        // Apply ordering
+        // Apply where clause (simplified)
+        if (where && where.includes('=')) {
+          const [key, value] = where.split('=').map(s => s.trim().replace(/'/g, ''));
+          filters[key] = value;
+        }
+
+        const orderByList: { column: string; ascending?: boolean }[] = [];
         if (orderBy) {
           const [field, direction] = orderBy.split(' ');
-          query = direction === 'DESC' ? query.order(field, { ascending: false }) : query.order(field);
-        }
-
-        // Apply limit
-        if (limit) {
-          query = query.limit(limit);
+          orderByList.push({ column: field, ascending: direction !== 'DESC' });
         }
 
         // 4. Execute the query
-        const { data, error } = await query;
+        const { data, success, error } = await select<T>({
+          table: objectName,
+          columns: fields.join(','),
+          filters,
+          orderBy: orderByList,
+          limit
+        });
 
-        if (error) {
+        if (!success) {
           this.logger.error('Query error:', error);
           return {
             data: {
               data: null,
-              error: error.message,
+              error: error || 'Failed to execute query',
               totalSize: 0,
               done: true,
-            },
+            } as QueryResult<T>,
             error: null,
+            success: true
           };
         }
 
         // 5. Apply field-level security
-        const securedData = await this.applyFieldLevelSecurity(data, userId, objectName);
+        const securedData = await this.applyFieldLevelSecurity(data || [], userId, objectName);
 
         return {
           data: {
-            data: securedData,
+            data: securedData as T[],
             error: null,
             totalSize: securedData?.length || 0,
             done: true,
-          },
+          } as QueryResult<T>,
           error: null,
+          success: true
         };
       } catch (error) {
         this.logger.error('Error querying records:', error);
@@ -155,8 +159,9 @@ export class SalesforceStyleDataService extends BaseService {
             error: error instanceof Error ? error.message : 'Unknown error',
             totalSize: 0,
             done: true,
-          },
-          error: null,
+          } as QueryResult<T>,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          success: false
         };
       }
     }, `query records for object ${options.objectName}`);
@@ -181,6 +186,7 @@ export class SalesforceStyleDataService extends BaseService {
               error: 'Insufficient permissions to create records in this object',
             },
             error: null,
+            success: true
           };
         }
 
@@ -197,20 +203,17 @@ export class SalesforceStyleDataService extends BaseService {
         };
 
         // 4. Insert the record
-        const { data: result, error } = await this.supabase
-          .from(objectName)
-          .insert(recordWithAudit)
-          .select()
-          .single();
+        const { data: result, success, error } = await insertOne<T>(objectName, recordWithAudit);
 
-        if (error) {
+        if (!success) {
           this.logger.error('Insert error:', error);
           return {
             data: {
               data: null,
-              error: error.message,
+              error: error || 'Failed to insert record',
             },
             error: null,
+            success: true
           };
         }
 
@@ -218,8 +221,9 @@ export class SalesforceStyleDataService extends BaseService {
           data: {
             data: result,
             error: null,
-          },
+          } as RecordOperationResult<T>,
           error: null,
+          success: true
         };
       } catch (error) {
         this.logger.error('Error inserting record:', error);
@@ -227,8 +231,9 @@ export class SalesforceStyleDataService extends BaseService {
           data: {
             data: null,
             error: error instanceof Error ? error.message : 'Unknown error',
-          },
-          error: null,
+          } as RecordOperationResult<T>,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          success: false
         };
       }
     }, `insert record in object ${objectName}`);
@@ -254,6 +259,7 @@ export class SalesforceStyleDataService extends BaseService {
               error: 'Insufficient permissions to update records in this object',
             },
             error: null,
+            success: true
           };
         }
 
@@ -266,6 +272,7 @@ export class SalesforceStyleDataService extends BaseService {
               error: 'Insufficient permissions to update this record',
             },
             error: null,
+            success: true
           };
         }
 
@@ -280,21 +287,17 @@ export class SalesforceStyleDataService extends BaseService {
         };
 
         // 5. Update the record
-        const { data: result, error } = await this.supabase
-          .from(objectName)
-          .update(updatesWithAudit)
-          .eq('id', recordId)
-          .select()
-          .single();
+        const { data: result, success, error } = await updateOne<T>(objectName, { id: recordId }, updatesWithAudit);
 
-        if (error) {
+        if (!success) {
           this.logger.error('Update error:', error);
           return {
             data: {
               data: null,
-              error: error.message,
+              error: error || 'Failed to update record',
             },
             error: null,
+            success: true
           };
         }
 
@@ -302,8 +305,9 @@ export class SalesforceStyleDataService extends BaseService {
           data: {
             data: result,
             error: null,
-          },
+          } as RecordOperationResult<T>,
           error: null,
+          success: true
         };
       } catch (error) {
         this.logger.error('Error updating record:', error);
@@ -311,8 +315,9 @@ export class SalesforceStyleDataService extends BaseService {
           data: {
             data: null,
             error: error instanceof Error ? error.message : 'Unknown error',
-          },
-          error: null,
+          } as RecordOperationResult<T>,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          success: false
         };
       }
     }, `update record ${recordId} in object ${objectName}`);
@@ -335,8 +340,9 @@ export class SalesforceStyleDataService extends BaseService {
             data: {
               success: false,
               error: 'Insufficient permissions to delete records in this object',
-            },
+            } as DeleteResult,
             error: null,
+            success: true
           };
         }
 
@@ -347,30 +353,29 @@ export class SalesforceStyleDataService extends BaseService {
             data: {
               success: false,
               error: 'Insufficient permissions to delete this record',
-            },
+            } as DeleteResult,
             error: null,
+            success: true
           };
         }
 
         // 3. Soft delete (mark as deleted)
-        const { error } = await this.supabase
-          .from(objectName)
-          .update({
-            deleted_at: new Date().toISOString(),
-            deleted_by: userId,
-            updated_by: userId,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', recordId);
+        const { success, error } = await updateOne(objectName, { id: recordId }, {
+          deleted_at: new Date().toISOString(),
+          deleted_by: userId,
+          updated_by: userId,
+          updated_at: new Date().toISOString(),
+        });
 
-        if (error) {
+        if (!success) {
           this.logger.error('Delete error:', error);
           return {
             data: {
               success: false,
-              error: error.message,
-            },
+              error: error || 'Failed to delete record',
+            } as DeleteResult,
             error: null,
+            success: true
           };
         }
 
@@ -378,8 +383,9 @@ export class SalesforceStyleDataService extends BaseService {
           data: {
             success: true,
             error: null,
-          },
+          } as DeleteResult,
           error: null,
+          success: true
         };
       } catch (error) {
         this.logger.error('Error deleting record:', error);
@@ -388,7 +394,8 @@ export class SalesforceStyleDataService extends BaseService {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error',
           },
-          error: null,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          success: false
         };
       }
     }, `delete record ${recordId} from object ${objectName}`);
@@ -402,27 +409,21 @@ export class SalesforceStyleDataService extends BaseService {
     userId: string,
     objectName: string
   ): Promise<any[]> {
-    return this.executeDbOperation(async () => {
-      try {
-        // Get user's field permissions for this object
-        const fieldPermissions = await salesforcePermissions.getFieldPermissions(userId, objectName);
-        
-        return records.map(record => {
-          const securedRecord: any = {};
-          
-          Object.keys(record).forEach(field => {
-            if (fieldPermissions[field]?.read) {
-              securedRecord[field] = record[field];
-            }
-          });
-          
-          return securedRecord;
-        });
-      } catch (error) {
-        this.logger.error('Error applying field-level security:', error);
-        return records; // Return original records if security check fails
-      }
-    }, `apply field-level security for object ${objectName}`);
+    // Removed executeDbOperation and try/catch as per instruction.
+    // Error handling for getFieldPermissions will now propagate up.
+    const fieldPermissions = await salesforcePermissions.getFieldPermissions(userId, objectName);
+
+    return records.map(record => {
+      const securedRecord: any = {};
+
+      Object.keys(record).forEach(field => {
+        if (fieldPermissions[field]?.read) {
+          securedRecord[field] = record[field];
+        }
+      });
+
+      return securedRecord;
+    });
   }
 
   /**
@@ -433,25 +434,19 @@ export class SalesforceStyleDataService extends BaseService {
     userId: string,
     objectName: string
   ): Promise<any> {
-    return this.executeDbOperation(async () => {
-      try {
-        // Get user's field permissions for this object
-        const fieldPermissions = await salesforcePermissions.getFieldPermissions(userId, objectName);
-        
-        const securedRecord: any = {};
-        
-        Object.keys(record).forEach(field => {
-          if (fieldPermissions[field]?.create) {
-            securedRecord[field] = record[field];
-          }
-        });
-        
-        return securedRecord;
-      } catch (error) {
-        this.logger.error('Error applying field-level security for insert:', error);
-        return record; // Return original record if security check fails
+    // Removed executeDbOperation and try/catch as per instruction.
+    // Error handling for getFieldPermissions will now propagate up.
+    const fieldPermissions = await salesforcePermissions.getFieldPermissions(userId, objectName);
+
+    const securedRecord: any = {};
+
+    Object.keys(record).forEach(field => {
+      if (fieldPermissions[field]?.create) {
+        securedRecord[field] = record[field];
       }
-    }, `apply field-level security for insert in object ${objectName}`);
+    });
+
+    return securedRecord;
   }
 
   /**
@@ -462,25 +457,19 @@ export class SalesforceStyleDataService extends BaseService {
     userId: string,
     objectName: string
   ): Promise<any> {
-    return this.executeDbOperation(async () => {
-      try {
-        // Get user's field permissions for this object
-        const fieldPermissions = await salesforcePermissions.getFieldPermissions(userId, objectName);
-        
-        const securedUpdates: any = {};
-        
-        Object.keys(updates).forEach(field => {
-          if (fieldPermissions[field]?.update) {
-            securedUpdates[field] = updates[field];
-          }
-        });
-        
-        return securedUpdates;
-      } catch (error) {
-        this.logger.error('Error applying field-level security for update:', error);
-        return updates; // Return original updates if security check fails
+    // Removed executeDbOperation and try/catch as per instruction.
+    // Error handling for getFieldPermissions will now propagate up.
+    const fieldPermissions = await salesforcePermissions.getFieldPermissions(userId, objectName);
+
+    const securedUpdates: any = {};
+
+    Object.keys(updates).forEach(field => {
+      if (fieldPermissions[field]?.update) {
+        securedUpdates[field] = updates[field];
       }
-    }, `apply field-level security for update in object ${objectName}`);
+    });
+
+    return securedUpdates;
   }
 
   /**
@@ -491,33 +480,31 @@ export class SalesforceStyleDataService extends BaseService {
     recordId: string,
     userId: string
   ): Promise<RecordAccess> {
-    return this.executeDbOperation(async () => {
-      try {
-        // Get the record to check ownership
-        const { data: record, error } = await this.supabase
-          .from(objectName)
-          .select('created_by, owner_id')
-          .eq('id', recordId)
-          .single();
+    // Removed executeDbOperation and try/catch as per instruction.
+    try { // Re-added try/catch for selectOne as it's a DB operation
+      // Get the record to check ownership
+      const { data: record, success } = await selectOne<any>(
+        objectName,
+        { id: recordId }
+      );
 
-        if (error) {
-          this.logger.error('Error checking record access:', error);
-          return { canEdit: false, canDelete: false };
-        }
-
-        // Check if user is the owner
-        const isOwner = record.created_by === userId || record.owner_id === userId;
-        
-        // Check additional permissions
-        const canEdit = isOwner || await salesforcePermissions.hasPermission(userId, objectName, 'edit_all');
-        const canDelete = isOwner || await salesforcePermissions.hasPermission(userId, objectName, 'delete_all');
-
-        return { canEdit, canDelete };
-      } catch (error) {
-        this.logger.error('Error checking record access:', error);
+      if (!success || !record) {
+        this.logger.error('Error checking record access'); // Removed 'error' variable from log
         return { canEdit: false, canDelete: false };
       }
-    }, `check record access for record ${recordId} in object ${objectName}`);
+
+      // Check if user is the owner
+      const isOwner = record.created_by === userId || record.owner_id === userId;
+
+      // Check additional permissions
+      const canEdit = isOwner || await salesforcePermissions.hasPermission(userId, objectName, 'edit_all');
+      const canDelete = isOwner || await salesforcePermissions.hasPermission(userId, objectName, 'delete_all');
+
+      return { canEdit, canDelete };
+    } catch (error) {
+      this.logger.error('Error checking record access:', error);
+      return { canEdit: false, canDelete: false };
+    }
   }
 
   /**
@@ -542,10 +529,10 @@ export class SalesforceStyleDataService extends BaseService {
           canDeleteAll: await salesforcePermissions.hasPermission(userId, objectName, 'delete_all'),
         };
 
-        return { data: permissions, error: null };
+        return { data: permissions, error: null, success: true };
       } catch (error) {
         this.logger.error('Error getting user permissions:', error);
-        return { data: null, error: 'Failed to get user permissions' };
+        return { data: null, error: 'Failed to get user permissions', success: false };
       }
     }, `get user permissions for object ${objectName}`);
   }
@@ -561,10 +548,10 @@ export class SalesforceStyleDataService extends BaseService {
     return this.executeDbOperation(async () => {
       try {
         const fieldPermissions = await salesforcePermissions.getFieldPermissions(userId, objectName);
-        return { data: fieldPermissions, error: null };
+        return { data: fieldPermissions, error: null, success: true };
       } catch (error) {
         this.logger.error('Error getting field permissions:', error);
-        return { data: null, error: 'Failed to get field permissions' };
+        return { data: null, error: 'Failed to get field permissions', success: false };
       }
     }, `get field permissions for object ${objectName}`);
   }

@@ -13,10 +13,13 @@ export interface OnboardingInsight {
   estimatedValue?: string;
   timeframe?: string;
   category: string;
+  implementationDifficulty?: string;
 }
 
 export interface OnboardingContext {
   user: {
+    id?: string;
+    companyId?: string;
     firstName: string;
     lastName: string;
     company: string;
@@ -44,16 +47,16 @@ export class OnboardingInsightsService extends BaseService {
    */
   async generateOnboardingInsights(context: OnboardingContext): Promise<ServiceResponse<OnboardingInsight[]>> {
     return this.executeDbOperation(async () => {
-      this.logMethodCall('generateOnboardingInsights', { 
-        company: context.user.company, 
+      this.logMethodCall('generateOnboardingInsights', {
+        company: context.user.company,
         industry: context.user.industry,
-        integrationCount: context.selectedIntegrations?.length || 0 
+        integrationCount: context.selectedIntegrations?.length || 0
       });
 
       try {
         // Build comprehensive context for AI analysis
         const businessContext = this.buildBusinessContext(context);
-        
+
         // Generate insights using AI
         const aiResponse = await this.aiGateway.call({
           task: 'business.insights',
@@ -81,7 +84,7 @@ export class OnboardingInsightsService extends BaseService {
 
         // Parse AI response and transform into structured insights
         const insights = this.parseAIInsights(aiResponse.output, context);
-        
+
         // Calculate maturity score based on insights and context
         const maturityScore = this.calculateMaturityScore(context, insights);
 
@@ -90,7 +93,7 @@ export class OnboardingInsightsService extends BaseService {
         return this.createSuccessResponse(insights);
       } catch (error) {
         this.logger.error('Error generating onboarding insights', { error });
-        
+
         // Fallback to contextual mock insights if AI fails
         const fallbackInsights = this.generateFallbackInsights(context);
         return this.createSuccessResponse(fallbackInsights);
@@ -103,13 +106,13 @@ export class OnboardingInsightsService extends BaseService {
    */
   private buildBusinessContext(context: OnboardingContext): string {
     const { user, selectedIntegrations, selectedTools } = context;
-    
-    const toolCategories = Object.entries(selectedTools || {}).map(([category, tools]) => 
+
+    const toolCategories = Object.entries(selectedTools || {}).map(([category, tools]) =>
       `${category}: ${tools.join(', ')}`
     ).join('\n');
 
-    const integrationList = selectedIntegrations?.length > 0 
-      ? selectedIntegrations.join(', ') 
+    const integrationList = selectedIntegrations?.length > 0
+      ? selectedIntegrations.join(', ')
       : 'None yet';
 
     return `
@@ -147,11 +150,11 @@ Please generate 3-5 high-quality, actionable business insights that will help ${
     try {
       // Handle different AI response formats
       let insightsData = aiOutput;
-      
+
       if (typeof aiOutput === 'string') {
         insightsData = JSON.parse(aiOutput);
       }
-      
+
       if (aiOutput.insights) {
         insightsData = aiOutput.insights;
       }
@@ -184,7 +187,7 @@ Please generate 3-5 high-quality, actionable business insights that will help ${
    */
   private generateFallbackInsights(context: OnboardingContext): OnboardingInsight[] {
     const { user, selectedIntegrations } = context;
-    
+
     const baseInsights: OnboardingInsight[] = [
       {
         id: `fallback-${Date.now()}-1`,

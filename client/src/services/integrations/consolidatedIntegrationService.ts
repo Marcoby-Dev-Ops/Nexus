@@ -12,15 +12,15 @@
  * - dataPointMappingService.ts (data point mapping)
  */
 
-import { 
-  callRPC, 
-  callEdgeFunction, 
-  selectData, 
-  selectOne, 
-  insertOne, 
-  updateOne, 
-  upsertOne, 
-  deleteOne 
+import {
+  callRPC,
+  callEdgeFunction,
+  selectData,
+  selectOne,
+  insertOne,
+  updateOne,
+  upsertOne,
+  deleteOne
 } from '@/lib/database';
 import { database } from '@/lib/database';
 import { BaseService } from '@/core/services/BaseService';
@@ -99,7 +99,7 @@ export const UserIntegrationSchema = z.object({
   id: z.string(),
   user_id: z.string(),
   integration_id: z.string().nullable(),
-      integration_slug: z.string(),
+  integration_slug: z.string(),
   status: z.string().nullable(),
   config: z.any(),
   last_sync_at: z.string().nullable(),
@@ -151,6 +151,14 @@ export const ApiIntegrationDataSchema = z.object({
     description: z.string(),
   })).optional(),
   authMethods: z.array(z.string()).optional(),
+  provider: z.string().optional(),
+  generatedCode: z.string().optional(),
+  config: z.record(z.any()).optional(),
+  apiKey: z.string().optional(),
+  clientId: z.string().optional(),
+  clientSecret: z.string().optional(),
+  accessToken: z.string().optional(),
+  refreshToken: z.string().optional(),
 });
 
 export type ApiIntegrationData = z.infer<typeof ApiIntegrationDataSchema>;
@@ -189,7 +197,7 @@ export type SyncResult = z.infer<typeof SyncResultSchema>;
  * - Data point mapping
  */
 export class ConsolidatedIntegrationService extends BaseService {
-  
+
   // ============================================================================
   // AUTHENTICATION & VALIDATION
   // ============================================================================
@@ -197,14 +205,14 @@ export class ConsolidatedIntegrationService extends BaseService {
   /**
    * Validate authentication and session before making database calls
    */
-  private async validateAuth(): Promise<{ userId: string; error?: string }> {
+  private async validateAuth(): Promise<{ userId: string; error: string | null }> {
     try {
       // Get session with retries
       const { data: session, error } = await authentikAuthService.getSession();
-      
+
       if (error || !session) {
         this.logger.error('Authentication validation failed', { error });
-        return { userId: '', error: 'No valid session found' };
+        return { userId: '', error: typeof error === 'string' ? error : (error as any)?.message || 'No valid session found' };
       }
 
       if (!session.user?.id) {
@@ -213,17 +221,17 @@ export class ConsolidatedIntegrationService extends BaseService {
       }
 
       // Validate session is not expired
-      if (session.expires_at) {
-        const expiresAtMs = typeof session.expires_at === 'number'
-          ? session.expires_at * 1000
-          : Date.parse(String(session.expires_at));
+      if (session.expiresAt) {
+        const expiresAtMs = typeof session.expiresAt === 'number'
+          ? (session.expiresAt as number) * 1000
+          : Date.parse(String(session.expiresAt));
         if (expiresAtMs <= Date.now()) {
           this.logger.error('Session has expired');
           return { userId: '', error: 'Session expired' };
         }
       }
 
-      return { userId: session.user.id };
+      return { userId: session.user.id, error: null };
     } catch (error) {
       this.logger.error('Unexpected error during auth validation', { error });
       return { userId: '', error: 'Authentication validation failed' };
@@ -242,7 +250,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId: authUserId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError };
+        return this.createErrorResponse(authError);
       }
 
       const targetUserId = userId || authUserId;
@@ -255,7 +263,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       );
 
       if (integrationsError) {
-        return { data: null, error: integrationsError, success: false };
+        return this.createErrorResponse(integrationsError || 'Unknown error');
       }
 
       // Sort by updated_at descending
@@ -265,7 +273,7 @@ export class ConsolidatedIntegrationService extends BaseService {
         return bDate - aDate;
       });
 
-      return { data: sortedIntegrations, error: null, success: true };
+      return this.createSuccessResponse(sortedIntegrations);
     }, `get user integrations for user ${userId}`);
   }
 
@@ -282,7 +290,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       );
 
       if (platformsError) {
-        return { data: null, error: platformsError, success: false };
+        return this.createErrorResponse(platformsError || 'Unknown error');
       }
 
       // Sort by name ascending
@@ -299,7 +307,7 @@ export class ConsolidatedIntegrationService extends BaseService {
         features: [], // Default empty array since it's not in the schema
       }));
 
-      return { data: transformedPlatforms, error: null, success: true };
+      return this.createSuccessResponse(transformedPlatforms);
     }, 'get available platforms');
   }
 
@@ -311,7 +319,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId: authUserId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError, success: false };
+        return this.createErrorResponse(authError);
       }
 
       const targetUserId = userId || authUserId;
@@ -324,7 +332,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       );
 
       if (integrationError || !integrations || integrations.length === 0) {
-        return { data: null, error: 'Integration not found', success: false };
+        return this.createErrorResponse('Integration not found');
       }
 
       const integration = integrations[0] as any;
@@ -344,7 +352,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       });
 
       if (upsertError) {
-        return { data: null, error: upsertError, success: false };
+        return this.createErrorResponse(upsertError || 'Unknown error');
       }
 
       // Initialize unified client profiles after successful integration
@@ -355,7 +363,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       // TODO: Implement ai_email_accounts table and email account creation
       this.logger.info(`Skipping email account creation for ${platform} - table not yet implemented`);
 
-      return { data: { success: true }, error: null, success: true };
+      return this.createSuccessResponse({ success: true } as any);
     }, `connect integration ${platform} for user ${userId}`);
   }
 
@@ -367,7 +375,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId: authUserId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError };
+        return this.createErrorResponse(authError);
       }
 
       const targetUserId = userId || authUserId;
@@ -380,24 +388,26 @@ export class ConsolidatedIntegrationService extends BaseService {
       );
 
       if (integrationError || !integrations || integrations.length === 0) {
-        return { data: null, error: 'Integration not found' };
+        return this.createErrorResponse('Integration not found');
       }
 
       const integration = integrations[0];
 
       // Update user integration status to disconnected
-      const { data: userIntegration, error: updateError } = await database.from('user_integrations').update(
-        { 
+      const { success: updateSuccess, error: updateError } = await updateOne(
+        'user_integrations',
+        { user_id: targetUserId, integration_id: integration.id },
+        {
           status: 'disconnected',
           updated_at: new Date().toISOString()
         }
-      ).eq('user_id', targetUserId).eq('integration_id', integration.id);
+      );
 
-      if (updateError) {
-        return { data: null, error: updateError };
+      if (!updateSuccess) {
+        return this.createErrorResponse(updateError || 'Unknown error');
       }
 
-      return { data: { success: true }, error: null };
+      return this.createSuccessResponse({ success: true } as ConnectionResult);
     }, `disconnect integration ${platform} for user ${userId}`);
   }
 
@@ -409,7 +419,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId: authUserId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError };
+        return this.createErrorResponse(authError);
       }
 
       const targetUserId = userId || authUserId;
@@ -421,25 +431,25 @@ export class ConsolidatedIntegrationService extends BaseService {
         { slug: platform }
       );
 
-      if (integrationError || !integration) {
-        return { data: null, error: 'Integration not found' };
+      if (integrationError || !integration || (integration as any[]).length === 0) {
+        return this.createErrorResponse('Integration not found');
       }
 
       // Update last sync time
-      const { data: userIntegration, error: updateError } = await this.database.update(
+      const { success: updateSuccess, error: updateError } = await updateOne(
         'user_integrations',
+        {
+          user_id: targetUserId,
+          integration_id: (integration as any)[0]?.id
+        },
         {
           last_sync_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        },
-        {
-          user_id: targetUserId,
-          integration_id: integration.id
         }
       );
 
-      if (updateError) {
-        return { data: null, error: updateError };
+      if (!updateSuccess) {
+        return this.createErrorResponse(updateError || 'Unknown error');
       }
 
       // Trigger actual data sync based on platform
@@ -455,21 +465,21 @@ export class ConsolidatedIntegrationService extends BaseService {
             recordsProcessed += hubspotResult.recordsProcessed || 0;
             if (hubspotResult.errors) errors.push(...hubspotResult.errors);
             break;
-          
+
           case 'microsoft365':
             // Trigger Microsoft 365 sync
             const ms365Result = await this.triggerMicrosoft365Sync(userId);
             recordsProcessed += ms365Result.recordsProcessed || 0;
             if (ms365Result.errors) errors.push(...ms365Result.errors);
             break;
-          
+
           case 'google-workspace':
             // Trigger Google Workspace sync
             const gwsResult = await this.triggerGoogleWorkspaceSync(userId);
             recordsProcessed += gwsResult.recordsProcessed || 0;
             if (gwsResult.errors) errors.push(...gwsResult.errors);
             break;
-          
+
           default:
             this.logger.warn(`No sync implementation for platform: ${platform}`);
         }
@@ -480,14 +490,15 @@ export class ConsolidatedIntegrationService extends BaseService {
 
       const duration = Date.now() - startTime;
 
-      return { 
-        data: { 
-          success: errors.length === 0, 
-          recordsProcessed, 
+      return {
+        data: {
+          success: errors.length === 0,
+          recordsProcessed,
           errors,
           duration
-        }, 
-        error: null 
+        } as SyncResult,
+        error: null,
+        success: true
       };
     }, `sync integration ${platform} for user ${userId}`);
   }
@@ -504,7 +515,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId: authUserId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError };
+        return this.createErrorResponse(authError);
       }
 
       const targetUserId = userId || authUserId;
@@ -518,13 +529,13 @@ export class ConsolidatedIntegrationService extends BaseService {
 
       if (integrationsError) {
         this.logger.error('Failed to fetch user integrations for analytics', { error: integrationsError });
-        return { data: null, error: integrationsError.message };
+        return this.createErrorResponse(typeof integrationsError === 'string' ? integrationsError : (integrationsError as any).message || 'Unknown error');
       }
 
       // Generate analytics based on integration activity
       const analytics = this.generateAnalyticsFromIntegrations(userIntegrations || []);
 
-      return { data: analytics, error: null };
+      return this.createSuccessResponse(analytics);
     }, `get user data point analytics for user ${userId}`);
   }
 
@@ -536,7 +547,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId: authUserId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError };
+        return this.createErrorResponse(authError);
       }
 
       const targetUserId = userId || authUserId;
@@ -550,15 +561,15 @@ export class ConsolidatedIntegrationService extends BaseService {
 
       if (integrationsError) {
         this.logger.error('Failed to fetch user integrations for summaries', { error: integrationsError });
-        return { data: null, error: typeof integrationsError === 'string' ? integrationsError : integrationsError.message || 'Unknown error' };
+        return this.createErrorResponse(typeof integrationsError === 'string' ? integrationsError : (integrationsError as any).message || 'Unknown error');
       }
 
       // Generate summaries for each integration
-      const summaries = (userIntegrations || []).map(integration => 
+      const summaries = (userIntegrations || []).map(integration =>
         this.generateIntegrationSummary(integration)
       );
 
-      return { data: summaries, error: null };
+      return this.createSuccessResponse(summaries);
     }, `get user integration data summaries for user ${userId}`);
   }
 
@@ -574,7 +585,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       try {
         // Parse JSON and return basic info
         const doc = JSON.parse(apiDoc);
-        
+
         const apiData: ApiIntegrationData = {
           name: doc.info?.title || 'Unknown API',
           version: doc.info?.version || '1.0.0',
@@ -592,9 +603,9 @@ export class ConsolidatedIntegrationService extends BaseService {
           authMethods: doc.security ? Object.keys(doc.security[0] || {}) : [],
         };
 
-        return { data: apiData, error: null };
+        return this.createSuccessResponse(apiData);
       } catch (error) {
-        return { data: null, error: 'Invalid API documentation format' };
+        return this.createErrorResponse('Invalid API documentation format');
       }
     }, 'analyze API documentation');
   }
@@ -605,7 +616,7 @@ export class ConsolidatedIntegrationService extends BaseService {
   async generateIntegration(config: Partial<ApiIntegrationData>): Promise<ServiceResponse<ApiIntegrationData>> {
     return this.executeDbOperation(async () => {
       const integration = { ...config, id: 'integration_' + Date.now() };
-      return { data: integration, error: null };
+      return this.createSuccessResponse(integration as any);
     }, 'generate integration from API data');
   }
 
@@ -617,7 +628,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError };
+        return this.createErrorResponse(authError);
       }
 
       // Create integration record in integrations table
@@ -642,7 +653,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       });
 
       if (integrationError) {
-        return { data: null, error: `Failed to create integration: ${integrationError}` };
+        return this.createErrorResponse(`Failed to create integration: ${integrationError}`);
       }
 
       // Create user_integration record
@@ -670,10 +681,10 @@ export class ConsolidatedIntegrationService extends BaseService {
       });
 
       if (userIntegrationError) {
-        return { data: null, error: `Failed to create user integration: ${userIntegrationError}` };
+        return this.createErrorResponse(userIntegrationError || 'Failed to create user integration');
       }
 
-      return { data: userIntegration.id, error: null };
+      return this.createSuccessResponse((userIntegration as any).id);
     }, 'save integration');
   }
 
@@ -685,24 +696,24 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError };
+        return this.createErrorResponse(authError);
       }
 
       // Update integration in database
-      const { data: updatedIntegration, error: updateError } = await this.database.update(
+      const { data: updatedIntegration, success: updateSuccess, error: updateError } = await updateOne(
         'user_integrations',
-        {
-          ...updates,
-          updated_at: new Date().toISOString(),
-        },
         {
           id: integrationId,
           user_id: userId
+        },
+        {
+          ...updates as any,
+          updated_at: new Date().toISOString(),
         }
       );
 
-      if (updateError) {
-        return { data: null, error: updateError };
+      if (!updateSuccess || updateError) {
+        return this.createErrorResponse(updateError || 'Failed to update integration');
       }
 
       // Transform the user integration to API integration format
@@ -713,7 +724,7 @@ export class ConsolidatedIntegrationService extends BaseService {
         endpoints: [], // Default empty endpoints
       };
 
-      return { data: apiIntegration, error: null };
+      return this.createSuccessResponse(apiIntegration);
     }, 'update API integration');
   }
 
@@ -725,7 +736,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError };
+        return this.createErrorResponse(authError);
       }
 
       // Get integration details
@@ -736,7 +747,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       );
 
       if (fetchError || !integration || integration.length === 0) {
-        return { data: null, error: 'Integration not found' };
+        return this.createErrorResponse('Integration not found');
       }
 
       // Simulate API test (in real implementation, this would make actual API calls)
@@ -745,7 +756,7 @@ export class ConsolidatedIntegrationService extends BaseService {
         message: `Integration ${integration[0].integration_slug} tested successfully`,
       };
 
-      return { data: testResult, error: null };
+      return this.createSuccessResponse(testResult);
     }, 'test API integration');
   }
 
@@ -757,11 +768,11 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError };
+        return this.createErrorResponse(authError);
       }
 
       // Delete integration from database
-      const { error: deleteError } = await this.database.delete(
+      const { success: deleteSuccess, error: deleteError } = await deleteOne(
         'user_integrations',
         {
           id: integrationId,
@@ -769,11 +780,11 @@ export class ConsolidatedIntegrationService extends BaseService {
         }
       );
 
-      if (deleteError) {
-        return { data: null, error: deleteError };
+      if (!deleteSuccess || deleteError) {
+        return this.createErrorResponse(deleteError || 'Failed to delete integration');
       }
 
-      return { data: true, error: null };
+      return this.createSuccessResponse(true);
     }, 'delete API integration');
   }
 
@@ -785,20 +796,20 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId: authUserId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError };
+        return this.createErrorResponse(authError);
       }
 
       const targetUserId = userId || authUserId;
 
       // Use the existing connectIntegration method
       const result = await this.connectIntegration(targetUserId, vendorId, credentials);
-      
+
       if (result.error) {
-        return { data: null, error: result.error };
+        return this.createErrorResponse(result.error);
       }
 
       return result;
-    }, 'connect vendor');
+    }, 'connect vendor') as Promise<ServiceResponse<ConnectionResult>>;
   }
 
   /**
@@ -809,7 +820,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       // Validate authentication first
       const { userId: authUserId, error: authError } = await this.validateAuth();
       if (authError) {
-        return { data: null, error: authError };
+        return this.createErrorResponse(authError);
       }
 
       const targetUserId = userId || authUserId;
@@ -822,18 +833,18 @@ export class ConsolidatedIntegrationService extends BaseService {
       );
 
       if (integrationError) {
-        return { data: null, error: integrationError };
+        return this.createErrorResponse(integrationError || 'Unknown error');
       }
 
       // Find the specific integration
       const userIntegration = userIntegrations?.find(ui => {
         // Check if the integration name matches the platform
         return ui.integration_slug?.toLowerCase().includes(platform.toLowerCase()) ||
-               ui.integration_slug?.toLowerCase() === platform.toLowerCase();
+          ui.integration_slug?.toLowerCase() === platform.toLowerCase();
       });
 
       if (!userIntegration) {
-        return { data: null, error: 'Integration not found for user' };
+        return this.createErrorResponse('Integration not found for user');
       }
 
       // Simulate connection test (in real implementation, this would test the actual API)
@@ -842,15 +853,15 @@ export class ConsolidatedIntegrationService extends BaseService {
         const hasCredentials = userIntegration.access_token || userIntegration.api_key;
 
         if (!hasCredentials) {
-          return { data: { success: false, error: 'No credentials found' }, error: null };
+          return this.createSuccessResponse({ success: false, error: 'No credentials found' } as ConnectionResult);
         }
 
         // Simulate API test
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        return { data: { success: true }, error: null };
+        return this.createSuccessResponse({ success: true } as ConnectionResult);
       } catch (error) {
-        return { data: { success: false, error: 'Connection test failed' }, error: null };
+        return this.createSuccessResponse({ success: false, error: 'Connection test failed' } as ConnectionResult);
       }
     }, `test connection for integration ${platform} and user ${userId}`);
   }
@@ -868,7 +879,7 @@ export class ConsolidatedIntegrationService extends BaseService {
    */
   private generateAnalyticsFromIntegrations(integrations: any[]): DataPointAnalytics {
     const totalDataPoints = integrations.length * 10; // Estimate 10 data points per integration
-    
+
     const dataPointsByType = this.calculateDataPointsByType(integrations);
     const dataPointsByTimePeriod = this.calculateTimePeriodCounts(integrations);
     const topDataPoints = this.getTopDataPoints(integrations);
@@ -888,10 +899,10 @@ export class ConsolidatedIntegrationService extends BaseService {
    */
   private generateIntegrationSummary(integration: any): IntegrationDataSummary {
     const analytics = this.generateAnalyticsFromIntegrations([integration]);
-    
+
     return {
       integrationId: integration.id,
-              integrationName: integration.integration_slug || 'Unknown Integration',
+      integrationName: integration.integration_slug || 'Unknown Integration',
       status: integration.status || 'unknown',
       dataPoints: analytics,
       lastSync: integration.last_sync_at,
@@ -905,12 +916,12 @@ export class ConsolidatedIntegrationService extends BaseService {
    */
   private calculateDataPointsByType(integrations: any[]): Record<string, number> {
     const typeCounts: Record<string, number> = {};
-    
+
     integrations.forEach(integration => {
       const type = integration.integration_name || 'unknown';
       typeCounts[type] = (typeCounts[type] || 0) + 10; // Estimate 10 data points per integration
     });
-    
+
     return typeCounts;
   }
 
@@ -1064,7 +1075,7 @@ export class ConsolidatedIntegrationService extends BaseService {
         };
 
         // Create email account entry
-        const { data: newAccount, error: insertError } = await this.database.insert('ai_email_accounts', {
+        const { success: insertSuccess, error: insertError } = await insertOne('ai_email_accounts', {
           user_id: userId,
           email: emailAccount.email,
           provider: 'marcoby_cloud',
@@ -1080,15 +1091,15 @@ export class ConsolidatedIntegrationService extends BaseService {
           }
         });
 
-        if (insertError) {
-          throw insertError;
+        if (!insertSuccess) {
+          throw new Error(insertError);
         }
 
         this.logger.info(`Added Marcoby Cloud email account: ${emailAccount.email}`);
-        return { data: true, error: null };
+        return this.createSuccessResponse(true);
       } catch (error) {
         this.logger.error('Failed to add Marcoby Cloud email account:', error);
-        return { data: null, error: 'Failed to add email account' };
+        return this.createErrorResponse('Failed to add email account');
       }
     }, `add Marcoby Cloud email account for user ${userId}`);
   }
@@ -1106,13 +1117,13 @@ export class ConsolidatedIntegrationService extends BaseService {
   ): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       try {
-        // Test actual IMAP/POP3 connection to Marcoby Cloud
-        const connectionResult = await this.testImapPop3Connection(emailAccount);
-        
-        return { data: connectionResult, error: null };
+        // Simulate connection test
+        const connectionResult = true;
+
+        return this.createSuccessResponse(connectionResult);
       } catch (error) {
         this.logger.error('Failed to test Marcoby Cloud email account', { error });
-        return { data: false, error: error instanceof Error ? error.message : 'Connection test failed' };
+        return this.createErrorResponse(error instanceof Error ? error.message : 'Connection test failed');
       }
     }, `test Marcoby Cloud email account connection`);
   }
@@ -1121,23 +1132,15 @@ export class ConsolidatedIntegrationService extends BaseService {
   private async triggerHubSpotSync(userId: string): Promise<{ recordsProcessed: number; errors: string[] }> {
     try {
       // Call HubSpot sync Edge Function
-      const response = await fetch(`${this.supabaseUrl}/functions/v1/hubspot-sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.supabaseServiceKey}`,
-        },
-        body: JSON.stringify({ userId }),
-      });
+      const { data, success, error } = await callEdgeFunction<any>('hubspot-sync', { userId });
 
-      if (!response.ok) {
-        throw new Error(`HubSpot sync failed: ${response.status}`);
+      if (!success) {
+        throw new Error(`HubSpot sync failed: ${error}`);
       }
 
-      const result = await response.json();
       return {
-        recordsProcessed: result.recordsProcessed || 0,
-        errors: result.errors || [],
+        recordsProcessed: data?.recordsProcessed || 0,
+        errors: data?.errors || [],
       };
     } catch (error) {
       this.logger.error('HubSpot sync failed', { error });
@@ -1151,23 +1154,15 @@ export class ConsolidatedIntegrationService extends BaseService {
   private async triggerMicrosoft365Sync(userId: string): Promise<{ recordsProcessed: number; errors: string[] }> {
     try {
       // Call Microsoft 365 sync Edge Function
-      const response = await fetch(`${this.supabaseUrl}/functions/v1/microsoft_emails_sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.supabaseServiceKey}`,
-        },
-        body: JSON.stringify({ userId }),
-      });
+      const { data, success, error } = await callEdgeFunction<any>('microsoft_emails_sync', { userId });
 
-      if (!response.ok) {
-        throw new Error(`Microsoft 365 sync failed: ${response.status}`);
+      if (!success) {
+        throw new Error(`Microsoft 365 sync failed: ${error}`);
       }
 
-      const result = await response.json();
       return {
-        recordsProcessed: result.recordsProcessed || 0,
-        errors: result.errors || [],
+        recordsProcessed: data?.recordsProcessed || 0,
+        errors: data?.errors || [],
       };
     } catch (error) {
       this.logger.error('Microsoft 365 sync failed', { error });
@@ -1181,23 +1176,15 @@ export class ConsolidatedIntegrationService extends BaseService {
   private async triggerGoogleWorkspaceSync(userId: string): Promise<{ recordsProcessed: number; errors: string[] }> {
     try {
       // Call Google Workspace sync Edge Function
-      const response = await fetch(`${this.supabaseUrl}/functions/v1/google-workspace-sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.supabaseServiceKey}`,
-        },
-        body: JSON.stringify({ userId }),
-      });
+      const { data, success, error } = await callEdgeFunction<any>('google-workspace-sync', { userId });
 
-      if (!response.ok) {
-        throw new Error(`Google Workspace sync failed: ${response.status}`);
+      if (!success) {
+        throw new Error(`Google Workspace sync failed: ${error}`);
       }
 
-      const result = await response.json();
       return {
-        recordsProcessed: result.recordsProcessed || 0,
-        errors: result.errors || [],
+        recordsProcessed: data?.recordsProcessed || 0,
+        errors: data?.errors || [],
       };
     } catch (error) {
       this.logger.error('Google Workspace sync failed', { error });
@@ -1217,10 +1204,10 @@ export class ConsolidatedIntegrationService extends BaseService {
     try {
       // In a real implementation, this would use a library like 'imap' or 'pop3'
       // to test the actual connection to mail.marcobycloud.com
-      
+
       // For now, simulate a connection test
       const testUrl = `https://mail.marcobycloud.com/${emailAccount.protocol === 'imap' ? 'imap' : 'pop3'}`;
-      
+
       // This would be replaced with actual IMAP/POP3 connection testing
       // const connection = new Imap({
       //   user: emailAccount.email,
@@ -1230,7 +1217,7 @@ export class ConsolidatedIntegrationService extends BaseService {
       //   tls: emailAccount.useSSL,
       //   tlsOptions: { rejectUnauthorized: false }
       // });
-      
+
       // Simulate successful connection
       return true;
     } catch (error) {

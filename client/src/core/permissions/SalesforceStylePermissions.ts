@@ -52,7 +52,7 @@ export interface FieldPermission {
 export interface SharingRule {
   id: string;
   objectName: string;
-  type: 'Owner' | 'Role' | 'Territory' | 'Criteria';
+  type: 'Owner' | 'Role' | 'Territory' | 'Criteria' | 'Company';
   access: 'Read' | 'Edit' | 'All';
   criteria?: Record<string, unknown>;
 }
@@ -62,8 +62,8 @@ export class SalesforceStylePermissions {
    * Check if user has permission for a specific action
    */
   async hasPermission(
-    userId: string, 
-    resource: string, 
+    userId: string,
+    resource: string,
     action: string
   ): Promise<boolean> {
     try {
@@ -100,17 +100,13 @@ export class SalesforceStylePermissions {
    */
   private async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('id, role, company_id')
-        .eq('id', userId)
-        .single();
+      const { data, success, error } = await selectOne<any>('user_profiles', { id: userId });
 
-      if (error || !data) return null;
+      if (!success || !data) return null;
 
       // Map database role to Salesforce-style profile
       const profileType = this.mapRoleToProfileType(data.role);
-      
+
       return {
         id: data.id,
         type: profileType,
@@ -176,9 +172,9 @@ export class SalesforceStylePermissions {
    * Check field-level permissions
    */
   async hasFieldPermission(
-    userId: string, 
-    objectName: string, 
-    fieldName: string, 
+    userId: string,
+    objectName: string,
+    fieldName: string,
     action: 'read' | 'edit'
   ): Promise<boolean> {
     try {
@@ -193,15 +189,15 @@ export class SalesforceStylePermissions {
 
       // Check field-level security
       const fieldPermissions = await this.getFieldPermissions(userId, objectName);
-      const fieldPermission = fieldPermissions.find(fp => fp.fieldName === fieldName);
-      
+      const fieldPermission = fieldPermissions[fieldName];
+
       if (!fieldPermission) {
         // Default to read-only for standard users
         return action === 'read';
       }
 
-      return fieldPermission.access === 'Edit' || 
-             (action === 'read' && fieldPermission.access === 'Read');
+      return (action === 'edit' && fieldPermission.update) ||
+        (action === 'read' && fieldPermission.read);
     } catch (error) {
       logger.error('Error checking field permissions:', error);
       return false;
@@ -212,8 +208,8 @@ export class SalesforceStylePermissions {
    * Apply sharing rules to query
    */
   async applySharingRules(
-    query: string, 
-    userId: string, 
+    query: string,
+    userId: string,
     objectName: string
   ): Promise<string> {
     try {
@@ -222,10 +218,10 @@ export class SalesforceStylePermissions {
 
       // Get sharing rules for the object
       const sharingRules = await this.getSharingRules(objectName, userId);
-      
+
       // Apply sharing rules to query
       let modifiedQuery = query;
-      
+
       for (const rule of sharingRules) {
         switch (rule.type) {
           case 'Owner':
@@ -281,17 +277,25 @@ export class SalesforceStylePermissions {
     }
   }
 
-  private async getFieldPermissions(
-    userId: string, 
+  /**
+   * Get all field permissions for a user on an object
+   */
+  public async getFieldPermissions(
+    userId: string,
     objectName: string
-  ): Promise<FieldPermission[]> {
+  ): Promise<Record<string, { read: boolean; create: boolean; update: boolean; }>> {
     // In a real implementation, this would query field permissions
-    // For now, return empty array
-    return [];
+    // Return a default set for now
+    return {
+      'id': { read: true, create: false, update: false },
+      'created_at': { read: true, create: false, update: false },
+      'updated_at': { read: true, create: false, update: false },
+      'name': { read: true, create: true, update: true },
+    };
   }
 
   private async getSharingRules(
-    objectName: string, 
+    objectName: string,
     userId: string
   ): Promise<SharingRule[]> {
     // In a real implementation, this would query sharing rules

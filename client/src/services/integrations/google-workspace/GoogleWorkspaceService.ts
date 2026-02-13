@@ -1,5 +1,5 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/database';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, upsertOne, callEdgeFunction } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 import { retryFetch } from '@/shared/utils/retry';
 import { createGoogleWorkspaceAuthUrl } from './utils';
@@ -120,19 +120,21 @@ export class GoogleWorkspaceService extends BaseService {
     return this.executeDbOperation(async () => {
       try {
         // Get the user's Google Workspace integration
-        const { data: userIntegration, error: integrationError } = await this.supabase
-          .from('user_integrations')
-          .select('config, status')
-          .eq('user_id', userId)
-          .eq('integration_slug', 'Google Workspace')
-          .single();
+        const { data: userIntegration, success, error: integrationError } = await selectOne<any>(
+          'user_integrations',
+          { user_id: userId, integration_slug: 'Google Workspace' }
+        );
 
-        if (integrationError || !userIntegration) {
-          return { data: null, error: 'Google Workspace integration not found' };
+        if (!success || !userIntegration) {
+          return {
+            data: null,
+            error: integrationError || 'Google Workspace integration not found',
+            success: false
+          };
         }
 
         if (userIntegration.status !== 'connected') {
-          return { data: null, error: 'Google Workspace integration is not connected' };
+          return { data: null, error: 'Google Workspace integration is not connected', success: false };
         }
 
         const config = userIntegration.config as any;
@@ -149,23 +151,24 @@ export class GoogleWorkspaceService extends BaseService {
               expires_at: config.expires_at,
               scope: config.scope,
             },
-            error: null
+            error: null,
+            success: true
           };
         }
 
         // Token is expired, refresh it
         this.logger.info('Google Workspace token expired, refreshing...', { userId, expiresAt });
-        
+
         const refreshResult = await this.refreshTokens(userId, config.refresh_token);
-        
+
         if (!refreshResult.success) {
-          return { data: null, error: refreshResult.error || 'Failed to refresh tokens' };
+          return { data: null, error: refreshResult.error || 'Failed to refresh tokens', success: false };
         }
 
-        return { data: refreshResult.data!, error: null };
+        return { data: refreshResult.data!, error: null, success: true };
       } catch (error) {
         this.logger.error('Error getting valid Google Workspace tokens', { error, userId });
-        return { data: null, error: 'Failed to get valid tokens' };
+        return { data: null, error: 'Failed to get valid tokens', success: false };
       }
     }, `get valid Google Workspace tokens for user ${userId}`);
   }
@@ -177,8 +180,8 @@ export class GoogleWorkspaceService extends BaseService {
     try {
       const result = await authentikAuthService.getSession();
       const session = result.data;
-      
-      if (!session?.access_token) {
+
+      if (!session?.accessToken) {
         return this.createErrorResponse('No valid session found');
       }
 
@@ -186,7 +189,7 @@ export class GoogleWorkspaceService extends BaseService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${session.accessToken}`,
         },
         body: JSON.stringify({
           refresh_token: refreshToken,
@@ -199,11 +202,12 @@ export class GoogleWorkspaceService extends BaseService {
       }
 
       const tokenData = await response.json();
-      
+
       // Update the stored tokens
-      const { error: updateError } = await this.supabase
-        .from('user_integrations')
-        .update({
+      const { success: updateSuccess, error: updateError } = await updateOne(
+        'user_integrations',
+        { user_id: userId, integration_slug: 'Google Workspace' },
+        {
           config: {
             access_token: tokenData.access_token,
             refresh_token: tokenData.refresh_token || refreshToken,
@@ -211,9 +215,8 @@ export class GoogleWorkspaceService extends BaseService {
             scope: tokenData.scope,
           },
           updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId)
-        .eq('integration_slug', 'Google Workspace');
+        }
+      );
 
       if (updateError) {
         this.logger.error('Failed to update refreshed tokens', { error: updateError, userId });
@@ -237,35 +240,33 @@ export class GoogleWorkspaceService extends BaseService {
   async hasValidConnection(userId: string): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       try {
-        const { data: userIntegration, error } = await this.supabase
-          .from('user_integrations')
-          .select('status, config')
-          .eq('user_id', userId)
-          .eq('integration_name', 'Google Workspace')
-          .single();
+        const { data: userIntegration, success, error } = await selectOne<any>(
+          'user_integrations',
+          { user_id: userId, integration_name: 'Google Workspace' }
+        );
 
-        if (error || !userIntegration) {
-          return { data: false, error: null };
+        if (!success || !userIntegration) {
+          return { data: false, error: error || null, success: true };
         }
 
         if (userIntegration.status !== 'connected') {
-          return { data: false, error: null };
+          return { data: false, error: null, success: true };
         }
 
         // Check if token is expired
         const config = userIntegration.config as any;
         if (!config.expires_at) {
-          return { data: false, error: null };
+          return { data: false, error: null, success: true };
         }
 
         const expiresAt = new Date(config.expires_at);
         const now = new Date();
         const isValid = expiresAt.getTime() > now.getTime() + 300000; // 5 minute buffer
 
-        return { data: isValid, error: null };
+        return { data: isValid, error: null, success: true };
       } catch (error) {
         this.logger.error('Error checking Google Workspace connection', { error, userId });
-        return { data: false, error: null };
+        return { data: false, error: null, success: true };
       }
     }, `check Google Workspace connection for user ${userId}`);
   }
@@ -281,21 +282,25 @@ export class GoogleWorkspaceService extends BaseService {
   }>> {
     return this.executeDbOperation(async () => {
       try {
-        const { data: userIntegration, error } = await this.supabase
-          .from('user_integrations')
-          .select('status, config, last_sync')
-          .eq('user_id', userId)
-          .eq('integration_name', 'Google Workspace')
-          .single();
+        const { data: userIntegration, success, error } = await selectOne<any>(
+          'user_integrations',
+          { user_id: userId, integration_name: 'Google Workspace' }
+        );
 
-        if (error || !userIntegration) {
+        if (!success || !userIntegration) {
           return {
             data: {
               connected: false,
               status: 'not_connected',
             },
-            error: null
-          };
+            error: error || null,
+            success: true
+          } as ServiceResponse<{
+            connected: boolean;
+            status: string;
+            lastSync?: string;
+            expiresAt?: string;
+          }>;
         }
 
         const config = userIntegration.config as any;
@@ -310,11 +315,12 @@ export class GoogleWorkspaceService extends BaseService {
             lastSync: userIntegration.last_sync,
             expiresAt: config?.expires_at,
           },
-          error: null
+          error: null,
+          success: true
         };
       } catch (error) {
         this.logger.error('Error getting Google Workspace connection status', { error, userId });
-        return { data: null, error: 'Failed to get connection status' };
+        return { data: null, error: 'Failed to get connection status', success: false };
       }
     }, `get Google Workspace connection status for user ${userId}`);
   }
@@ -494,13 +500,15 @@ export class GoogleWorkspaceService extends BaseService {
         updated_at: new Date().toISOString(),
       }));
 
-      const { error } = await this.supabase
-        .from('integration_data')
-        .upsert(userData, { onConflict: 'user_id,integration_name,data_type,external_id' });
-
-      if (error) {
-        this.logger.error('Error storing Google Workspace users', { error });
-        return 0;
+      for (const data of userData) {
+        const { success, error } = await upsertOne(
+          'integration_data',
+          data,
+          'user_id,integration_name,data_type,external_id'
+        );
+        if (!success) {
+          this.logger.error('Error storing Google Workspace users', { error });
+        }
       }
 
       return users.length;
@@ -525,13 +533,15 @@ export class GoogleWorkspaceService extends BaseService {
         updated_at: new Date().toISOString(),
       }));
 
-      const { error } = await this.supabase
-        .from('integration_data')
-        .upsert(groupData, { onConflict: 'user_id,integration_name,data_type,external_id' });
-
-      if (error) {
-        this.logger.error('Error storing Google Workspace groups', { error });
-        return 0;
+      for (const data of groupData) {
+        const { success, error } = await upsertOne(
+          'integration_data',
+          data,
+          'user_id,integration_name,data_type,external_id'
+        );
+        if (!success) {
+          this.logger.error('Error storing Google Workspace groups', { error });
+        }
       }
 
       return groups.length;
@@ -556,13 +566,15 @@ export class GoogleWorkspaceService extends BaseService {
         updated_at: new Date().toISOString(),
       }));
 
-      const { error } = await this.supabase
-        .from('integration_data')
-        .upsert(fileData, { onConflict: 'user_id,integration_name,data_type,external_id' });
-
-      if (error) {
-        this.logger.error('Error storing Google Workspace Drive files', { error });
-        return 0;
+      for (const data of fileData) {
+        const { success, error } = await upsertOne(
+          'integration_data',
+          data,
+          'user_id,integration_name,data_type,external_id'
+        );
+        if (!success) {
+          this.logger.error('Error storing Google Workspace files', { error });
+        }
       }
 
       return files.length;
@@ -587,13 +599,15 @@ export class GoogleWorkspaceService extends BaseService {
         updated_at: new Date().toISOString(),
       }));
 
-      const { error } = await this.supabase
-        .from('integration_data')
-        .upsert(eventData, { onConflict: 'user_id,integration_name,data_type,external_id' });
-
-      if (error) {
-        this.logger.error('Error storing Google Workspace Calendar events', { error });
-        return 0;
+      for (const data of eventData) {
+        const { success, error } = await upsertOne(
+          'integration_data',
+          data,
+          'user_id,integration_name,data_type,external_id'
+        );
+        if (!success) {
+          this.logger.error('Error storing Google Workspace events', { error });
+        }
       }
 
       return events.length;
@@ -608,15 +622,15 @@ export class GoogleWorkspaceService extends BaseService {
    */
   private async updateIntegrationStatus(userId: string, status: any): Promise<void> {
     try {
-      const { error } = await this.supabase
-        .from('user_integrations')
-        .update({
+      const { success, error } = await updateOne(
+        'user_integrations',
+        { user_id: userId, integration_name: 'Google Workspace' },
+        {
           status: status.status,
           last_sync: status.last_sync,
           updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId)
-        .eq('integration_name', 'Google Workspace');
+        }
+      );
 
       if (error) {
         this.logger.error('Error updating Google Workspace integration status', { error });
@@ -632,14 +646,16 @@ export class GoogleWorkspaceService extends BaseService {
   async getGoogleWorkspaceData(userId: string): Promise<ServiceResponse<GoogleWorkspaceIntegrationData>> {
     return this.executeDbOperation(async () => {
       try {
-        const { data: integrationData, error } = await this.supabase
-          .from('integration_data')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('integration_name', 'Google Workspace');
+        const { data: integrationData, success, error } = await select<any>({
+          table: 'integration_data',
+          filters: {
+            user_id: userId,
+            integration_name: 'Google Workspace'
+          }
+        });
 
-        if (error) {
-          return { data: null, error: 'Failed to fetch integration data' };
+        if (!success || !integrationData) {
+          return { data: null, error: error || 'Failed to fetch integration data', success: false };
         }
 
         const users = integrationData
@@ -658,7 +674,7 @@ export class GoogleWorkspaceService extends BaseService {
           .filter(item => item.data_type === 'calendar_events')
           .map(item => item.data as GoogleWorkspaceCalendarEvent);
 
-        const lastSync = integrationData.length > 0 
+        const lastSync = integrationData.length > 0
           ? Math.max(...integrationData.map(item => new Date(item.updated_at).getTime()))
           : new Date().toISOString();
 
@@ -670,11 +686,12 @@ export class GoogleWorkspaceService extends BaseService {
             calendarEvents,
             lastSync: new Date(lastSync).toISOString(),
           },
-          error: null
+          error: null,
+          success: true
         };
       } catch (error) {
         this.logger.error('Error getting Google Workspace data', { error, userId });
-        return { data: null, error: 'Failed to get integration data' };
+        return { data: null, error: 'Failed to get integration data', success: false };
       }
     }, `get Google Workspace data for user ${userId}`);
   }

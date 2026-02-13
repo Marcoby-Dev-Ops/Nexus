@@ -5,7 +5,7 @@
 
 import { logger } from '@/shared/utils/logger';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectOne, selectData, callRPC } from '@/lib/database';
+import { selectOne, selectData, callRPC, upsertOne, insertOne } from '@/lib/api-client';
 
 // ============================================================================
 // INTERFACES
@@ -71,283 +71,132 @@ export class CompanyStatusService extends BaseService {
    * Get company status overview for a user
    */
   async getCompanyStatusOverview(userId: string): Promise<ServiceResponse<CompanyStatusOverview>> {
-    return this.executeDbOperation(async () => {
-      try {
-        // Get user's company ID using the ensure_user_profile RPC function
-        const { data: profileData, error: profileError } = await callRPC('ensure_user_profile', { user_id: userId });
-        
-        if (profileError || !profileData || profileData.length === 0) {
-          this.logger.error('Failed to get user profile', { userId, error: profileError });
-          return this.createErrorResponse<CompanyStatusOverview>('Failed to get user profile');
-        }
-        
-        const userProfile = profileData[0];
-        
-        if (!userProfile || !(userProfile as any).company_id) {
-          this.logger.info('No company found for user, returning default status', { userId });
-          return this.createSuccessResponse<CompanyStatusOverview>({
-            overallHealth: {
-              score: 0,
-              status: 'critical',
-              trend: 'stable'
-            },
-            keyMetrics: {
-              revenue: { value: 0, trend: 0, period: 'month' },
-              customer: { value: 0, trend: 0, period: 'month' },
-              uptime: { value: 99.9, trend: 0, period: 'week' },
-              satisfaction: { value: 0, trend: 0, period: 'week' }
-            },
-            dimensions: {
-              financial: {
-                id: 'financial_health',
-                name: 'Financial Health',
-                score: 0,
-                trend: 'stable',
-                description: 'Financial stability and growth metrics'
-              },
-              operational: {
-                id: 'operational_efficiency',
-                name: 'Operational Efficiency',
-                score: 0,
-                trend: 'stable',
-                description: 'Process efficiency and productivity metrics'
-              },
-              market: {
-                id: 'market_position',
-                name: 'Market Position',
-                score: 0,
-                trend: 'stable',
-                description: 'Competitive position and market share'
-              },
-              customer: {
-                id: 'customer_satisfaction',
-                name: 'Customer Satisfaction',
-                score: 0,
-                trend: 'stable',
-                description: 'Customer satisfaction and retention metrics'
-              },
-              team: {
-                id: 'team_performance',
-                name: 'Team Performance',
-                score: 0,
-                trend: 'stable',
-                description: 'Team productivity and engagement metrics'
-              }
-            },
-            alerts: [],
-            insights: [],
-            lastUpdated: new Date().toISOString()
-          });
-        }
+    try {
+      this.logger.info('Getting company status overview', { userId });
 
-        const companyId = (userProfile as any).company_id;
+      // Get user's company ID using the ensure_user_profile RPC function
+      const { data: profileData, error: profileError, success: profileSuccess } = await callRPC<any[]>('ensure_user_profile', { user_id: userId });
 
-        // Get company status data
-        const { data: statusData, error: statusError } = await selectData('company_status', '*', { company_id: companyId });
-
-        if (statusError) {
-          this.logger.error('Failed to fetch company status data', { 
-            error: statusError, 
-            userId, 
-            companyId,
-            errorMessage: typeof statusError === 'string' ? statusError : 'Unknown database error',
-            errorCode: 'DB_ERROR'
-          });
-          
-          // Return default status instead of failing
-          return this.createSuccessResponse<CompanyStatusOverview>({
-            overallHealth: {
-              score: 0,
-              status: 'critical',
-              trend: 'stable'
-            },
-            keyMetrics: {
-              revenue: { value: 0, trend: 0, period: 'month' },
-              customer: { value: 0, trend: 0, period: 'month' },
-              uptime: { value: 99.9, trend: 0, period: 'week' },
-              satisfaction: { value: 0, trend: 0, period: 'week' }
-            },
-            dimensions: {
-              financial: {
-                id: 'financial_health',
-                name: 'Financial Health',
-                score: 0,
-                trend: 'stable',
-                description: 'Financial stability and growth metrics'
-              },
-              operational: {
-                id: 'operational_efficiency',
-                name: 'Operational Efficiency',
-                score: 0,
-                trend: 'stable',
-                description: 'Process efficiency and productivity metrics'
-              },
-              market: {
-                id: 'market_position',
-                name: 'Market Position',
-                score: 0,
-                trend: 'stable',
-                description: 'Competitive position and market share'
-              },
-              customer: {
-                id: 'customer_satisfaction',
-                name: 'Customer Satisfaction',
-                score: 0,
-                trend: 'stable',
-                description: 'Customer satisfaction and retention metrics'
-              },
-              team: {
-                id: 'team_performance',
-                name: 'Team Performance',
-                score: 0,
-                trend: 'stable',
-                description: 'Team productivity and engagement metrics'
-              }
-            },
-            alerts: [],
-            insights: [],
-            lastUpdated: new Date().toISOString()
-          });
-        }
-
-        // Process the status data
-        const latestStatus = statusData && statusData.length > 0 ? statusData[0] as any : null;
-        
-        const overview: CompanyStatusOverview = {
-          overallHealth: {
-            score: latestStatus?.overall_score || 0,
-            status: this.calculateStatus(latestStatus?.overall_score || 0),
-            trend: this.calculateTrend(latestStatus?.overall_score || 0)
-          },
-          keyMetrics: {
-            revenue: {
-              value: (latestStatus?.financial_health || 0) * 1000,
-              trend: 5.2,
-              period: 'month'
-            },
-            customer: {
-              value: Math.floor((latestStatus?.customer_satisfaction || 0) * 10),
-              trend: 10.5,
-              period: 'month'
-            },
-            uptime: {
-              value: 99.9,
-              trend: 0.1,
-              period: 'week'
-            },
-            satisfaction: {
-              value: latestStatus?.customer_satisfaction || 0,
-              trend: -0.2,
-              period: 'week'
-            }
-          },
-          dimensions: {
-            financial: {
-              id: 'financial_health',
-              name: 'Financial Health',
-              score: latestStatus?.financial_health || 0,
-              trend: this.calculateTrend(latestStatus?.financial_health),
-              description: 'Financial stability and growth metrics',
-              lastUpdated: latestStatus?.last_updated
-            },
-            operational: {
-              id: 'operational_efficiency',
-              name: 'Operational Efficiency',
-              score: latestStatus?.operational_efficiency || 0,
-              trend: this.calculateTrend(latestStatus?.operational_efficiency),
-              description: 'Process efficiency and productivity metrics',
-              lastUpdated: latestStatus?.last_updated
-            },
-            market: {
-              id: 'market_position',
-              name: 'Market Position',
-              score: latestStatus?.market_position || 0,
-              trend: this.calculateTrend(latestStatus?.market_position),
-              description: 'Competitive position and market share',
-              lastUpdated: latestStatus?.last_updated
-            },
-            customer: {
-              id: 'customer_satisfaction',
-              name: 'Customer Satisfaction',
-              score: latestStatus?.customer_satisfaction || 0,
-              trend: this.calculateTrend(latestStatus?.customer_satisfaction),
-              description: 'Customer satisfaction and retention metrics',
-              lastUpdated: latestStatus?.last_updated
-            },
-            team: {
-              id: 'team_performance',
-              name: 'Team Performance',
-              score: latestStatus?.team_performance || 0,
-              trend: this.calculateTrend(latestStatus?.team_performance),
-              description: 'Team productivity and engagement metrics',
-              lastUpdated: latestStatus?.last_updated
-            }
-          },
-          alerts: this.generateAlerts(latestStatus),
-          insights: this.generateInsights(latestStatus),
-          lastUpdated: latestStatus?.last_updated || new Date().toISOString()
-        };
-
-        return this.createSuccessResponse<CompanyStatusOverview>(overview);
-      } catch (error) {
-        this.logger.error('Unexpected error in getCompanyStatusOverview', { error, userId });
-        
-        // Return default status instead of failing
-        return this.createSuccessResponse<CompanyStatusOverview>({
-          overallHealth: {
-            score: 0,
-            status: 'critical',
-            trend: 'stable'
-          },
-          keyMetrics: {
-            revenue: { value: 0, trend: 0, period: 'month' },
-            customer: { value: 0, trend: 0, period: 'month' },
-            uptime: { value: 99.9, trend: 0, period: 'week' },
-            satisfaction: { value: 0, trend: 0, period: 'week' }
-          },
-          dimensions: {
-            financial: {
-              id: 'financial_health',
-              name: 'Financial Health',
-              score: 0,
-              trend: 'stable',
-              description: 'Financial stability and growth metrics'
-            },
-            operational: {
-              id: 'operational_efficiency',
-              name: 'Operational Efficiency',
-              score: 0,
-              trend: 'stable',
-              description: 'Process efficiency and productivity metrics'
-            },
-            market: {
-              id: 'market_position',
-              name: 'Market Position',
-              score: 0,
-              trend: 'stable',
-              description: 'Competitive position and market share'
-            },
-            customer: {
-              id: 'customer_satisfaction',
-              name: 'Customer Satisfaction',
-              score: 0,
-              trend: 'stable',
-              description: 'Customer satisfaction and retention metrics'
-            },
-            team: {
-              id: 'team_performance',
-              name: 'Team Performance',
-              score: 0,
-              trend: 'stable',
-              description: 'Team productivity and engagement metrics'
-            }
-          },
-          alerts: [],
-          insights: [],
-          lastUpdated: new Date().toISOString()
-        });
+      if (!profileSuccess || !profileData || profileData.length === 0) {
+        this.logger.error('Failed to get user profile', { userId, error: profileError });
+        return this.createErrorResponse<CompanyStatusOverview>('Failed to get user profile');
       }
-    }, 'getCompanyStatusOverview');
+
+      const userProfile = profileData[0];
+
+      if (!userProfile || !userProfile.company_id) {
+        this.logger.info('No company found for user, returning default status', { userId });
+        return this.createSuccessResponse<CompanyStatusOverview>(this.getDefaultStatus());
+      }
+
+      const companyId = userProfile.company_id;
+
+      // Get company status data
+      const { data: statusData, error: statusError, success: statusSuccess } = await selectData<any>({
+        table: 'company_status',
+        filters: { company_id: companyId }
+      });
+
+      if (!statusSuccess) {
+        this.logger.error('Failed to fetch company status data', {
+          error: statusError,
+          userId,
+          companyId,
+          errorMessage: statusError || 'Unknown database error',
+          errorCode: 'DB_ERROR'
+        });
+
+        // Return default status instead of failing
+        return this.createSuccessResponse<CompanyStatusOverview>(this.getDefaultStatus());
+      }
+
+      // Process the status data
+      const latestStatus = statusData && statusData.length > 0 ? statusData[0] : null;
+
+      if (!latestStatus) {
+        return this.createSuccessResponse<CompanyStatusOverview>(this.getDefaultStatus());
+      }
+
+      const overview: CompanyStatusOverview = {
+        overallHealth: {
+          score: latestStatus?.overall_score || 0,
+          status: this.calculateStatus(latestStatus?.overall_score || 0),
+          trend: this.calculateTrend(latestStatus?.overall_score || 0)
+        },
+        keyMetrics: {
+          revenue: {
+            value: (latestStatus?.financial_health || 0) * 1000,
+            trend: 5.2,
+            period: 'month'
+          },
+          customer: {
+            value: Math.floor((latestStatus?.customer_satisfaction || 0) * 10),
+            trend: 10.5,
+            period: 'month'
+          },
+          uptime: {
+            value: 99.9,
+            trend: 0.1,
+            period: 'week'
+          },
+          satisfaction: {
+            value: latestStatus?.customer_satisfaction || 0,
+            trend: -0.2,
+            period: 'week'
+          }
+        },
+        dimensions: {
+          financial: {
+            id: 'financial_health',
+            name: 'Financial Health',
+            score: latestStatus?.financial_health || 0,
+            trend: this.calculateTrend(latestStatus?.financial_health),
+            description: 'Financial stability and growth metrics',
+            lastUpdated: latestStatus?.last_updated
+          },
+          operational: {
+            id: 'operational_efficiency',
+            name: 'Operational Efficiency',
+            score: latestStatus?.operational_efficiency || 0,
+            trend: this.calculateTrend(latestStatus?.operational_efficiency),
+            description: 'Process efficiency and productivity metrics',
+            lastUpdated: latestStatus?.last_updated
+          },
+          market: {
+            id: 'market_position',
+            name: 'Market Position',
+            score: latestStatus?.market_position || 0,
+            trend: this.calculateTrend(latestStatus?.market_position),
+            description: 'Competitive position and market share',
+            lastUpdated: latestStatus?.last_updated
+          },
+          customer: {
+            id: 'customer_satisfaction',
+            name: 'Customer Satisfaction',
+            score: latestStatus?.customer_satisfaction || 0,
+            trend: this.calculateTrend(latestStatus?.customer_satisfaction),
+            description: 'Customer satisfaction and retention metrics',
+            lastUpdated: latestStatus?.last_updated
+          },
+          team: {
+            id: 'team_performance',
+            name: 'Team Performance',
+            score: latestStatus?.team_performance || 0,
+            trend: this.calculateTrend(latestStatus?.team_performance),
+            description: 'Team productivity and engagement metrics',
+            lastUpdated: latestStatus?.last_updated
+          }
+        },
+        alerts: this.generateAlerts(latestStatus),
+        insights: this.generateInsights(latestStatus),
+        lastUpdated: latestStatus?.last_updated || new Date().toISOString()
+      };
+
+      return this.createSuccessResponse<CompanyStatusOverview>(overview);
+    } catch (error) {
+      this.logger.error('Unexpected error in getCompanyStatusOverview', { error, userId });
+      return this.createSuccessResponse<CompanyStatusOverview>(this.getDefaultStatus());
+    }
   }
 
   /**
@@ -357,41 +206,36 @@ export class CompanyStatusService extends BaseService {
     companyId: string,
     status: Partial<CompanyStatusOverview>
   ): Promise<ServiceResponse<void>> {
-    return this.executeDbOperation(async () => {
-      this.logMethodCall('updateCompanyStatus', { companyId });
+    try {
+      this.logger.info('Updating company status', { companyId });
 
-      try {
-        const updateData: any = {
-          company_id: companyId,
-          last_updated: new Date().toISOString()
-        };
+      const updateData: any = {
+        company_id: companyId,
+        last_updated: new Date().toISOString()
+      };
 
-        if (status.overallHealth) {
-          updateData.overall_score = status.overallHealth.score;
-        }
-
-        if (status.dimensions) {
-          Object.entries(status.dimensions).forEach(([key, dimension]) => {
-            updateData[`${key}_score`] = dimension.score;
-          });
-        }
-
-        const { error } = await this.supabase
-          .from('company_status')
-          .upsert(updateData, { onConflict: 'company_id' });
-
-        if (error) {
-          this.logFailure('updateCompanyStatus', error, { companyId });
-          return { data: null, error };
-        }
-
-        this.logSuccess('updateCompanyStatus', { companyId });
-        return { data: null, error: null };
-      } catch (error) {
-        this.logFailure('updateCompanyStatus', error, { companyId });
-        return { data: null, error };
+      if (status.overallHealth) {
+        updateData.overall_score = status.overallHealth.score;
       }
-    }, 'updateCompanyStatus');
+
+      if (status.dimensions) {
+        Object.entries(status.dimensions).forEach(([key, dimension]) => {
+          updateData[`${key}_score`] = dimension.score;
+        });
+      }
+
+      const { error, success } = await upsertOne('company_status', updateData, 'company_id');
+
+      if (!success) {
+        this.logger.error('Failed to update company status', { companyId, error });
+        return this.createErrorResponse<void>(error || 'Failed to update company status');
+      }
+
+      return this.createSuccessResponse<void>(undefined);
+    } catch (error) {
+      this.logger.error('Unexpected error in updateCompanyStatus', { error, companyId });
+      return this.handleError(error, 'Failed to update company status');
+    }
   }
 
   /**
@@ -409,46 +253,41 @@ export class CompanyStatusService extends BaseService {
     customerSatisfaction: number;
     teamPerformance: number;
   }>>> {
-    return this.executeDbOperation(async () => {
-      this.logMethodCall('getCompanyStatusHistory', { companyId, days });
+    try {
+      this.logger.info('Getting company status history', { companyId, days });
 
-      try {
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
 
-        const { data, error } = await this.supabase
-          .from('company_status')
-          .select('*')
-          .eq('company_id', companyId)
-          .gte('last_updated', startDate.toISOString())
-          .order('last_updated', { ascending: true });
+      const { data, error, success } = await selectData<any>({
+        table: 'company_status',
+        filters: { company_id: companyId },
+        orderBy: [{ column: 'last_updated', ascending: true }]
+      });
 
-        if (error) {
-          this.logFailure('getCompanyStatusHistory', error, { companyId });
-          return { data: null, error };
-        }
-
-        const history = data?.map(status => ({
-          date: status.last_updated,
-          overallScore: status.overall_score || 0,
-          financialHealth: status.financial_health || 0,
-          operationalEfficiency: status.operational_efficiency || 0,
-          marketPosition: status.market_position || 0,
-          customerSatisfaction: status.customer_satisfaction || 0,
-          teamPerformance: status.team_performance || 0
-        })) || [];
-
-        this.logSuccess('getCompanyStatusHistory', { 
-          companyId, 
-          recordCount: history.length 
-        });
-
-        return { data: history, error: null };
-      } catch (error) {
-        this.logFailure('getCompanyStatusHistory', error, { companyId });
-        return { data: null, error };
+      if (!success) {
+        this.logger.error('Failed to get company status history', { companyId, error });
+        return this.createErrorResponse<any>(error || 'Failed to get history');
       }
-    }, 'getCompanyStatusHistory');
+
+      // Filter by date client-side as selectData might not support >= yet
+      const filteredData = (data || []).filter(s => s.last_updated >= startDate.toISOString());
+
+      const history = filteredData.map(status => ({
+        date: status.last_updated,
+        overallScore: status.overall_score || 0,
+        financialHealth: status.financial_health || 0,
+        operationalEfficiency: status.operational_efficiency || 0,
+        marketPosition: status.market_position || 0,
+        customerSatisfaction: status.customer_satisfaction || 0,
+        teamPerformance: status.team_performance || 0
+      }));
+
+      return this.createSuccessResponse(history);
+    } catch (error) {
+      this.logger.error('Unexpected error in getCompanyStatusHistory', { error, companyId });
+      return this.handleError(error, 'Failed to get status history');
+    }
   }
 
   /**
@@ -456,18 +295,20 @@ export class CompanyStatusService extends BaseService {
    */
   private async populateCompanyStatus(companyId: string): Promise<void> {
     try {
+      this.logger.info('Populating company status', { companyId });
+
       // Get company profile
-      const { data: company } = await this.supabase
-        .from('companies')
-        .select('*')
-        .eq('id', companyId)
-        .single();
+      const { data: company, success: companySuccess } = await selectOne<any>('companies', { id: companyId });
+
+      if (!companySuccess || !company) {
+        throw new Error('Company not found');
+      }
 
       // Get user integrations
-      const { data: integrations } = await this.supabase
-        .from('user_integrations')
-        .select('*')
-        .eq('user_id', companyId);
+      const { data: integrations, success: integrationsSuccess } = await selectData<any>({
+        table: 'user_integrations',
+        filters: { user_id: companyId }
+      });
 
       // Calculate realistic scores based on company profile and integrations
       const scores = this.calculateRealisticScores(company, integrations || []);
@@ -476,28 +317,25 @@ export class CompanyStatusService extends BaseService {
       const recommendations = this.generateRecommendations(scores, company, integrations || []);
 
       // Create status record
-      const { error } = await this.supabase
-        .from('company_status')
-        .insert({
-          company_id: companyId,
-          overall_score: scores.overall,
-          financial_health: scores.financial,
-          operational_efficiency: scores.operational,
-          market_position: scores.market,
-          customer_satisfaction: scores.customer,
-          team_performance: scores.team,
-          recommendations: recommendations,
-          last_updated: new Date().toISOString()
-        });
+      const { error, success } = await insertOne('company_status', {
+        company_id: companyId,
+        overall_score: scores.overall,
+        financial_health: scores.financial,
+        operational_efficiency: scores.operational,
+        market_position: scores.market,
+        customer_satisfaction: scores.customer,
+        team_performance: scores.team,
+        recommendations: recommendations,
+        last_updated: new Date().toISOString()
+      });
 
-      if (error) {
-        this.logFailure('populateCompanyStatus', error, { companyId });
-        throw error;
+      if (!success) {
+        throw new Error(error || 'Failed to insert company status');
       }
 
-      this.logSuccess('populateCompanyStatus', { companyId, scores });
+      this.logger.info('Successfully populated company status', { companyId, scores });
     } catch (error) {
-      this.logFailure('populateCompanyStatus', error, { companyId });
+      this.logger.error('Failed to populate company status', { error, companyId });
       throw error;
     }
   }
@@ -515,14 +353,14 @@ export class CompanyStatusService extends BaseService {
   } {
     // Base scores based on company size and industry
     let baseScore = 50;
-    
+
     if (company?.size === 'enterprise') baseScore += 20;
     else if (company?.size === 'medium') baseScore += 10;
     else if (company?.size === 'small') baseScore += 5;
 
     // Integration bonus
     const integrationBonus = Math.min(integrations.length * 5, 30);
-    
+
     // Industry-specific adjustments
     let industryBonus = 0;
     if (company?.industry === 'technology') industryBonus = 10;
@@ -745,4 +583,4 @@ export class CompanyStatusService extends BaseService {
 }
 
 // Export singleton instance
-export const companyStatusService = new CompanyStatusService(); 
+export const companyStatusService = new CompanyStatusService();

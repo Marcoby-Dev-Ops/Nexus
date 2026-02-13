@@ -1,5 +1,6 @@
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
+import { selectData, insertOne, updateOne, deleteOne, selectOne } from '@/lib/api-client';
 import { z } from 'zod';
 
 // Data Mapping Schema
@@ -64,16 +65,18 @@ export class DataMappingService extends BaseService {
    */
   async getMappings(integrationType: string, entityType: string): Promise<ServiceResponse<DataMapping[]>> {
     return this.executeDbOperation(async () => {
-      const { data, error } = await this.supabase
-        .from('data_mappings')
-        .select('*')
-        .eq('integration_type', integrationType)
-        .eq('entity_type', entityType)
-        .order('external_field');
+      const { data, success, error } = await selectData<any>({
+        table: 'data_mappings',
+        filters: {
+          integration_type: integrationType,
+          entity_type: entityType
+        },
+        orderBy: [{ column: 'external_field', ascending: true }]
+      });
 
-      if (error) throw error;
+      if (!success) throw new Error(error || 'Failed to fetch mappings');
       const validatedData = data?.map(item => DataMappingSchema.parse(item)) || [];
-      return { data: validatedData, error: null };
+      return { data: validatedData, error: null, success: true };
     }, `get mappings for ${integrationType} ${entityType}`);
   }
 
@@ -88,14 +91,10 @@ export class DataMappingService extends BaseService {
         updatedAt: new Date().toISOString(),
       };
 
-      const { data: result, error } = await this.supabase
-        .from('data_mappings')
-        .insert(mappingData)
-        .select()
-        .single();
+      const { data: result, success, error } = await insertOne<any>('data_mappings', mappingData);
 
-      if (error) throw error;
-      return { data: DataMappingSchema.parse(result), error: null };
+      if (!success) throw new Error(error || 'Failed to create mapping');
+      return { data: DataMappingSchema.parse(result), error: null, success: true };
     }, `create mapping for ${mapping.integrationType} ${mapping.entityType}`);
   }
 
@@ -109,15 +108,14 @@ export class DataMappingService extends BaseService {
         updatedAt: new Date().toISOString(),
       };
 
-      const { data: result, error } = await this.supabase
-        .from('data_mappings')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data: result, success, error } = await updateOne<any>(
+        'data_mappings',
+        { id: id },
+        updateData
+      );
 
-      if (error) throw error;
-      return { data: DataMappingSchema.parse(result), error: null };
+      if (!success) throw new Error(error || 'Failed to update mapping');
+      return { data: DataMappingSchema.parse(result), error: null, success: true };
     }, `update mapping ${id}`);
   }
 
@@ -126,13 +124,10 @@ export class DataMappingService extends BaseService {
    */
   async deleteMapping(id: string): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
-      const { error } = await this.supabase
-        .from('data_mappings')
-        .delete()
-        .eq('id', id);
+      const { success, error } = await deleteOne('data_mappings', { id: id });
 
-      if (error) throw error;
-      return { data: true, error: null };
+      if (!success) throw new Error(error || 'Failed to delete mapping');
+      return { data: true, error: null, success: true };
     }, `delete mapping ${id}`);
   }
 
@@ -141,14 +136,14 @@ export class DataMappingService extends BaseService {
    */
   async getEntityTypes(): Promise<ServiceResponse<Entity[]>> {
     return this.executeDbOperation(async () => {
-      const { data, error } = await this.supabase
-        .from('entities')
-        .select('*')
-        .order('name');
+      const { data, success, error } = await selectData<any>({
+        table: 'entities',
+        orderBy: [{ column: 'name', ascending: true }]
+      });
 
-      if (error) throw error;
+      if (!success) throw new Error(error || 'Failed to fetch entity types');
       const validatedData = data?.map(item => EntitySchema.parse(item)) || [];
-      return { data: validatedData, error: null };
+      return { data: validatedData, error: null, success: true };
     }, 'get entity types');
   }
 
@@ -157,20 +152,15 @@ export class DataMappingService extends BaseService {
    */
   async getMappingTemplates(integrationType?: string): Promise<ServiceResponse<MappingTemplate[]>> {
     return this.executeDbOperation(async () => {
-      let query = this.supabase
-        .from('mapping_templates')
-        .select('*')
-        .order('name');
+      const { data, success, error } = await selectData<any>({
+        table: 'mapping_templates',
+        filters: integrationType ? { integration_type: integrationType } : undefined,
+        orderBy: [{ column: 'name', ascending: true }]
+      });
 
-      if (integrationType) {
-        query = query.eq('integration_type', integrationType);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
+      if (!success) throw new Error(error || 'Failed to fetch mapping templates');
       const validatedData = data?.map(item => MappingTemplateSchema.parse(item)) || [];
-      return { data: validatedData, error: null };
+      return { data: validatedData, error: null, success: true };
     }, `get mapping templates${integrationType ? ` for ${integrationType}` : ''}`);
   }
 
@@ -185,14 +175,10 @@ export class DataMappingService extends BaseService {
         updatedAt: new Date().toISOString(),
       };
 
-      const { data: result, error } = await this.supabase
-        .from('mapping_templates')
-        .insert(templateData)
-        .select()
-        .single();
+      const { data: result, success, error } = await insertOne<any>('mapping_templates', templateData);
 
-      if (error) throw error;
-      return { data: MappingTemplateSchema.parse(result), error: null };
+      if (!success) throw new Error(error || 'Failed to create template');
+      return { data: MappingTemplateSchema.parse(result), error: null, success: true };
     }, `create mapping template ${template.name}`);
   }
 
@@ -202,13 +188,12 @@ export class DataMappingService extends BaseService {
   async applyMappingTemplate(templateId: string, integrationType: string, entityType: string): Promise<ServiceResponse<DataMapping[]>> {
     return this.executeDbOperation(async () => {
       // Get the template
-      const { data: template, error: templateError } = await this.supabase
-        .from('mapping_templates')
-        .select('*')
-        .eq('id', templateId)
-        .single();
+      const { data: template, success: templateSuccess, error: templateError } = await selectOne<any>(
+        'mapping_templates',
+        { id: templateId }
+      );
 
-      if (templateError) throw templateError;
+      if (!templateSuccess) throw new Error(templateError || 'Template not found');
 
       // Create mappings from template
       const mappings: Omit<DataMapping, 'id' | 'createdAt' | 'updatedAt'>[] = template.mappings.map((mapping: any) => ({
@@ -223,19 +208,20 @@ export class DataMappingService extends BaseService {
         validation: mapping.validation,
       }));
 
-      // Insert all mappings
-      const { data: results, error } = await this.supabase
-        .from('data_mappings')
-        .insert(mappings.map(mapping => ({
+      // Insert all mappings - note: insertOne only handles single row, 
+      // but for simplicity here we'll iterate or assume a bulk helper if needed.
+      // Since our api-client doesn't have insertMany, we'll iterate.
+      const results: DataMapping[] = [];
+      for (const mapping of mappings) {
+        const { data: result, success } = await insertOne<any>('data_mappings', {
           ...mapping,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        })))
-        .select();
+        });
+        if (success && result) results.push(DataMappingSchema.parse(result));
+      }
 
-      if (error) throw error;
-      const validatedData = results?.map(item => DataMappingSchema.parse(item)) || [];
-      return { data: validatedData, error: null };
+      return { data: results, error: null, success: true };
     }, `apply mapping template ${templateId} to ${integrationType} ${entityType}`);
   }
 
@@ -253,14 +239,14 @@ export class DataMappingService extends BaseService {
       if (error) throw new Error(error);
 
       if (!mappings?.length) {
-        return { data: externalData, error: null };
+        return { data: externalData, error: null, success: true };
       }
 
       const transformedData: Record<string, any> = {};
 
       for (const mapping of mappings) {
         const externalValue = externalData[mapping.externalField];
-        
+
         if (externalValue !== undefined) {
           let transformedValue = externalValue;
 
@@ -299,8 +285,8 @@ export class DataMappingService extends BaseService {
         }
       }
 
-      return { data: transformedData, error: null };
-    }, `transform data for ${integrationType} ${entityType}`);
+      return { data: transformedData, error: null, success: true };
+    }, `transformData for ${integrationType} ${entityType}`);
   }
 
   /**
@@ -317,14 +303,14 @@ export class DataMappingService extends BaseService {
       if (error) throw new Error(error);
 
       if (!mappings?.length) {
-        return { data: internalData, error: null };
+        return { data: internalData, error: null, success: true };
       }
 
       const externalData: Record<string, any> = {};
 
       for (const mapping of mappings) {
         const internalValue = internalData[mapping.internalField];
-        
+
         if (internalValue !== undefined) {
           let transformedValue = internalValue;
 
@@ -344,8 +330,8 @@ export class DataMappingService extends BaseService {
         }
       }
 
-      return { data: externalData, error: null };
-    }, `reverse transform data for ${integrationType} ${entityType}`);
+      return { data: externalData, error: null, success: true };
+    }, `reverseTransformData for ${integrationType} ${entityType}`);
   }
 
   /**
@@ -401,7 +387,7 @@ export class DataMappingService extends BaseService {
 
       // Check for duplicate mappings
       const { data: existingMappings } = await this.getMappings(mapping.integrationType, mapping.entityType);
-      const duplicate = existingMappings?.find(m => 
+      const duplicate = existingMappings?.find(m =>
         m.externalField === mapping.externalField || m.internalField === mapping.internalField
       );
 
@@ -415,7 +401,8 @@ export class DataMappingService extends BaseService {
           errors,
           warnings,
         },
-        error: null
+        error: null,
+        success: true
       };
     }, `validate mapping for ${mapping.integrationType} ${mapping.entityType}`);
   }

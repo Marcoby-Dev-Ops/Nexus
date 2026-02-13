@@ -386,6 +386,11 @@ router.get('/:table', authenticateToken, async (req, res) => {
       const filterConditions = [];
 
       Object.entries(filters).forEach(([key, value]) => {
+        // Skip common query parameters that are not table columns
+        if (['limit', 'offset', 'user_id'].includes(key)) {
+          return;
+        }
+
         if (key === 'filter') {
           // Handle nested filter object; accept stringified or object
           const filterObj = typeof value === 'string' ? JSON.parse(value) : value;

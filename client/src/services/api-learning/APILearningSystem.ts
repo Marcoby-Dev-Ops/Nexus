@@ -5,6 +5,7 @@
 
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
+import { selectData, selectOne, upsertOne } from '@/lib/api-client';
 import { APIDiscoveryEngine } from './APIDiscoveryEngine';
 import { ComplianceAnalyzer } from './ComplianceAnalyzer';
 import { TemplateGenerator } from './TemplateGenerator';
@@ -173,7 +174,7 @@ export class APILearningSystem extends BaseService {
   private integrationDeployer: IntegrationDeployer;
 
   constructor() {
-    super();
+    super('APILearningSystem');
     this.discoveryEngine = new APIDiscoveryEngine();
     this.complianceAnalyzer = new ComplianceAnalyzer();
     this.templateGenerator = new TemplateGenerator();
@@ -316,42 +317,34 @@ export class APILearningSystem extends BaseService {
     progress: number;
     details: any;
   }>> {
-    return this.executeDbOperation(async () => {
-      try {
-        const { data: status, error } = await this.supabase
-          .from('api_learning_status')
-          .select('*')
-          .eq('service_name', serviceName)
-          .single();
+    try {
+      this.logger.info('Getting learning status', { serviceName });
 
-        if (error && error.code !== 'PGRST116') {
-          return { data: null, error: 'Failed to get learning status' };
-        }
+      const { data, error, success } = await selectOne<any>('api_learning_status', { service_name: serviceName });
 
-        if (!status) {
-          return {
-            data: {
-              phase: 'discovery',
-              progress: 0,
-              details: null
-            },
-            error: null
-          };
-        }
-
-        return {
-          data: {
-            phase: status.phase,
-            progress: status.progress,
-            details: status.details
-          },
-          error: null
-        };
-      } catch (error) {
+      if (!success) {
         this.logger.error('Error getting learning status', { error, serviceName });
-        return { data: null, error: 'Failed to get learning status' };
+        return this.createErrorResponse('Failed to get learning status');
       }
-    }, `get learning status for ${serviceName}`);
+
+      if (!data) {
+        return this.createSuccessResponse({
+          phase: 'discovery',
+          progress: 0,
+          details: null
+        });
+      }
+
+      const status = data;
+      return this.createSuccessResponse({
+        phase: status.phase,
+        progress: status.progress,
+        details: status.details
+      });
+    } catch (error) {
+      this.logger.error('Unexpected error getting learning status', { error, serviceName });
+      return this.handleError(error, 'Failed to get learning status');
+    }
   }
 
   /**
@@ -368,36 +361,34 @@ export class APILearningSystem extends BaseService {
       lastSync?: string;
     }>;
   }>> {
-    return this.executeDbOperation(async () => {
-      try {
-        const { data: integrations, error } = await this.supabase
-          .from('api_learning_integrations')
-          .select('*')
-          .order('created_at', { ascending: false });
+    try {
+      this.logger.info('Listing learned integrations');
 
-        if (error) {
-          return { data: null, error: 'Failed to list integrations' };
-        }
+      const { data, error, success } = await selectData<any>({
+        table: 'api_learning_integrations',
+        orderBy: [{ column: 'created_at', ascending: false }]
+      });
 
-        return {
-          data: {
-            integrations: integrations.map(integration => ({
-              id: integration.id,
-              serviceName: integration.service_name,
-              displayName: integration.display_name,
-              status: integration.status,
-              complianceScore: integration.compliance_score,
-              createdAt: integration.created_at,
-              lastSync: integration.last_sync
-            }))
-          },
-          error: null
-        };
-      } catch (error) {
+      if (!success) {
         this.logger.error('Error listing learned integrations', { error });
-        return { data: null, error: 'Failed to list integrations' };
+        return this.createErrorResponse('Failed to list integrations');
       }
-    }, 'list learned integrations');
+
+      const integrations = (data || []).map(integration => ({
+        id: integration.id,
+        serviceName: integration.service_name,
+        displayName: integration.display_name,
+        status: integration.status,
+        complianceScore: integration.compliance_score,
+        createdAt: integration.created_at,
+        lastSync: integration.last_sync
+      }));
+
+      return this.createSuccessResponse({ integrations });
+    } catch (error) {
+      this.logger.error('Unexpected error listing learned integrations', { error });
+      return this.handleError(error, 'Failed to list integrations');
+    }
   }
 
   /**
@@ -444,7 +435,7 @@ export class APILearningSystem extends BaseService {
     ];
 
     const environmentVariables: EnvironmentVariable[] = this.generateEnvironmentVariables(templateVars);
-    const oauthConfiguration = discovery.authType === 'oauth2' 
+    const oauthConfiguration = discovery.authType === 'oauth2'
       ? this.generateOAuthConfiguration(templateVars)
       : undefined;
 
@@ -602,21 +593,23 @@ console.log('Connection status:', status);`;
     details?: any
   ): Promise<void> {
     try {
-      const { error } = await this.supabase
-        .from('api_learning_status')
-        .upsert({
-          service_name: serviceName,
-          phase,
-          progress,
-          details,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'service_name' });
+      this.logger.info('Updating learning status', { serviceName, phase, progress });
 
-      if (error) {
+      const { error, success } = await upsertOne('api_learning_status', {
+        service_name: serviceName,
+        phase,
+        progress,
+        details,
+        updated_at: new Date().toISOString()
+      }, 'service_name');
+
+      if (!success) {
         this.logger.error('Error updating learning status', { error, serviceName });
       }
     } catch (error) {
-      this.logger.error('Error updating learning status', { error, serviceName });
+      this.logger.error('Unexpected error updating learning status', { error, serviceName });
     }
   }
 }
+
+export const apiLearningSystem = new APILearningSystem();

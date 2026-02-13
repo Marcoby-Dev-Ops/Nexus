@@ -98,23 +98,32 @@ export class HubSpotClientIntelligenceService extends BaseService {
         logger.info('Starting HubSpot to Client Intelligence sync', { userId });
 
         // Get HubSpot integration with tokens
-        const { data: integration, error: integrationError } = await this.supabase
-          .from('user_integrations')
-          .select('config')
-          .eq('user_id', userId)
-          .eq('integration_slug', 'HubSpot')
-          .eq('status', 'connected')
-          .single();
+        const { data: integration, success: integrationSuccess, error: integrationError } = await selectOne<any>(
+          'user_integrations',
+          {
+            user_id: userId,
+            integration_slug: 'HubSpot',
+            status: 'connected'
+          }
+        );
 
-        if (integrationError || !integration) {
-          return { data: null, error: 'HubSpot integration not found or not connected' };
+        if (!integrationSuccess || !integration) {
+          return {
+            data: null,
+            error: integrationError || 'HubSpot integration not found or not connected',
+            success: false
+          };
         }
 
         const config = integration.config as any;
         const accessToken = config.access_token;
 
         if (!accessToken) {
-          return { data: null, error: 'No access token found for HubSpot integration' };
+          return {
+            data: null,
+            error: 'No access token found for HubSpot integration',
+            success: false
+          };
         }
 
         // Fetch data from HubSpot
@@ -132,7 +141,7 @@ export class HubSpotClientIntelligenceService extends BaseService {
 
         // Transform and create unified client profiles
         const profiles = await this.createUnifiedProfiles(contacts, companies, deals, userId);
-        
+
         // Generate AI insights for each profile
         const insightsGenerated = await this.generateAIInsights(profiles);
 
@@ -151,12 +160,17 @@ export class HubSpotClientIntelligenceService extends BaseService {
             profilesUpdated,
             insightsGenerated
           },
-          error: null
+          error: null,
+          success: true
         };
 
       } catch (error) {
         logger.error('HubSpot client intelligence sync failed', { error, userId });
-        return { data: null, error: 'Failed to sync HubSpot data to client intelligence' };
+        return {
+          data: null,
+          error: 'Failed to sync HubSpot data to client intelligence',
+          success: false
+        };
       }
     }, `sync HubSpot data to client intelligence for user ${userId}`);
   }
@@ -244,8 +258,9 @@ export class HubSpotClientIntelligenceService extends BaseService {
 
     // Create profiles from contacts
     for (const contact of contacts) {
-      const company = contact.properties.associatedcompanyid 
-        ? companyMap.get(contact.properties.associatedcompanyid)
+      const companyId = contact.properties.associatedcompanyid;
+      const company = companyId
+        ? companyMap.get(companyId) || null
         : null;
 
       const companyDeals = contact.properties.associatedcompanyid
@@ -279,7 +294,7 @@ export class HubSpotClientIntelligenceService extends BaseService {
     userId: string
   ): UnifiedClientProfile {
     const name = `${contact.properties.firstname || ''} ${contact.properties.lastname || ''}`.trim() || contact.properties.email || 'Unnamed Contact';
-    
+
     const totalDealValue = deals.reduce((sum, deal) => {
       return sum + parseFloat(deal.properties.amount || '0');
     }, 0);
@@ -374,7 +389,7 @@ export class HubSpotClientIntelligenceService extends BaseService {
 
     const filledFields = fields.filter(field => field && field.trim() !== '').length;
     score = Math.round((filledFields / fields.length) * 100);
-    
+
     return Math.min(score, 100);
   }
 
@@ -393,7 +408,7 @@ export class HubSpotClientIntelligenceService extends BaseService {
 
     const filledFields = fields.filter(field => field && field.trim() !== '').length;
     score = Math.round((filledFields / fields.length) * 100);
-    
+
     return Math.min(score, 100);
   }
 
@@ -511,18 +526,20 @@ export class HubSpotClientIntelligenceService extends BaseService {
     for (const profile of profiles) {
       try {
         // Check if profile already exists
-        const { data: existingProfile } = await this.supabase
-          .from('unified_client_profiles')
-          .select('id')
-          .eq('clientid', profile.clientid)
-          .eq('primarysource', 'hubspot')
-          .single();
+        const { data: existingProfile, success: existingSuccess } = await selectOne<any>(
+          'unified_client_profiles',
+          {
+            clientid: profile.clientid,
+            primarysource: 'hubspot'
+          }
+        );
 
-        if (existingProfile) {
+        if (existingSuccess && existingProfile) {
           // Update existing profile
-          const { error } = await this.supabase
-            .from('unified_client_profiles')
-            .update({
+          const { success: updateSuccess } = await updateOne(
+            'unified_client_profiles',
+            { id: existingProfile.id },
+            {
               profiledata: profile.profiledata,
               completenessscore: profile.completenessscore,
               engagementscore: profile.engagementscore,
@@ -531,19 +548,20 @@ export class HubSpotClientIntelligenceService extends BaseService {
               lastenrichmentat: profile.lastenrichmentat,
               insights: profile.insights,
               updatedat: profile.updatedat
-            })
-            .eq('id', existingProfile.id);
+            }
+          );
 
-          if (!error) {
+          if (updateSuccess) {
             profilesUpdated++;
           }
         } else {
           // Create new profile
-          const { error } = await this.supabase
-            .from('unified_client_profiles')
-            .insert(profile);
+          const { success: insertSuccess } = await insertOne(
+            'unified_client_profiles',
+            profile as any
+          );
 
-          if (!error) {
+          if (insertSuccess) {
             profilesCreated++;
           }
         }
@@ -567,17 +585,21 @@ export class HubSpotClientIntelligenceService extends BaseService {
   }>> {
     return this.executeDbOperation(async () => {
       try {
-        const { data: profiles, error } = await this.supabase
-          .from('unified_client_profiles')
-          .select('*')
-          .eq('primarysource', 'hubspot');
+        const { data: profiles, success, error } = await select<any>({
+          table: 'unified_client_profiles',
+          filters: { primarysource: 'hubspot' }
+        });
 
-        if (error) {
-          return { data: null, error: 'Failed to fetch client profiles' };
+        if (!success || !profiles) {
+          return {
+            data: null,
+            error: error || 'Failed to fetch client profiles',
+            success: false
+          };
         }
 
         const totalProfiles = profiles.length;
-        const averageCompleteness = profiles.length > 0 
+        const averageCompleteness = profiles.length > 0
           ? Math.round(profiles.reduce((sum, p) => sum + p.completenessscore, 0) / profiles.length)
           : 0;
         const averageEngagement = profiles.length > 0
@@ -599,12 +621,17 @@ export class HubSpotClientIntelligenceService extends BaseService {
             totalValue,
             topInsights
           },
-          error: null
+          error: null,
+          success: true
         };
 
       } catch (error) {
         logger.error('Failed to get client intelligence summary', { error, userId });
-        return { data: null, error: 'Failed to get client intelligence summary' };
+        return {
+          data: null,
+          error: 'Failed to get client intelligence summary',
+          success: false
+        };
       }
     }, `get client intelligence summary for user ${userId}`);
   }

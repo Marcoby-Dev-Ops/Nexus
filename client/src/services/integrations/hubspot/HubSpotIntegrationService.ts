@@ -1,5 +1,6 @@
 import { IntegrationBaseService, type IntegrationConfig, type TestConnectionResult, type SyncResult } from '../core/IntegrationBaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
+import { selectOne, upsertOne } from '@/lib/api-client';
 import { DataMappingService } from '../core/DataMappingService';
 import { nowIsoUtc } from '@/shared/utils/time';
 import { retryFetch } from '@/shared/utils/retry';
@@ -21,13 +22,9 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
   async testConnection(integrationId: string): Promise<ServiceResponse<TestConnectionResult>> {
     return this.executeDbOperation(async () => {
       // Get integration details
-      const { data: integration, error } = await this.supabase
-        .from('integrations')
-        .select('*')
-        .eq('id', integrationId)
-        .single();
+      const { data: integration, success, error } = await selectOne<any>('integrations', { id: integrationId });
 
-      if (error) throw error;
+      if (!success) throw new Error(error || 'Integration not found');
 
       try {
         // Test HubSpot API connection
@@ -52,17 +49,19 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
             },
           },
           error: null,
+          success: true
         };
       } catch (error) {
         await this.logError(integrationId, error instanceof Error ? error.message : 'Unknown error');
-        
+
         return {
           data: {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to connect to HubSpot',
           },
           error: null,
-        };
+          success: true
+        } as ServiceResponse<TestConnectionResult>;
       }
     }, `test HubSpot connection for integration ${integrationId}`);
   }
@@ -78,13 +77,9 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
 
       try {
         // Get integration details
-        const { data: integration, error } = await this.supabase
-          .from('integrations')
-          .select('*')
-          .eq('id', integrationId)
-          .single();
+        const { data: integration, success, error } = await selectOne<any>('integrations', { id: integrationId });
 
-        if (error) throw error;
+        if (!success) throw new Error(error || 'Integration not found');
 
         // Sync contacts
         const contactsResult = await this.syncContacts(integration);
@@ -118,10 +113,11 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
             lastSync: nowIsoUtc(),
           },
           error: null,
+          success: true
         };
       } catch (error) {
         await this.logError(integrationId, error instanceof Error ? error.message : 'Unknown error');
-        
+
         return {
           data: {
             success: false,
@@ -131,6 +127,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
             lastSync: new Date().toISOString(),
           },
           error: null,
+          success: true
         };
       }
     }, `sync HubSpot data for integration ${integrationId}`);
@@ -165,7 +162,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
     return this.executeDbOperation(async () => {
       // Update integration status
       await this.updateStatus(integrationId, 'disconnected');
-      return { data: true, error: null };
+      return { data: true, error: null, success: true };
     }, `disconnect HubSpot integration ${integrationId}`);
   }
 
@@ -190,7 +187,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
           description: 'Connect to HubSpot CRM to sync contacts, companies, and deals',
           capabilities: [
             'sync_contacts',
-            'sync_companies', 
+            'sync_companies',
             'sync_deals',
             'sync_engagements',
             'create_contacts',
@@ -204,6 +201,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
           optionalFields: ['refreshToken', 'clientId', 'clientSecret'],
         },
         error: null,
+        success: true
       };
     }, 'get HubSpot metadata');
   }
@@ -242,6 +240,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
           warnings,
         },
         error: null,
+        success: true
       };
     }, `validate HubSpot config`);
   }
@@ -280,17 +279,15 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
           }
 
           // Store in internal database
-          const { error } = await this.supabase
-            .from('integration_data')
-            .upsert({
-              integration_id: integration.id,
-              entity_type: 'contact',
-              external_id: contact.id,
-              data: transformedContact.data,
-              synced_at: nowIsoUtc(),
-            });
+          const { success, error } = await upsertOne('integration_data', {
+            integration_id: integration.id,
+            entity_type: 'contact',
+            external_id: contact.id,
+            data: transformedContact.data,
+            synced_at: nowIsoUtc(),
+          }, 'integration_id,entity_type,external_id');
 
-          if (error) throw error;
+          if (!success) throw new Error(error || 'Failed to upsert contact');
           recordsProcessed++;
         } catch (error) {
           this.logger.error(`Failed to sync contact ${contact.id}:`, error);
@@ -299,9 +296,9 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
 
       return { recordsProcessed, errors: [] };
     } catch (error) {
-      return { 
-        recordsProcessed: 0, 
-        errors: [error instanceof Error ? error.message : 'Unknown error'] 
+      return {
+        recordsProcessed: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error']
       };
     }
   }
@@ -340,17 +337,15 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
           }
 
           // Store in internal database
-          const { error } = await this.supabase
-            .from('integration_data')
-            .upsert({
-              integration_id: integration.id,
-              entity_type: 'company',
-              external_id: company.id,
-              data: transformedCompany.data,
-              synced_at: nowIsoUtc(),
-            });
+          const { success, error } = await upsertOne('integration_data', {
+            integration_id: integration.id,
+            entity_type: 'company',
+            external_id: company.id,
+            data: transformedCompany.data,
+            synced_at: nowIsoUtc(),
+          }, 'integration_id,entity_type,external_id');
 
-          if (error) throw error;
+          if (!success) throw new Error(error || 'Failed to upsert company');
           recordsProcessed++;
         } catch (error) {
           this.logger.error(`Failed to sync company ${company.id}:`, error);
@@ -359,9 +354,9 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
 
       return { recordsProcessed, errors: [] };
     } catch (error) {
-      return { 
-        recordsProcessed: 0, 
-        errors: [error instanceof Error ? error.message : 'Unknown error'] 
+      return {
+        recordsProcessed: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error']
       };
     }
   }
@@ -400,17 +395,15 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
           }
 
           // Store in internal database
-          const { error } = await this.supabase
-            .from('integration_data')
-            .upsert({
-              integration_id: integration.id,
-              entity_type: 'deal',
-              external_id: deal.id,
-              data: transformedDeal.data,
-              synced_at: nowIsoUtc(),
-            });
+          const { success, error } = await upsertOne('integration_data', {
+            integration_id: integration.id,
+            entity_type: 'deal',
+            external_id: deal.id,
+            data: transformedDeal.data,
+            synced_at: nowIsoUtc(),
+          }, 'integration_id,entity_type,external_id');
 
-          if (error) throw error;
+          if (!success) throw new Error(error || 'Failed to upsert deal');
           recordsProcessed++;
         } catch (error) {
           this.logger.error(`Failed to sync deal ${deal.id}:`, error);
@@ -419,9 +412,9 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
 
       return { recordsProcessed, errors: [] };
     } catch (error) {
-      return { 
-        recordsProcessed: 0, 
-        errors: [error instanceof Error ? error.message : 'Unknown error'] 
+      return {
+        recordsProcessed: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error']
       };
     }
   }

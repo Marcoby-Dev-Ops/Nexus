@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+import { selectData, selectOne, insertOne, updateOne } from '@/lib/api-client';
 
 // ============================================================================
 // SCHEMAS
@@ -102,31 +103,27 @@ export class AIUsageMonitoringService extends BaseService {
    */
   async recordUsage(data: Omit<AIProviderUsage, 'id' | 'created_at'>): Promise<ServiceResponse<AIProviderUsage>> {
     try {
-      this.logger.info('Recording AI usage', { 
-        provider: data.provider, 
-        model: data.model, 
+      this.logger.info('Recording AI usage', {
+        provider: data.provider,
+        model: data.model,
         task_type: data.task_type,
-        cost_usd: data.cost_usd 
+        cost_usd: data.cost_usd
       });
 
-      const { data: created, error } = await this.supabase
-        .from(this.config.usageTable)
-        .insert(data)
-        .select()
-        .single();
+      const { data: created, error, success } = await insertOne<AIProviderUsage>(this.config.usageTable, data as any);
 
-      if (error) {
-        return this.handleError(error, 'Failed to record AI usage');
+      if (!success) {
+        return this.handleError(error || 'Failed to record usage', 'Failed to record AI usage');
       }
 
       const validated = AIProviderUsageSchema.parse(created);
-      
+
       // Update model performance tracking
-      await this.updateModelPerformance(data);
-      
+      await this.updateModelPerformance(validated);
+
       // Check for alerts
-      await this.checkUsageAlerts(data);
-      
+      await this.checkUsageAlerts(validated);
+
       return this.createResponse(validated);
     } catch (error) {
       return this.handleError(error, 'Failed to record AI usage');
@@ -156,37 +153,31 @@ export class AIUsageMonitoringService extends BaseService {
     try {
       this.logger.info('Getting AI usage stats', { filters });
 
-      let query = this.supabase
-        .from(this.config.usageTable)
-        .select('*');
+      const filterParams: Record<string, any> = {};
+      if (filters?.provider) filterParams.provider = filters.provider;
+      if (filters?.model) filterParams.model = filters.model;
+      if (filters?.task_type) filterParams.task_type = filters.task_type;
+      if (filters?.org_id) filterParams.org_id = filters.org_id;
 
-      // Apply filters
-      if (filters?.provider) {
-        query = query.eq('provider', filters.provider);
-      }
-      if (filters?.model) {
-        query = query.eq('model', filters.model);
-      }
-      if (filters?.task_type) {
-        query = query.eq('task_type', filters.task_type);
-      }
-      if (filters?.org_id) {
-        query = query.eq('org_id', filters.org_id);
-      }
-      if (filters?.start_date) {
-        query = query.gte('created_at', filters.start_date);
-      }
-      if (filters?.end_date) {
-        query = query.lte('created_at', filters.end_date);
+      const { data, error, success } = await selectData<any>({
+        table: this.config.usageTable,
+        filters: filterParams
+      });
+
+      if (!success) {
+        return this.handleError(error || 'Failed to get usage stats', 'Failed to get usage stats');
       }
 
-      const { data, error } = await query;
+      const records = data || [];
 
-      if (error) {
-        return this.handleError(error, 'Failed to get usage stats');
-      }
+      // Filter by date client-side
+      const filteredRecords = records.filter(r => {
+        if (filters?.start_date && r.created_at < filters.start_date) return false;
+        if (filters?.end_date && r.created_at > filters.end_date) return false;
+        return true;
+      });
 
-      if (!data || data.length === 0) {
+      if (filteredRecords.length === 0) {
         return this.createResponse({
           total_requests: 0,
           total_cost_usd: 0,
@@ -200,15 +191,15 @@ export class AIUsageMonitoringService extends BaseService {
       }
 
       // Calculate statistics
-      const totalRequests = data.length;
-      const successfulRequests = data.filter(r => r.success).length;
-      const totalCostUsd = data.reduce((sum, r) => sum + (r.cost_usd || 0), 0);
-      const totalTokens = data.reduce((sum, r) => sum + (r.total_tokens || 0), 0);
-      const totalResponseTime = data.reduce((sum, r) => sum + (r.response_time_ms || 0), 0);
+      const totalRequests = filteredRecords.length;
+      const successfulRequests = filteredRecords.filter(r => r.success).length;
+      const totalCostUsd = filteredRecords.reduce((sum, r) => sum + (r.cost_usd || 0), 0);
+      const totalTokens = filteredRecords.reduce((sum, r) => sum + (r.total_tokens || 0), 0);
+      const totalResponseTime = filteredRecords.reduce((sum, r) => sum + (r.response_time_ms || 0), 0);
 
       // Group by provider
       const byProvider: Record<string, any> = {};
-      data.forEach(record => {
+      filteredRecords.forEach(record => {
         if (!byProvider[record.provider]) {
           byProvider[record.provider] = {
             requests: 0,
@@ -224,14 +215,14 @@ export class AIUsageMonitoringService extends BaseService {
 
       // Calculate success rates
       Object.keys(byProvider).forEach(provider => {
-        const providerData = data.filter(r => r.provider === provider);
+        const providerData = filteredRecords.filter(r => r.provider === provider);
         const successful = providerData.filter(r => r.success).length;
         byProvider[provider].success_rate = providerData.length > 0 ? (successful / providerData.length) * 100 : 0;
       });
 
       // Group by model
       const byModel: Record<string, any> = {};
-      data.forEach(record => {
+      filteredRecords.forEach(record => {
         if (!byModel[record.model]) {
           byModel[record.model] = {
             requests: 0,
@@ -245,7 +236,7 @@ export class AIUsageMonitoringService extends BaseService {
       });
 
       // Daily usage
-      const dailyUsage = this.calculateDailyUsage(data);
+      const dailyUsage = this.calculateDailyUsage(filteredRecords);
 
       return this.createResponse({
         total_requests: totalRequests,
@@ -269,16 +260,16 @@ export class AIUsageMonitoringService extends BaseService {
     try {
       this.logger.info('Getting provider credits');
 
-      const { data, error } = await this.supabase
-        .from(this.config.creditsTable)
-        .select('*')
-        .order('provider');
+      const { data, error, success } = await selectData<AIProviderCredits>({
+        table: this.config.creditsTable,
+        orderBy: [{ column: 'provider', ascending: true }]
+      });
 
-      if (error) {
-        return this.handleError(error, 'Failed to get provider credits');
+      if (!success) {
+        return this.handleError(error || 'Failed to get credits', 'Failed to get provider credits');
       }
 
-      const validated = data.map(record => AIProviderCreditsSchema.parse(record));
+      const validated = (data || []).map(record => AIProviderCreditsSchema.parse(record));
       return this.createResponse(validated);
     } catch (error) {
       return this.handleError(error, 'Failed to get provider credits');
@@ -292,18 +283,13 @@ export class AIUsageMonitoringService extends BaseService {
     try {
       this.logger.info('Updating provider credits', { provider, updates });
 
-      const { data, error } = await this.supabase
-        .from(this.config.creditsTable)
-        .update({
-          ...updates,
-          last_updated: new Date().toISOString(),
-        })
-        .eq('provider', provider)
-        .select()
-        .single();
+      const { data, error, success } = await updateOne<AIProviderCredits>(this.config.creditsTable, { provider }, {
+        ...updates,
+        last_updated: new Date().toISOString(),
+      });
 
-      if (error) {
-        return this.handleError(error, 'Failed to update provider credits');
+      if (!success) {
+        return this.handleError(error || 'Failed to update credits', 'Failed to update provider credits');
       }
 
       const validated = AIProviderCreditsSchema.parse(data);
@@ -320,17 +306,17 @@ export class AIUsageMonitoringService extends BaseService {
     try {
       this.logger.info('Getting active alerts');
 
-      const { data, error } = await this.supabase
-        .from(this.config.alertsTable)
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+      const { data, error, success } = await selectData<AIUsageAlert>({
+        table: this.config.alertsTable,
+        filters: { is_active: true },
+        orderBy: [{ column: 'created_at', ascending: false }]
+      });
 
-      if (error) {
-        return this.handleError(error, 'Failed to get active alerts');
+      if (!success) {
+        return this.handleError(error || 'Failed to get alerts', 'Failed to get active alerts');
       }
 
-      const validated = data.map(record => AIUsageAlertSchema.parse(record));
+      const validated = (data || []).map(record => AIUsageAlertSchema.parse(record));
       return this.createResponse(validated);
     } catch (error) {
       return this.handleError(error, 'Failed to get active alerts');
@@ -342,20 +328,16 @@ export class AIUsageMonitoringService extends BaseService {
    */
   async createAlert(data: Omit<AIUsageAlert, 'id' | 'created_at'>): Promise<ServiceResponse<AIUsageAlert>> {
     try {
-      this.logger.info('Creating usage alert', { 
-        alert_type: data.alert_type, 
-        provider: data.provider, 
-        severity: data.severity 
+      this.logger.info('Creating usage alert', {
+        alert_type: data.alert_type,
+        provider: data.provider,
+        severity: data.severity
       });
 
-      const { data: created, error } = await this.supabase
-        .from(this.config.alertsTable)
-        .insert(data)
-        .select()
-        .single();
+      const { data: created, error, success } = await insertOne<AIUsageAlert>(this.config.alertsTable, data as any);
 
-      if (error) {
-        return this.handleError(error, 'Failed to create alert');
+      if (!success) {
+        return this.handleError(error || 'Failed to create alert', 'Failed to create alert');
       }
 
       const validated = AIUsageAlertSchema.parse(created);
@@ -372,18 +354,13 @@ export class AIUsageMonitoringService extends BaseService {
     try {
       this.logger.info('Acknowledging alert', { alertId, userId });
 
-      const { data, error } = await this.supabase
-        .from(this.config.alertsTable)
-        .update({
-          acknowledged_by: userId,
-          acknowledged_at: new Date().toISOString(),
-        })
-        .eq('id', alertId)
-        .select()
-        .single();
+      const { data, error, success } = await updateOne<AIUsageAlert>(this.config.alertsTable, { id: alertId }, {
+        acknowledged_by: userId,
+        acknowledged_at: new Date().toISOString(),
+      });
 
-      if (error) {
-        return this.handleError(error, 'Failed to acknowledge alert');
+      if (!success) {
+        return this.handleError(error || 'Failed to acknowledge alert', 'Failed to acknowledge alert');
       }
 
       const validated = AIUsageAlertSchema.parse(data);
@@ -400,22 +377,21 @@ export class AIUsageMonitoringService extends BaseService {
     try {
       this.logger.info('Getting usage budgets', { orgId });
 
-      let query = this.supabase
-        .from(this.config.budgetsTable)
-        .select('*')
-        .eq('is_active', true);
-
+      const filterParams: Record<string, any> = { is_active: true };
       if (orgId) {
-        query = query.eq('org_id', orgId);
+        filterParams.org_id = orgId;
       }
 
-      const { data, error } = await query;
+      const { data, error, success } = await selectData<AIUsageBudget>({
+        table: this.config.budgetsTable,
+        filters: filterParams
+      });
 
-      if (error) {
-        return this.handleError(error, 'Failed to get usage budgets');
+      if (!success) {
+        return this.handleError(error || 'Failed to get budgets', 'Failed to get usage budgets');
       }
 
-      const validated = data.map(record => AIUsageBudgetSchema.parse(record));
+      const validated = (data || []).map(record => AIUsageBudgetSchema.parse(record));
       return this.createResponse(validated);
     } catch (error) {
       return this.handleError(error, 'Failed to get usage budgets');
@@ -427,51 +403,40 @@ export class AIUsageMonitoringService extends BaseService {
    */
   async setUsageBudget(data: Omit<AIUsageBudget, 'id' | 'created_at' | 'updated_at'>): Promise<ServiceResponse<AIUsageBudget>> {
     try {
-      this.logger.info('Setting usage budget', { 
-        org_id: data.org_id, 
-        provider: data.provider, 
+      this.logger.info('Setting usage budget', {
+        org_id: data.org_id,
+        provider: data.provider,
         budget_type: data.budget_type,
-        budget_amount_usd: data.budget_amount_usd 
+        budget_amount_usd: data.budget_amount_usd
       });
 
       // Check if budget already exists
-      const { data: existing } = await this.supabase
-        .from(this.config.budgetsTable)
-        .select('id')
-        .eq('org_id', data.org_id)
-        .eq('provider', data.provider)
-        .eq('budget_type', data.budget_type)
-        .eq('reset_date', data.reset_date)
-        .single();
+      const { data: existing, success } = await selectOne<any>(this.config.budgetsTable, {
+        org_id: data.org_id,
+        provider: data.provider,
+        budget_type: data.budget_type,
+        reset_date: data.reset_date
+      });
 
       let result;
-      if (existing) {
+      if (success && existing) {
         // Update existing budget
-        const { data: updated, error } = await this.supabase
-          .from(this.config.budgetsTable)
-          .update({
-            budget_amount_usd: data.budget_amount_usd,
-            current_spend_usd: data.current_spend_usd,
-            is_active: data.is_active,
-          })
-          .eq('id', existing.id)
-          .select()
-          .single();
+        const { data: updated, error, success: updateSuccess } = await updateOne<AIUsageBudget>(this.config.budgetsTable, { id: existing.id }, {
+          budget_amount_usd: data.budget_amount_usd,
+          current_spend_usd: data.current_spend_usd,
+          is_active: data.is_active,
+        });
 
-        if (error) {
-          return this.handleError(error, 'Failed to update usage budget');
+        if (!updateSuccess) {
+          return this.handleError(error || 'Failed to update budget', 'Failed to update usage budget');
         }
         result = updated;
       } else {
         // Create new budget
-        const { data: created, error } = await this.supabase
-          .from(this.config.budgetsTable)
-          .insert(data)
-          .select()
-          .single();
+        const { data: created, error, success: insertSuccess } = await insertOne<AIUsageBudget>(this.config.budgetsTable, data as any);
 
-        if (error) {
-          return this.handleError(error, 'Failed to create usage budget');
+        if (!insertSuccess) {
+          return this.handleError(error || 'Failed to create budget', 'Failed to create usage budget');
         }
         result = created;
       }
@@ -500,17 +465,19 @@ export class AIUsageMonitoringService extends BaseService {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      const { data, error } = await this.supabase
-        .from(this.config.usageTable)
-        .select('provider, cost_usd, created_at')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
+      const { data, error, success } = await selectData<any>({
+        table: this.config.usageTable
+      });
 
-      if (error) {
-        return this.handleError(error, 'Failed to get cost projections');
+      if (!success) {
+        return this.handleError(error || 'Failed to get records', 'Failed to get cost projections');
       }
 
-      if (!data || data.length === 0) {
+      const filteredRecords = (data || []).filter(r => {
+        return r.created_at >= startDate.toISOString() && r.created_at <= endDate.toISOString();
+      });
+
+      if (filteredRecords.length === 0) {
         return this.createResponse({
           projected_cost_usd: 0,
           current_daily_average: 0,
@@ -521,7 +488,7 @@ export class AIUsageMonitoringService extends BaseService {
 
       // Calculate daily averages by provider
       const byProvider: Record<string, { total_cost: number; days: number }> = {};
-      data.forEach(record => {
+      filteredRecords.forEach(record => {
         if (!byProvider[record.provider]) {
           byProvider[record.provider] = { total_cost: 0, days: 0 };
         }
@@ -530,11 +497,11 @@ export class AIUsageMonitoringService extends BaseService {
       });
 
       // Calculate projections
-      const totalCost = data.reduce((sum, r) => sum + (r.cost_usd || 0), 0);
+      const totalCost = filteredRecords.reduce((sum, r) => sum + (r.cost_usd || 0), 0);
       const currentDailyAverage = totalCost / days;
       const projectedCost = currentDailyAverage * 30; // 30-day projection
 
-      // Determine trend (simplified - could be enhanced with more sophisticated analysis)
+      // Determine trend
       const trend: 'increasing' | 'decreasing' | 'stable' = 'stable';
 
       const byProviderProjections: Record<string, { projected_cost: number; current_daily_avg: number }> = {};
@@ -564,15 +531,13 @@ export class AIUsageMonitoringService extends BaseService {
 
   private async updateModelPerformance(usageData: AIProviderUsage): Promise<void> {
     try {
-      const { data: existing } = await this.supabase
-        .from('ai_model_performance')
-        .select('*')
-        .eq('provider', usageData.provider)
-        .eq('model', usageData.model)
-        .eq('task_type', usageData.task_type)
-        .single();
+      const { data: existing, success } = await selectOne<any>('ai_model_performance', {
+        provider: usageData.provider,
+        model: usageData.model,
+        task_type: usageData.task_type
+      });
 
-      const updates = {
+      const updates: any = {
         total_requests: (existing?.total_requests || 0) + 1,
         successful_requests: (existing?.successful_requests || 0) + (usageData.success ? 1 : 0),
         failed_requests: (existing?.failed_requests || 0) + (usageData.success ? 0 : 1),
@@ -588,20 +553,15 @@ export class AIUsageMonitoringService extends BaseService {
         updates.avg_response_time_ms = usageData.response_time_ms;
       }
 
-      if (existing) {
-        await this.supabase
-          .from('ai_model_performance')
-          .update(updates)
-          .eq('id', existing.id);
+      if (success && existing) {
+        await updateOne('ai_model_performance', { id: existing.id }, updates);
       } else {
-        await this.supabase
-          .from('ai_model_performance')
-          .insert({
-            provider: usageData.provider,
-            model: usageData.model,
-            task_type: usageData.task_type,
-            ...updates,
-          });
+        await insertOne('ai_model_performance', {
+          provider: usageData.provider,
+          model: usageData.model,
+          task_type: usageData.task_type,
+          ...updates,
+        });
       }
     } catch (error) {
       this.logger.error('Failed to update model performance', error);
@@ -612,15 +572,15 @@ export class AIUsageMonitoringService extends BaseService {
     try {
       // Check for high usage alerts
       const today = new Date().toISOString().split('T')[0];
-      const { data: todayUsage } = await this.supabase
-        .from(this.config.usageTable)
-        .select('cost_usd')
-        .eq('provider', usageData.provider)
-        .gte('created_at', today);
+      const { data, success } = await selectData<any>({
+        table: this.config.usageTable,
+        filters: { provider: usageData.provider }
+      });
 
-      if (todayUsage) {
+      if (success && data) {
+        const todayUsage = data.filter(r => r.created_at >= today);
         const todayCost = todayUsage.reduce((sum, r) => sum + (r.cost_usd || 0), 0);
-        
+
         // Alert if daily cost exceeds $10
         if (todayCost > 10) {
           await this.createAlert({
@@ -637,28 +597,31 @@ export class AIUsageMonitoringService extends BaseService {
       }
 
       // Check for error rate alerts
-      const recentRequests = await this.supabase
-        .from(this.config.usageTable)
-        .select('success')
-        .eq('provider', usageData.provider)
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-        .limit(100);
+      const { data: recentData, success: recentSuccess } = await selectData<any>({
+        table: this.config.usageTable,
+        filters: { provider: usageData.provider },
+        limit: 100
+      });
 
-      if (recentRequests.data && recentRequests.data.length >= 10) {
-        const failedRequests = recentRequests.data.filter(r => !r.success).length;
-        const errorRate = (failedRequests / recentRequests.data.length) * 100;
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      if (recentSuccess && recentData) {
+        const recentRequests = recentData.filter(r => r.created_at >= yesterday);
+        if (recentRequests.length >= 10) {
+          const failedRequests = recentRequests.filter(r => !r.success).length;
+          const errorRate = (failedRequests / recentRequests.length) * 100;
 
-        if (errorRate > 10) {
-          await this.createAlert({
-            alert_type: 'error_rate',
-            provider: usageData.provider as 'openai' | 'openrouter',
-            severity: errorRate > 25 ? 'critical' : 'high',
-            title: `High Error Rate Alert - ${usageData.provider}`,
-            message: `Error rate for ${usageData.provider} is ${errorRate.toFixed(1)}%`,
-            threshold_value: 10,
-            current_value: errorRate,
-            is_active: true,
-          });
+          if (errorRate > 10) {
+            await this.createAlert({
+              alert_type: 'error_rate',
+              provider: usageData.provider as 'openai' | 'openrouter',
+              severity: errorRate > 25 ? 'critical' : 'high',
+              title: `High Error Rate Alert - ${usageData.provider}`,
+              message: `Error rate for ${usageData.provider} is ${errorRate.toFixed(1)}%`,
+              threshold_value: 10,
+              current_value: errorRate,
+              is_active: true,
+            });
+          }
         }
       }
     } catch (error) {
@@ -670,7 +633,7 @@ export class AIUsageMonitoringService extends BaseService {
     const dailyMap = new Map<string, { requests: number; cost_usd: number; tokens: number }>();
 
     data.forEach(record => {
-      const date = record.created_at.split('T')[0];
+      const date = record.created_at ? record.created_at.split('T')[0] : new Date().toISOString().split('T')[0];
       if (!dailyMap.has(date)) {
         dailyMap.set(date, { requests: 0, cost_usd: 0, tokens: 0 });
       }
@@ -685,9 +648,5 @@ export class AIUsageMonitoringService extends BaseService {
       .sort((a, b) => b.date.localeCompare(a.date));
   }
 }
-
-// ============================================================================
-// SERVICE INSTANCE
-// ============================================================================
 
 export const aiUsageMonitoringService = new AIUsageMonitoringService();

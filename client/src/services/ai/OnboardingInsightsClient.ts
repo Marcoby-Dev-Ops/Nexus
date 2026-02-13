@@ -1,4 +1,5 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+import { selectData, deleteOne, insertOne } from '@/lib/api-client';
 import { callEdgeFunction } from '@/lib/database';
 import type { OnboardingInsight, OnboardingContext } from './OnboardingInsightsService';
 
@@ -16,31 +17,31 @@ export class OnboardingInsightsClient extends BaseService {
    */
   async generateOnboardingInsights(context: OnboardingContext): Promise<ServiceResponse<OnboardingInsight[]>> {
     return this.executeDbOperation(async () => {
-      this.logMethodCall('generateOnboardingInsights', { 
-        company: context.user.company, 
+      this.logMethodCall('generateOnboardingInsights', {
+        company: context.user.company,
         industry: context.user.industry,
-        integrationCount: context.selectedIntegrations?.length || 0 
+        integrationCount: context.selectedIntegrations?.length || 0
       });
 
       // First, check for existing insights to avoid duplicates
       const existingInsights = await this.checkForExistingInsights(context);
       if (existingInsights.length > 0) {
-        this.logger.info('Found existing insights, returning cached results', { 
+        this.logger.info('Found existing insights, returning cached results', {
           count: existingInsights.length,
-          company: context.user.company 
+          company: context.user.company
         });
         return this.createSuccessResponse(existingInsights);
       }
 
       let result: any = null;
-      
+
       try {
         // Call server-side API via edge function
         result = await callEdgeFunction('ai-insights-onboarding', {
           context
         });
 
-        this.logger.info('AI insights API response received', { 
+        this.logger.info('AI insights API response received', {
           success: result?.success,
           hasData: !!result?.data,
           dataType: typeof result?.data,
@@ -124,7 +125,7 @@ export class OnboardingInsightsClient extends BaseService {
    */
   private generateFallbackInsights(context: OnboardingContext): OnboardingInsight[] {
     const { user, selectedIntegrations } = context;
-    
+
     const baseInsights: OnboardingInsight[] = [
       {
         id: `fallback-${Date.now()}-1`,
@@ -208,22 +209,32 @@ export class OnboardingInsightsClient extends BaseService {
    */
   private async checkForExistingInsights(context: OnboardingContext): Promise<OnboardingInsight[]> {
     try {
-      // Query existing insights from the personal_thoughts table
-      const { data: existingThoughts } = await this.supabase
-        .from('personal_thoughts')
-        .select('*')
-        .eq('category', 'fire_initiative')
-        .eq('user_id', context.user.id || 'onboarding')
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // Query existing insights from the personal_thoughts table using api-client
+      const { data: existingThoughts, success, error } = await selectData<any>({
+        table: 'personal_thoughts',
+        filters: {
+          category: 'fire_initiative',
+          user_id: context.user.id || 'onboarding'
+        },
+        orderBy: [{ column: 'created_at', ascending: false }],
+        limit: 10
+      });
 
-      if (!existingThoughts || existingThoughts.length === 0) {
+      if (!success || !existingThoughts || existingThoughts.length === 0) {
+        if (error) this.logger.error('Error checking for existing insights', { error });
+        return [];
+      }
+
+      // Filter by date client-side (last 24 hours)
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const recentThoughts = existingThoughts.filter(t => t.created_at >= yesterday);
+
+      if (recentThoughts.length === 0) {
         return [];
       }
 
       // Remove duplicates based on title similarity
-      const uniqueThoughts = this.removeDuplicateThoughts(existingThoughts);
+      const uniqueThoughts = this.removeDuplicateThoughts(recentThoughts);
 
       // Transform thoughts back to insights format
       const insights: OnboardingInsight[] = uniqueThoughts.map((thought: any) => {
@@ -244,10 +255,10 @@ export class OnboardingInsightsClient extends BaseService {
         };
       });
 
-      this.logger.info('Found existing insights for deduplication', { 
+      this.logger.info('Found existing insights for deduplication', {
         count: insights.length,
         originalCount: existingThoughts.length,
-        company: context.user.company 
+        company: context.user.company
       });
 
       return insights;
@@ -267,14 +278,14 @@ export class OnboardingInsightsClient extends BaseService {
     for (const thought of thoughts) {
       // Normalize title for comparison (lowercase, remove extra spaces)
       const normalizedTitle = thought.title?.toLowerCase().replace(/\s+/g, ' ').trim() || '';
-      
+
       if (!seen.has(normalizedTitle)) {
         seen.add(normalizedTitle);
         unique.push(thought);
       } else {
-        this.logger.info('Removing duplicate insight', { 
+        this.logger.info('Removing duplicate insight', {
           title: thought.title,
-          id: thought.id 
+          id: thought.id
         });
       }
     }
@@ -288,23 +299,32 @@ export class OnboardingInsightsClient extends BaseService {
   async cleanupDuplicateInsights(): Promise<void> {
     try {
       this.logger.info('Starting duplicate insights cleanup');
-      
-      // Get all fire_initiative thoughts from the last 24 hours
-      const { data: allThoughts } = await this.supabase
-        .from('personal_thoughts')
-        .select('*')
-        .eq('category', 'fire_initiative')
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-        .order('created_at', { ascending: false });
 
-      if (!allThoughts || allThoughts.length === 0) {
+      // Get all fire_initiative thoughts from the last 24 hours
+      const { data: allThoughts, success, error } = await selectData<any>({
+        table: 'personal_thoughts',
+        filters: { category: 'fire_initiative' },
+        orderBy: [{ column: 'created_at', ascending: false }]
+      });
+
+      if (!success || !allThoughts || allThoughts.length === 0) {
+        if (error) this.logger.error('Error fetching insights for cleanup', { error });
         this.logger.info('No insights to clean up');
+        return;
+      }
+
+      // Filter by date client-side
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const recentThoughts = allThoughts.filter(t => t.created_at >= yesterday);
+
+      if (recentThoughts.length === 0) {
+        this.logger.info('No recent insights to clean up');
         return;
       }
 
       // Group by normalized title
       const groupedByTitle = new Map<string, any[]>();
-      
+
       for (const thought of allThoughts) {
         const normalizedTitle = thought.title?.toLowerCase().replace(/\s+/g, ' ').trim() || '';
         if (!groupedByTitle.has(normalizedTitle)) {
@@ -319,19 +339,16 @@ export class OnboardingInsightsClient extends BaseService {
         if (thoughts.length > 1) {
           // Sort by creation time, keep the oldest
           thoughts.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-          
+
           // Remove all but the first (oldest) one
           const toRemove = thoughts.slice(1);
-          
+
           for (const thought of toRemove) {
-            await this.supabase
-              .from('personal_thoughts')
-              .delete()
-              .eq('id', thought.id);
+            await deleteOne('personal_thoughts', { id: thought.id });
             removedCount++;
           }
-          
-          this.logger.info('Removed duplicate insights', { 
+
+          this.logger.info('Removed duplicate insights', {
             title,
             kept: thoughts[0].id,
             removed: toRemove.map(t => t.id)
@@ -339,9 +356,9 @@ export class OnboardingInsightsClient extends BaseService {
         }
       }
 
-      this.logger.info('Duplicate cleanup completed', { 
+      this.logger.info('Duplicate cleanup completed', {
         totalRemoved: removedCount,
-        totalProcessed: allThoughts.length 
+        totalProcessed: allThoughts.length
       });
     } catch (error) {
       this.logger.error('Error during duplicate cleanup', { error });
@@ -355,43 +372,41 @@ export class OnboardingInsightsClient extends BaseService {
     try {
       // Store insights in personal_thoughts table for future deduplication
       for (const insight of insights) {
-        await this.supabase
-          .from('personal_thoughts')
-          .insert({
-            user_id: context.user.id || 'onboarding',
-            company_id: context.user.companyId,
-            title: insight.title,
-            content: insight.description,
-            category: 'fire_initiative',
-            tags: [
-              'fire_initiative',
-              'onboarding',
-              insight.impact.toLowerCase(),
-              insight.category.toLowerCase(),
-              context.user.industry?.toLowerCase()
-            ].filter(Boolean),
-            metadata: {
-              insight_id: insight.id,
-              impact_level: insight.impact,
-              confidence_score: insight.confidence,
-              category: insight.category,
-              estimated_value: insight.estimatedValue,
-              timeframe: insight.timeframe,
-              implementation_difficulty: insight.implementationDifficulty,
-              company: context.user.company,
-              industry: context.user.industry,
-              company_size: context.user.companySize,
-              integrations: context.selectedIntegrations || [],
-              tools: context.selectedTools || {},
-              priorities: context.user.keyPriorities || [],
-              generated_at: new Date().toISOString()
-            }
-          });
+        await insertOne('personal_thoughts', {
+          user_id: context.user.id || 'onboarding',
+          company_id: context.user.companyId,
+          title: insight.title,
+          content: insight.description,
+          category: 'fire_initiative',
+          tags: [
+            'fire_initiative',
+            'onboarding',
+            insight.impact.toLowerCase(),
+            insight.category.toLowerCase(),
+            context.user.industry?.toLowerCase()
+          ].filter(Boolean) as any,
+          metadata: {
+            insight_id: insight.id,
+            impact_level: insight.impact,
+            confidence_score: insight.confidence,
+            category: insight.category,
+            estimated_value: insight.estimatedValue,
+            timeframe: insight.timeframe,
+            implementation_difficulty: insight.implementationDifficulty,
+            company: context.user.company,
+            industry: context.user.industry,
+            company_size: context.user.companySize,
+            integrations: context.selectedIntegrations || [],
+            tools: context.selectedTools || {},
+            priorities: context.user.keyPriorities || [],
+            generated_at: new Date().toISOString()
+          } as any
+        });
       }
 
-      this.logger.info('Stored insights for future deduplication', { 
+      this.logger.info('Stored insights for future deduplication', {
         count: insights.length,
-        company: context.user.company 
+        company: context.user.company
       });
     } catch (error) {
       this.logger.error('Error storing insights for deduplication', { error });

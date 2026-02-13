@@ -1,7 +1,8 @@
-import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+import { BaseService } from '@/core/services/BaseService';
+import type { ServiceResponse } from '@/core/services/BaseService';
+import { selectData as select, selectOne, insertOne, updateOne, upsertOne, deleteOne } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/database';
 
 export interface UnifiedClientProfile {
   id: string;
@@ -70,7 +71,7 @@ export class UnifiedClientService extends BaseService {
   async populateUnifiedClients(userId: string): Promise<ServiceResponse<{ profilesCreated: number; interactionsCreated: number; alertsCreated: number }>> {
     try {
       this.logger.info('Starting unified client population for user:', userId);
-      
+
       let profilesCreated = 0;
       let interactionsCreated = 0;
       let alertsCreated = 0;
@@ -118,14 +119,16 @@ export class UnifiedClientService extends BaseService {
         throw new Error('Authentication required - no valid session found');
       }
 
-      const result2 = await select('unified_client_profiles', ['*'], {
-        user_id: userId,
-        order_by: 'updated_at.desc'
+      const result2 = await select<any>({
+        table: 'unified_client_profiles',
+        columns: '*',
+        filters: { user_id: userId },
+        orderBy: [{ column: 'updated_at', ascending: false }]
       });
 
       if (!result2.success) throw new Error(result2.error);
 
-      return { data: result2.data || [], error: null };
+      return { data: result2.data || [], error: null, success: true };
     }, `get unified client profiles for user ${userId}`);
   }
 
@@ -141,14 +144,16 @@ export class UnifiedClientService extends BaseService {
         throw new Error('Authentication required - no valid session found');
       }
 
-      const result = await select('ai_client_interactions', ['*'], {
-        user_id: userId,
-        order_by: 'occurred_at.desc'
+      const result = await select<any>({
+        table: 'ai_client_interactions',
+        columns: '*',
+        filters: { user_id: userId },
+        orderBy: [{ column: 'occurred_at', ascending: false }]
       });
 
       if (!result.success) throw new Error(result.error);
 
-      return { data: result.data || [], error: null };
+      return { data: result.data || [], error: null, success: true };
     }, `get client interactions for user ${userId}`);
   }
 
@@ -164,15 +169,19 @@ export class UnifiedClientService extends BaseService {
         throw new Error('Authentication required - no valid session found');
       }
 
-      const result = await select('ai_client_intelligence_alerts', ['*'], {
-        user_id: userId,
-        is_resolved: false,
-        order_by: 'created_at.desc'
+      const result = await select<any>({
+        table: 'ai_client_intelligence_alerts',
+        columns: '*',
+        filters: {
+          user_id: userId,
+          is_resolved: false
+        },
+        orderBy: [{ column: 'created_at', ascending: false }]
       });
 
       if (!result.success) throw new Error(result.error);
 
-      return { data: result.data || [], error: null };
+      return { data: result.data || [], error: null, success: true };
     }, `get client intelligence alerts for user ${userId}`);
   }
 
@@ -184,25 +193,37 @@ export class UnifiedClientService extends BaseService {
 
     try {
       // Get HubSpot contacts
-      const contactsResult = await select('contacts', ['*'], {
-        user_id: userId,
-        hubspotid_not: null
+      const contactsResult = await select<any>({
+        table: 'contacts',
+        columns: '*',
+        filters: {
+          user_id: userId,
+          hubspotid: { operator: 'neq', value: null }
+        }
       });
 
       if (!contactsResult.success) throw new Error(contactsResult.error);
 
       // Get HubSpot companies
-      const companiesResult = await select('companies', ['*'], {
-        user_id: userId,
-        hubspotid_not: null
+      const companiesResult = await select<any>({
+        table: 'companies',
+        columns: '*',
+        filters: {
+          user_id: userId,
+          hubspotid: { operator: 'neq', value: null }
+        }
       });
 
       if (!companiesResult.success) throw new Error(companiesResult.error);
 
       // Get HubSpot deals
-      const dealsResult = await select('deals', ['*'], {
-        user_id: userId,
-        hubspotid_not: null
+      const dealsResult = await select<any>({
+        table: 'deals',
+        columns: '*',
+        filters: {
+          user_id: userId,
+          hubspotid: { operator: 'neq', value: null }
+        }
       });
 
       if (!dealsResult.success) throw new Error(dealsResult.error);
@@ -214,7 +235,7 @@ export class UnifiedClientService extends BaseService {
       // Create unified profiles from contacts
       for (const contact of contacts || []) {
         const company = companies?.find(c => c.id === contact.company_id);
-        
+
         const profileData = {
           name: contact.name || contact.email,
           email: contact.email,
@@ -235,7 +256,7 @@ export class UnifiedClientService extends BaseService {
         const estimatedValue = this.calculateEstimatedValue(contact, company, deals);
 
         // Check if profile already exists
-        const existingProfileResult = await selectOne('ai_unified_client_profiles', ['id'], {
+        const existingProfileResult = await selectOne<any>('ai_unified_client_profiles', {
           user_id: userId,
           client_id: `hubspot_contact_${contact.hubspotid}`
         });
@@ -256,7 +277,7 @@ export class UnifiedClientService extends BaseService {
 
           if (insertResult.success) {
             profilesCreated++;
-            
+
             // Create interactions from deals
             if (deals) {
               const contactDeals = deals.filter(d => d.contact_id === contact.id);
@@ -283,7 +304,7 @@ export class UnifiedClientService extends BaseService {
       // Create unified profiles from companies (if not already created from contacts)
       for (const company of companies || []) {
         const companyContacts = contacts?.filter(c => c.company_id === company.id);
-        
+
         if (companyContacts && companyContacts.length > 0) {
           // Company already covered by contacts
           continue;
@@ -306,7 +327,7 @@ export class UnifiedClientService extends BaseService {
         const estimatedValue = this.calculateEstimatedValue(null, company, deals);
 
         // Check if profile already exists
-        const existingProfileResult = await selectOne('ai_unified_client_profiles', ['id'], {
+        const existingProfileResult = await selectOne<any>('ai_unified_client_profiles', {
           user_id: userId,
           client_id: `hubspot_company_${company.hubspotid}`
         });
@@ -357,11 +378,13 @@ export class UnifiedClientService extends BaseService {
   private async generateCrossPlatformCorrelations(userId: string): Promise<void> {
     try {
       // Get all unified profiles
-      const result = await select('ai_unified_client_profiles', ['*'], {
-        user_id: userId
+      const result = await select<any>({
+        table: 'ai_unified_client_profiles',
+        columns: '*',
+        filters: { user_id: userId }
       });
 
-      if (!result.success) throw new Error(result.error);
+      if (!result.success || !result.data) throw new Error(result.error);
 
       // Find potential matches across platforms
       for (let i = 0; i < result.data.length; i++) {
@@ -370,7 +393,7 @@ export class UnifiedClientService extends BaseService {
           const profile2 = result.data[j];
 
           const matchScore = this.calculateMatchScore(profile1.profile_data, profile2.profile_data);
-          
+
           if (matchScore > 0.8) {
             // High confidence match - could be the same client across platforms
             await this.createCrossPlatformCorrelation(userId, profile1, profile2, matchScore);
@@ -387,17 +410,17 @@ export class UnifiedClientService extends BaseService {
    */
   private calculateCompletenessScore(profileData: any): number {
     const fields = [
-      'name', 'email', 'phone', 'company', 'location', 
-      'industry', 'website', 'demographics.company_size', 
+      'name', 'email', 'phone', 'company', 'location',
+      'industry', 'website', 'demographics.company_size',
       'demographics.revenue_range', 'demographics.role'
     ];
 
     let filledFields = 0;
     for (const field of fields) {
-      const value = field.includes('.') 
+      const value = field.includes('.')
         ? field.split('.').reduce((obj, key) => obj?.[key], profileData)
         : profileData[field];
-      
+
       if (value && value.toString().trim() !== '') {
         filledFields++;
       }
