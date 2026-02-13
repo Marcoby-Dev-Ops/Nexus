@@ -9,20 +9,21 @@
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Alert } from '@/shared/components/ui/Alert';
-import { 
-  Brain, 
-  Zap, 
-  ArrowUpRight, 
-  Target, 
-  Award, 
-  BookOpen, 
-  Lightbulb, 
-  TrendingUp, 
-  CheckCircle, 
-  Globe 
+import {
+  Brain,
+  Zap,
+  ArrowUpRight,
+  Target,
+  Award,
+  BookOpen,
+  Lightbulb,
+  TrendingUp,
+  CheckCircle,
+  Globe
 } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
 
@@ -101,16 +102,16 @@ const SimpleBarChart: React.FC<{ data: any }> = ({ _data }) => (
 
 // Mock analytics service
 const analyticsService = {
-  init: (userId: string, config: any) =>  
-     
+  init: (userId: string, config: any) =>
+
     // eslint-disable-next-line no-console
     console.log('Analytics init: ', userId, config),
-  track: (event: string, data: any) =>  
-     
+  track: (event: string, data: any) =>
+
     // eslint-disable-next-line no-console
     console.log('Analytics track: ', event, data),
-  reset: () =>  
-     
+  reset: () =>
+
     // eslint-disable-next-line no-console
     console.log('Analytics reset')
 };
@@ -120,46 +121,90 @@ interface SettingsSection {
   title: string;
   description: string;
   component: React.ComponentType;
+  icon?: React.ComponentType<{ className?: string }>;
+  hideWrapperCard?: boolean;
 }
 
 interface SettingsConfig {
   title: string;
   description: string;
   sections: SettingsSection[];
+  actions?: React.ReactNode;
 }
 
 export const UnifiedSettingsPage: React.FC<{ config: SettingsConfig }> = ({ config }) => {
-  const [activeSection, setActiveSection] = React.useState(config.sections[0]?.id);
+  const { section } = useParams<{ section?: string }>();
+  const navigate = useNavigate();
 
-  const currentSection = config.sections.find(s => s.id === activeSection);
+  // Use config's first section if no section is provided in URL
+  const [activeSection, setActiveSection] = React.useState(section || config.sections[0]?.id);
+
+  // Sync activeSection with URL param when it changes
+  useEffect(() => {
+    if (section && section !== activeSection) {
+      setActiveSection(section);
+    }
+  }, [section]);
+
+  const handleTabChange = (value: string) => {
+    setActiveSection(value);
+    // If the base URL is /settings, append the section. 
+    // We assume this component is used at a base path like /settings or /ai-settings
+    const basePath = window.location.pathname.split('/').slice(0, 2).join('/');
+    navigate(`${basePath}/${value}`, { replace: true });
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{config.title}</h1>
-        <p className="text-muted-foreground mt-2">{config.description}</p>
+    <div className="container mx-auto p-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{config.title}</h1>
+          <p className="text-muted-foreground mt-2">{config.description}</p>
+        </div>
+        {config.actions && (
+          <div className="flex items-center gap-3">
+            {config.actions}
+          </div>
+        )}
       </div>
-      
-      <Tabs value={activeSection} onValueChange={setActiveSection} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg: grid-cols-4">
+
+      <Tabs value={activeSection} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="flex w-full overflow-x-auto bg-muted/50 p-1 h-auto min-h-[44px]">
           {config.sections.map((section) => (
-            <TabsTrigger key={section.id} value={section.id} className="text-xs">
-              {section.title}
+            <TabsTrigger
+              key={section.id}
+              value={section.id}
+              className="flex items-center gap-2 px-4 py-2 text-sm sm:flex-1"
+            >
+              {section.icon && <section.icon className="w-4 h-4" />}
+              <span className="hidden sm:inline">{section.title}</span>
+              <span className="sm:hidden">{section.title.charAt(0)}</span>
             </TabsTrigger>
           ))}
         </TabsList>
-        
+
         {config.sections.map((section) => (
-          <TabsContent key={section.id} value={section.id}>
-            <Card>
-              <CardHeader>
-                <CardTitle>{section.title}</CardTitle>
-                <p className="text-sm text-muted-foreground">{section.description}</p>
-              </CardHeader>
-              <CardContent>
-                <section.component />
-              </CardContent>
-            </Card>
+          <TabsContent key={section.id} value={section.id} className="mt-0 focus-visible:outline-none">
+            {section.hideWrapperCard ? (
+              <section.component />
+            ) : (
+              <Card className="border-border/50 shadow-sm">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-3 mb-1">
+                    {section.icon && (
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        <section.icon className="w-5 h-5" />
+                      </div>
+                    )}
+                    <CardTitle>{section.title}</CardTitle>
+                  </div>
+                  <CardDescription>{section.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <section.component />
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         ))}
       </Tabs>
@@ -201,11 +246,10 @@ export const UnifiedAnalyticsPage: React.FC<{ config: AnalyticsConfig }> = ({ co
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                activeTab === tab.id
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover: text-foreground hover:border-muted'
-              }`}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${activeTab === tab.id
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover: text-foreground hover:border-muted'
+                }`}
             >
               {tab.label}
             </button>
@@ -258,13 +302,13 @@ export const UnifiedCallbackPage: React.FC<{ config: CallbackPageConfig }> = ({ 
               <p className="text-muted-foreground">{config.description}</p>
             </>
           )}
-          
+
           {status === 'success' && (
             <>
               <div className="text-success text-4xl mb-4">✓</div>
               <h2 className="text-xl font-semibold mb-2">Success!</h2>
               <p className="text-muted-foreground mb-4">{config.successMessage}</p>
-              <button 
+              <button
                 onClick={() => window.location.href = config.redirectPath}
                 className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover: bg-primary/90 transition-colors"
               >
@@ -272,13 +316,13 @@ export const UnifiedCallbackPage: React.FC<{ config: CallbackPageConfig }> = ({ 
               </button>
             </>
           )}
-          
+
           {status === 'error' && (
             <>
               <div className="text-destructive text-4xl mb-4">✗</div>
               <h2 className="text-xl font-semibold mb-2">Error</h2>
               <p className="text-muted-foreground mb-4">{config.errorMessage}</p>
-              <button 
+              <button
                 onClick={() => window.location.href = '/integrations'}
                 className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover: bg-primary/90 transition-colors"
               >
@@ -320,7 +364,7 @@ const AIInsightsPanel: React.FC<{ insights: BusinessInsight }> = ({ insights }) 
             <TabsTrigger value="drivers" className="text-xs">Business Drivers</TabsTrigger>
             <TabsTrigger value="practices" className="text-xs">Best Practices</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="recommendations" className="space-y-4 mt-4">
             {insights.aiRecommendations.map((rec: string, index: number) => (
               <Alert key={index} className="border-success-subtle bg-success-subtle">
@@ -330,7 +374,7 @@ const AIInsightsPanel: React.FC<{ insights: BusinessInsight }> = ({ insights }) 
               </Alert>
             ))}
           </TabsContent>
-          
+
           <TabsContent value="impact" className="space-y-4 mt-4">
             {insights.crossDepartmentalImpact.map((impact: string, index: number) => (
               <div key={index} className="flex items-start gap-4 p-4 bg-background rounded-lg border border-border">
@@ -339,7 +383,7 @@ const AIInsightsPanel: React.FC<{ insights: BusinessInsight }> = ({ insights }) 
               </div>
             ))}
           </TabsContent>
-          
+
           <TabsContent value="drivers" className="space-y-4 mt-4">
             {insights.keyBusinessDrivers.map((driver: string, index: number) => (
               <div key={index} className="flex items-start gap-4 p-4 bg-background rounded-lg border border-border">
@@ -348,7 +392,7 @@ const AIInsightsPanel: React.FC<{ insights: BusinessInsight }> = ({ insights }) 
               </div>
             ))}
           </TabsContent>
-          
+
           <TabsContent value="practices" className="space-y-4 mt-4">
             {insights.bestPractices.map((practice: string, index: number) => (
               <div key={index} className="flex items-start gap-4 p-4 bg-background rounded-lg border border-border">
@@ -387,7 +431,7 @@ const BusinessEducationPanel: React.FC<{ content: EducationalContent }> = ({ con
           </h4>
           <p className="text-sm text-muted-foreground">{content.whatThisMeans}</p>
         </div>
-        
+
         <div className="bg-background rounded-lg p-4 border border-border">
           <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
@@ -395,7 +439,7 @@ const BusinessEducationPanel: React.FC<{ content: EducationalContent }> = ({ con
           </h4>
           <p className="text-sm text-muted-foreground">{content.whyItMatters}</p>
         </div>
-        
+
         <div className="bg-background rounded-lg p-4 border border-border">
           <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
             <CheckCircle className="w-4 h-4" />
@@ -410,7 +454,7 @@ const BusinessEducationPanel: React.FC<{ content: EducationalContent }> = ({ con
             ))}
           </ul>
         </div>
-        
+
         <div className="bg-background rounded-lg p-4 border border-border">
           <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
             <Globe className="w-4 h-4" />
@@ -451,8 +495,8 @@ const EnhancedActivityFeed: React.FC<{ activities: EnhancedActivity[] }> = ({ ac
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs text-muted-foreground">{activity.time}</span>
                   {activity.badge && (
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className={`text-xs ${getBadgeColor(activity.badge)}`}
                     >
                       {activity.badge}
@@ -494,7 +538,7 @@ export const UnifiedDepartmentPage: React.FC<{ config: DepartmentConfig }> = ({ 
   };
 
   return (
-    <DashboardLayout 
+    <DashboardLayout
       title={config.title}
       subtitle={config.subtitle}
     >

@@ -10,6 +10,19 @@ import AdvancedSettings from './AdvancedSettings';
 import AIModelSettings from './AIModelSettings';
 import BillingSettings from './BillingSettings';
 
+import {
+  User,
+  Globe,
+  Shield,
+  Link,
+  Bell,
+  Palette,
+  CreditCard,
+  Lock,
+  Cpu,
+  Layers
+} from 'lucide-react';
+
 // Lazy loaded profile components
 const CompanyProfilePage = lazy(() => import('./CompanyProfilePage').then(m => ({ default: m.CompanyProfilePage })));
 const UserProfilePage = lazy(() => import('./UserProfilePage').then(m => ({ default: m.UserProfilePage })));
@@ -63,30 +76,39 @@ const settingsConfig = {
       title: 'Account',
       description: 'Personal information and interface appearance',
       component: AccountSection,
+      icon: User,
+      hideWrapperCard: true,
     },
     {
       id: 'organization',
       title: 'Organization',
       description: 'Company details, team management, and billing',
       component: OrganizationSection,
+      icon: Globe,
+      hideWrapperCard: true,
     },
     {
       id: 'security-privacy',
       title: 'Security & Privacy',
       description: 'Account protection, sessions, and data management',
       component: SecurityPrivacySection,
+      icon: Shield,
+      hideWrapperCard: true,
     },
     {
       id: 'connections',
       title: 'Connections & API',
       description: 'Integrations, AI models, and developer tools',
       component: ConnectionsAPISection,
+      icon: Link,
+      hideWrapperCard: true,
     },
     {
       id: 'notifications',
       title: 'Notifications',
       description: 'Notification preferences for email, push, and in-app',
       component: NotificationsSettings,
+      icon: Bell,
     },
   ],
 };

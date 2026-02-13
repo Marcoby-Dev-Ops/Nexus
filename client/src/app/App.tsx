@@ -107,7 +107,7 @@ function AppRoutes() {
 
       {/* Settings routes */}
       <Route
-        path="/settings"
+        path="/settings/:section?"
         element={
           <ProtectedRoute>
             <SettingsPage />
