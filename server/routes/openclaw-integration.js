@@ -10,11 +10,11 @@ const EMAIL_ADDRESS_REGEX = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 // Middleware to authenticate OpenClaw requests
 const authenticateOpenClaw = (req, res, next) => {
   const apiKey = req.headers['x-openclaw-api-key'] || req.query.apiKey;
-  
+
   // In production, validate against stored API keys
   // For now, accept any key or use environment variable
   const validApiKey = process.env.OPENCLAW_API_KEY || 'openclaw-default-key';
-  
+
   if (!apiKey) {
     return res.status(401).json({
       success: false,
@@ -22,7 +22,7 @@ const authenticateOpenClaw = (req, res, next) => {
       code: 'UNAUTHORIZED'
     });
   }
-  
+
   if (apiKey !== validApiKey) {
     return res.status(403).json({
       success: false,
@@ -30,7 +30,7 @@ const authenticateOpenClaw = (req, res, next) => {
       code: 'FORBIDDEN'
     });
   }
-  
+
   next();
 };
 
@@ -220,10 +220,10 @@ function buildTimeWindow(args = {}) {
   return { startIso, endIso, preset: 'custom' };
 }
 
-function parseSearchLimit(limitValue, fallback = 20) {
+function parseSearchLimit(limitValue, fallback = 50) {
   const parsed = Number(limitValue || fallback);
   if (!Number.isFinite(parsed)) return fallback;
-  return Math.min(Math.max(Math.trunc(parsed), 1), 50);
+  return Math.min(Math.max(Math.trunc(parsed), 1), 100);
 }
 
 function normalizeProviderSlug(provider) {
@@ -639,6 +639,153 @@ async function executeToolByName(req, toolName, args = {}) {
     };
   }
 
+  if (safeName === 'nexus_send_email') {
+    const providersToTry = resolveProviderPreference(args.provider);
+    const tokenResult = await query(
+      `SELECT integration_slug, access_token, updated_at
+       FROM oauth_tokens
+       WHERE user_id = $1
+         AND integration_slug = ANY($2::text[])
+       ORDER BY updated_at DESC`,
+      [userId, providersToTry]
+    );
+    if (tokenResult.error) throw new Error(tokenResult.error);
+
+    const tokens = (tokenResult.data || []).filter(row => row && row.access_token);
+    if (!tokens.length) throw new Error('No connected email provider token found.');
+
+    const entry = tokens[0]; // Use the most recently updated active connection
+    const provider = normalizeProviderSlug(entry.integration_slug);
+
+    if (provider === 'microsoft') {
+      const response = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${entry.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: {
+            subject: args.subject,
+            body: { contentType: 'Text', content: args.body },
+            toRecipients: [{ emailAddress: { address: args.to } }]
+          }
+        })
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(`Microsoft send failed: ${payload.error?.message || response.status}`);
+      }
+      return { success: true, provider: 'microsoft', to: args.to };
+    }
+
+    if (provider === 'google-workspace') {
+      const utf8Subject = `=?utf-8?B?${Buffer.from(args.subject).toString('base64')}?=`;
+      const message = [
+        `To: ${args.to}`,
+        `Subject: ${utf8Subject}`,
+        'Content-Type: text/plain; charset="UTF-8"',
+        'MIME-Version: 1.0',
+        '',
+        args.body
+      ].join('\r\n');
+
+      const encodedMessage = Buffer.from(message)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${entry.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ raw: encodedMessage })
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(`Google send failed: ${payload.error?.message || response.status}`);
+      }
+      return { success: true, provider: 'google-workspace', to: args.to };
+    }
+    throw new Error(`Provider "${provider}" does not support nexus_send_email`);
+  }
+
+  if (safeName === 'nexus_get_calendar_events') {
+    const limit = parseSearchLimit(args.limit, 20);
+    const providersToTry = resolveProviderPreference(args.provider);
+    const tokenResult = await query(
+      `SELECT integration_slug, access_token, updated_at
+       FROM oauth_tokens
+       WHERE user_id = $1
+         AND integration_slug = ANY($2::text[])
+       ORDER BY updated_at DESC`,
+      [userId, providersToTry]
+    );
+    if (tokenResult.error) throw new Error(tokenResult.error);
+
+    const tokens = (tokenResult.data || []).filter(row => row && row.access_token);
+    if (!tokens.length) throw new Error('No connected provider token found.');
+
+    const entry = tokens[0];
+    const provider = normalizeProviderSlug(entry.integration_slug);
+    const timeWindow = buildTimeWindow(args);
+
+    if (provider === 'microsoft') {
+      const graphParams = new URLSearchParams({
+        startDateTime: timeWindow.startIso,
+        endDateTime: timeWindow.endIso,
+        $top: String(limit),
+        $select: 'id,subject,start,end,location,isAllDay,bodyPreview'
+      });
+      const response = await fetch(`https://graph.microsoft.com/v1.0/me/calendarView?${graphParams.toString()}`, {
+        headers: { Authorization: `Bearer ${entry.access_token}` }
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(`Microsoft calendar query failed: ${payload.error?.message || response.status}`);
+
+      const events = (payload.value || []).map(event => ({
+        id: event.id,
+        subject: event.subject,
+        start: event.start.dateTime,
+        end: event.end.dateTime,
+        location: event.location?.displayName || null,
+        isAllDay: event.isAllDay,
+        preview: event.bodyPreview
+      }));
+      return { success: true, provider: 'microsoft', events };
+    }
+
+    if (provider === 'google-workspace') {
+      const params = new URLSearchParams({
+        timeMin: timeWindow.startIso,
+        timeMax: timeWindow.endIso,
+        maxResults: String(limit),
+        singleEvents: 'true',
+        orderBy: 'startTime'
+      });
+      const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${entry.access_token}` }
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(`Google calendar query failed: ${payload.error?.message || response.status}`);
+
+      const events = (payload.items || []).map(event => ({
+        id: event.id,
+        subject: event.summary,
+        start: event.start.dateTime || event.start.date,
+        end: event.end.dateTime || event.end.date,
+        location: event.location || null,
+        isAllDay: !!event.start.date,
+        preview: event.description || ''
+      }));
+      return { success: true, provider: 'google-workspace', events };
+    }
+    throw new Error(`Provider "${provider}" does not support nexus_get_calendar_events`);
+  }
+
   if (safeName === 'nexus_disconnect_integration') {
     const providerRaw = String(args.provider || '').trim();
     let integrationId = String(args.integrationId || '').trim();
@@ -672,7 +819,18 @@ async function executeToolByName(req, toolName, args = {}) {
     };
   }
 
-  throw new Error(`Unknown tool: ${safeName}`);
+  // Distinguish between OpenClaw-native tools (which should never arrive here)
+  // and genuinely unknown tools. The nexus-toolbridge plugin should only route
+  // nexus_* tools to this endpoint; anything else indicates a plugin misconfiguration.
+  if (!safeName.startsWith('nexus_')) {
+    throw new Error(
+      `Tool "${safeName}" is not a Nexus-bridged tool. ` +
+      `It should be executed by OpenClaw's native plugin system. ` +
+      `Check the nexus-toolbridge plugin configuration to ensure it only ` +
+      `routes nexus_* tools to the Nexus API.`
+    );
+  }
+  throw new Error(`Unknown Nexus tool: ${safeName}`);
 }
 
 const NEXUS_TOOL_CATALOG = [
@@ -750,6 +908,36 @@ const NEXUS_TOOL_CATALOG = [
         },
         query: { type: 'string' },
         unreadOnly: { type: 'boolean' },
+        limit: { type: 'number' }
+      },
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'nexus_send_email',
+    description: 'Draft and send a plain text email to a specific recipient.',
+    inputSchema: {
+      type: 'object',
+      required: ['to', 'subject', 'body'],
+      properties: {
+        provider: { type: 'string', enum: ['auto', 'microsoft', 'google_workspace', 'google-workspace'] },
+        to: { type: 'string' },
+        subject: { type: 'string' },
+        body: { type: 'string' }
+      },
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'nexus_get_calendar_events',
+    description: 'Fetch upcoming calendar events for a specific date range.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        provider: { type: 'string', enum: ['auto', 'microsoft', 'google_workspace', 'google-workspace'] },
+        datePreset: { type: 'string', enum: ['today', 'last_7_days', 'last_30_days', 'this_week', 'last_week', 'this_month', 'last_month', 'custom'] },
+        startDate: { type: 'string' },
+        endDate: { type: 'string' },
         limit: { type: 'number' }
       },
       additionalProperties: false
@@ -845,7 +1033,7 @@ router.post('/conversations/sync', authenticateOpenClaw, async (req, res) => {
       systemPrompt,
       metadata
     } = req.body;
-    
+
     // Validate required fields
     if (!userId || !conversationId || !messages || !Array.isArray(messages)) {
       return res.status(400).json({
@@ -854,7 +1042,7 @@ router.post('/conversations/sync', authenticateOpenClaw, async (req, res) => {
         code: 'VALIDATION_ERROR'
       });
     }
-    
+
     // Validate messages structure
     for (const [index, message] of messages.entries()) {
       if (!message.id || !message.role || !message.content) {
@@ -864,7 +1052,7 @@ router.post('/conversations/sync', authenticateOpenClaw, async (req, res) => {
           code: 'VALIDATION_ERROR'
         });
       }
-      
+
       if (!['user', 'assistant', 'system'].includes(message.role)) {
         return res.status(400).json({
           success: false,
@@ -873,17 +1061,17 @@ router.post('/conversations/sync', authenticateOpenClaw, async (req, res) => {
         });
       }
     }
-    
+
     logger.info('Syncing OpenClaw conversation', {
       userId,
       conversationId,
       messageCount: messages.length,
       title
     });
-    
+
     // Import database client
     const { query } = require('../src/database/connection');
-    
+
     // Use the sync function from migration
     const result = await query(
       `SELECT sync_openclaw_conversation(
@@ -899,16 +1087,16 @@ router.post('/conversations/sync', authenticateOpenClaw, async (req, res) => {
         metadata || {}
       ]
     );
-    
+
     const nexusConversationId = result.rows[0].conversation_id;
-    
+
     logger.info('OpenClaw conversation synced successfully', {
       userId,
       conversationId,
       nexusConversationId,
       messageCount: messages.length
     });
-    
+
     res.json({
       success: true,
       data: {
@@ -918,10 +1106,10 @@ router.post('/conversations/sync', authenticateOpenClaw, async (req, res) => {
         syncedAt: new Date().toISOString()
       }
     });
-    
+
   } catch (error) {
     logger.error('Failed to sync OpenClaw conversation:', error);
-    
+
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Internal server error',
@@ -934,7 +1122,7 @@ router.post('/conversations/sync', authenticateOpenClaw, async (req, res) => {
 router.get('/conversations', authenticateOpenClaw, async (req, res) => {
   try {
     const { userId } = req.query;
-    
+
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -942,14 +1130,14 @@ router.get('/conversations', authenticateOpenClaw, async (req, res) => {
         code: 'VALIDATION_ERROR'
       });
     }
-    
+
     const { query } = require('../src/database/connection');
-    
+
     const result = await query(
       `SELECT * FROM openclaw_conversations WHERE user_id = $1 ORDER BY created_at DESC`,
       [userId]
     );
-    
+
     res.json({
       success: true,
       data: {
@@ -957,10 +1145,10 @@ router.get('/conversations', authenticateOpenClaw, async (req, res) => {
         count: result.rows.length
       }
     });
-    
+
   } catch (error) {
     logger.error('Failed to fetch OpenClaw conversations:', error);
-    
+
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Internal server error',
@@ -974,19 +1162,19 @@ router.get('/conversations/:conversationId', authenticateOpenClaw, async (req, r
   try {
     const { conversationId } = req.params;
     const { userId } = req.query;
-    
+
     const { query: dbQuery } = require('../src/database/connection');
-    
+
     let query = `SELECT * FROM openclaw_conversations WHERE id = $1`;
     let params = [conversationId];
-    
+
     if (userId) {
       query += ` AND user_id = $2`;
       params.push(userId);
     }
-    
+
     const result = await dbQuery(query, params);
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -994,15 +1182,15 @@ router.get('/conversations/:conversationId', authenticateOpenClaw, async (req, r
         code: 'NOT_FOUND'
       });
     }
-    
+
     res.json({
       success: true,
       data: result.rows[0]
     });
-    
+
   } catch (error) {
     logger.error('Failed to fetch OpenClaw conversation:', error);
-    
+
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Internal server error',
@@ -1015,7 +1203,7 @@ router.get('/conversations/:conversationId', authenticateOpenClaw, async (req, r
 router.get('/conversations/stream', authenticateOpenClaw, (req, res) => {
   try {
     const { userId } = req.query;
-    
+
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -1023,37 +1211,37 @@ router.get('/conversations/stream', authenticateOpenClaw, (req, res) => {
         code: 'VALIDATION_ERROR'
       });
     }
-    
+
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    
+
     // Send initial connection event
     res.write(`event: connected\ndata: ${JSON.stringify({
       timestamp: new Date().toISOString(),
       userId
     })}\n\n`);
-    
+
     logger.info('OpenClaw SSE connection established', { userId });
-    
+
     // In a real implementation, you would:
     // 1. Subscribe to database changes (LISTEN/NOTIFY in PostgreSQL)
     // 2. Use Redis pub/sub for horizontal scaling
     // 3. Handle reconnections with last-event-id
-    
+
     // For now, just keep the connection open
     const keepAlive = setInterval(() => {
       res.write(`: keepalive\n\n`);
     }, 30000);
-    
+
     // Clean up on connection close
     req.on('close', () => {
       clearInterval(keepAlive);
       logger.info('OpenClaw SSE connection closed', { userId });
     });
-    
+
   } catch (error) {
     logger.error('Failed to establish SSE connection:', error);
     res.status(500).end();

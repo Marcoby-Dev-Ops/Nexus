@@ -32,6 +32,9 @@ import CoolifyOpsPage from '@/pages/operations/CoolifyOpsPage';
 import AtomModelPage from '@/pages/AtomModelPage';
 import UnifiedInboxPage from '@/pages/email/UnifiedInboxPage';
 import EmailIntelligencePage from '@/pages/email/EmailIntelligencePage';
+import AIAgentPage from '@/pages/ai/AIAgentPage';
+import AISettingsPage from '@/pages/ai/AISettingsPage';
+import AIModelSettings from '@/pages/admin/AIModelSettings';
 
 // Integrations pages
 import IntegrationMarketplacePage from '@/pages/integrations/IntegrationMarketplacePage';
@@ -146,6 +149,32 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* AI & Specialist Management */}
+      <Route
+        path="/ai-agent"
+        element={
+          <ProtectedRoute>
+            <AIAgentPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai-settings"
+        element={
+          <ProtectedRoute>
+            <AISettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/ai-model-settings"
+        element={
+          <ProtectedRoute>
+            <AIModelSettings />
           </ProtectedRoute>
         }
       />

@@ -49,12 +49,25 @@ Implemented in `server/src/routes/ai.js`:
 
 ### OpenClaw Tool Policy (Critical)
 
-Non-main OpenClaw agents typically run sandboxed. Sandbox tool policy must allow `nexus_*` or tool calls will be blocked.
+Non-main OpenClaw agents typically run sandboxed. Sandbox tool policy must allow both `nexus_*` tools (bridged via Nexus API) and OpenClaw-native tools (executed by OpenClaw's own plugin system).
 
 We enforce in OpenClaw config:
 
 - `tools.profile = "full"`
-- `tools.sandbox.tools.allow` includes `nexus_*` plus the core defaults
+- `tools.sandbox.tools.allow` includes:
+  - `nexus_*` — bridged tools that Nexus executes server-side (email, integrations)
+  - `web_search` — live internet queries
+  - `advanced_scrape` — URL data extraction
+  - `summarize_strategy` — information synthesis
+  - `create_skill` — generate new automated capabilities
+  - `implement_action` — execute system commands or code
+  - `list_skills` — browse the skill library
+  - `search_skills` — find specific skills
+  - `install_skill` — add skills from ClawHub
+  - `clawhub` — search the ClawHub skill registry
+  - `coding-agent` — programmatic development agent
+
+**Important:** OpenClaw-native tools are NOT proxied through Nexus. The `nexus-toolbridge` plugin should only route `nexus_*` tools to the Nexus API. All other tools are handled by OpenClaw's own plugins. If a non-`nexus_*` tool reaches the Nexus tool execution endpoint, it will return an informative error.
 
 ### Dedicated Agent Workspace (Recommended)
 
@@ -62,7 +75,7 @@ The `nexus` agent uses a minimal workspace:
 
 - Path: `/data/.openclaw/workspace-nexus`
 - Files:
-  - `SOUL.md` (forces Nexus tools + requires `TOOL_USED`)
+  - `SOUL.md` (documents both Nexus-bridged tools AND OpenClaw-native capabilities; requires `TOOL_USED`)
   - `AGENTS.md` (minimal, avoids memory/tool distractions)
 
 This isolates the prompt from the more complex `main` workspace (which can contain unrelated instructions, memory rules, and other operational content).
@@ -77,7 +90,7 @@ What to verify in the refreshed container:
 
 - Plugin exists at: `/data/.openclaw/extensions/nexus-toolbridge/`
 - Config contains agent `nexus` pointing to `/data/.openclaw/workspace-nexus`
-- Sandbox tool allowlist includes `nexus_*`
+- Sandbox tool allowlist includes `nexus_*` plus OpenClaw-native tools (web_search, create_skill, etc.)
 
 ### 2. Redeploy Nexus
 
@@ -156,4 +169,42 @@ If tool calls are missing:
 - Confirm the request is routed to agent `nexus` (model/header)
 - Confirm `nexus_*` is allowed by sandbox tool policy
 - Confirm plugin is loaded (`openclaw plugins list`)
+
+### D. Verify OpenClaw-Native Tools (Full Capabilities)
+
+Test that the `nexus` agent can use OpenClaw-native tools (not just Nexus-bridged tools):
+
+```bash
+curl -sS http://127.0.0.1:18790/tools/invoke \
+  -H "Authorization: Bearer $OPENCLAW_GATEWAY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tool":"web_search",
+    "args":{"query":"test"},
+    "sessionKey":"agent:nexus:openai-user:<NEXUS_USER_ID>:diag"
+  }'
+```
+
+Expected:
+
+- `ok:true`
+- Payload contains search results from the web.
+
+If this fails, the `nexus` agent's sandbox tool policy needs to be widened to
+include OpenClaw-native tools (see "OpenClaw Tool Policy" section above).
+
+### E. Verify Tool Bridge Rejects Non-Nexus Tools Gracefully
+
+```bash
+curl -sS https://napi.marcoby.net/api/openclaw/tools/execute \
+  -H "X-OpenClaw-Api-Key: $OPENCLAW_API_KEY" \
+  -H "X-Nexus-User-Id: <NEXUS_USER_ID>" \
+  -H "Content-Type: application/json" \
+  -d '{"tool":"web_search","args":{}}'
+```
+
+Expected:
+
+- Error message: `Tool "web_search" is not a Nexus-bridged tool...`
+- NOT a generic `Unknown tool` crash
 

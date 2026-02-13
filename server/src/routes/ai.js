@@ -63,6 +63,10 @@ function buildOpenClawSessionId(userId, conversationId) {
 // OpenClaw configuration
 const agentRuntime = getAgentRuntime();
 const {
+    TOOLS_NEXUS_BRIDGED,
+    TOOLS_OPENCLAW_NATIVE,
+    ALL_TOOLS,
+    // Backward-compatible aliases
     TOOLS_BASE,
     TOOLS_NEXUS_INTEGRATIONS,
     DEFAULT_TOOLS,
@@ -75,16 +79,29 @@ const OPENCLAW_MODELWAY_PROFILE = String(process.env.OPENCLAW_MODELWAY_PROFILE |
 const OPENCLAW_STRICT_GROUNDED_MODE = process.env.OPENCLAW_STRICT_GROUNDED_MODE !== 'false';
 const OPENCLAW_HIDE_INTERNAL_PROCESS = process.env.OPENCLAW_HIDE_INTERNAL_PROCESS !== 'false';
 
+// Only track Nexus-bridged tool IDs for intent routing.
+// OpenClaw-native tools (web_search, create_skill, etc.) are managed by
+// OpenClaw's own agent workspace tool policy — Nexus should not gate them.
+const OPENCLAW_TOOLS_NEXUS_BRIDGED_IDS = TOOLS_NEXUS_BRIDGED.map(t => t.id);
+const OPENCLAW_TOOLS_OPENCLAW_NATIVE_IDS = TOOLS_OPENCLAW_NATIVE.map(t => t.id);
+const OPENCLAW_TOOLS_ALL_IDS = ALL_TOOLS.map(t => t.id);
+// Backward-compatible aliases used by logging and assistantCore
 const OPENCLAW_TOOLS_BASE = TOOLS_BASE.map(t => t.id);
 const OPENCLAW_TOOLS_NEXUS_INTEGRATIONS = TOOLS_NEXUS_INTEGRATIONS.map(t => t.id);
 const OPENCLAW_TOOLS_DEFAULT = DEFAULT_TOOLS.map(t => t.id);
 const OPENCLAW_TOOLS_BY_INTENT = {
-    [INTENT_TYPES.LEARN.id]: OPENCLAW_TOOLS_DEFAULT,
-    [INTENT_TYPES.SOLVE.id]: OPENCLAW_TOOLS_DEFAULT,
+    // LEARN and SOLVE: OpenClaw-native tools are available via OpenClaw's plugin system;
+    // Nexus-bridged tools are available for all intents when enabled.
+    [INTENT_TYPES.LEARN.id]: OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS
+        ? OPENCLAW_TOOLS_NEXUS_BRIDGED_IDS
+        : [],
+    [INTENT_TYPES.SOLVE.id]: OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS
+        ? OPENCLAW_TOOLS_NEXUS_BRIDGED_IDS
+        : [],
     [INTENT_TYPES.DECIDE.id]: OPENCLAW_ENABLE_NEXUS_INTEGRATION_TOOLS
-        ? ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills', 'nexus_get_integration_status', 'nexus_search_emails', 'nexus_resolve_email_provider', 'nexus_start_email_connection', 'nexus_connect_imap', 'nexus_test_integration_connection', 'nexus_disconnect_integration']
-        : ['web_search', 'advanced_scrape', 'summarize_strategy', 'list_skills', 'search_skills'],
-    [INTENT_TYPES.WRITE.id]: ['web_search', 'advanced_scrape', 'summarize_strategy']
+        ? OPENCLAW_TOOLS_NEXUS_BRIDGED_IDS
+        : [],
+    [INTENT_TYPES.WRITE.id]: []
 };
 const MAX_ATTACHMENT_CONTEXT_BYTES = 200 * 1024;
 const MAX_DOCX_CONTEXT_BYTES = 10 * 1024 * 1024;

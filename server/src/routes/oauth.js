@@ -198,11 +198,11 @@ function testImapLogin({ host, port, username, password, useSSL = true, timeoutM
 
     const socket = useSSL
       ? tls.connect({
-          host,
-          port,
-          servername: host,
-          rejectUnauthorized: false,
-        })
+        host,
+        port,
+        servername: host,
+        rejectUnauthorized: false,
+      })
       : net.connect({ host, port });
 
     socket.setEncoding('utf8');
@@ -295,7 +295,7 @@ function getOAuthProviders() {
       clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
       authorizationUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
       tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-      scope: 'offline_access https://graph.microsoft.com/User.Read https://graph.microsoft.com/Mail.Read',
+      scope: 'offline_access https://graph.microsoft.com/User.Read https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/Calendars.Read',
     },
     slack: {
       clientId: process.env.SLACK_CLIENT_ID,
@@ -307,9 +307,9 @@ function getOAuthProviders() {
     'google-workspace': {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      authorizationUrl: 'https://accounts.google.com/o/oauth2/v2.0/auth',
       tokenUrl: 'https://oauth2.googleapis.com/token',
-      scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/drive.readonly',
+      scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/drive.readonly',
     },
   };
 }

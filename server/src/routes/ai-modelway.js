@@ -256,17 +256,12 @@ router.post('/chat', authenticateToken, async (req, res) => {
             user: userId // Critical for OpenClaw memory
         };
 
-        // Model-Way: Attach tools based on intent
-        if (intent.id === INTENT_TYPES.LEARN.id) {
-            // "Learning" now includes the ability to learn new skills (create tools)
-            // Also include web-utils (scrape, summarize) for discovery
-            openClawPayload.tools = ['web_search', 'advanced_scrape', 'summarize_strategy', 'create_skill', 'implement_action', 'list_skills', 'search_skills', 'install_skill'];
-            logger.info('Attaching learning tools for LEARN intent', { userId, conversationId });
-        } else if (intent.id === INTENT_TYPES.SOLVE.id) {
-            // "Solve" should also have access to create tools if it gets stuck
-            openClawPayload.tools = ['web_search', 'advanced_scrape', 'summarize_strategy', 'create_skill', 'implement_action', 'list_skills', 'search_skills', 'install_skill'];
-            logger.info('Attaching learning tools for SOLVE intent', { userId, conversationId });
-        }
+        // NOTE: Do not send `tools` to OpenClaw's /v1/chat/completions endpoint.
+        // OpenClaw expects OpenAI-compatible function schemas (objects), not bare
+        // string IDs. OpenClaw-native tools (web_search, create_skill, etc.) are
+        // managed by OpenClaw's own agent workspace tool policy and plugin system.
+        // Nexus-bridged tools (nexus_*) are registered via the nexus-toolbridge plugin.
+        // Sending tool hints here was silently ignored by OpenClaw.
 
         logger.info('Proxying chat request to OpenClaw with Model-Way Framework', {
             userId,
