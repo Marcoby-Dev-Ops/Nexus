@@ -218,6 +218,20 @@ function buildCodebaseContext() {
     return null;
 }
 
+function buildToolCapabilityBlock() {
+    if (!ALL_TOOLS || ALL_TOOLS.length === 0) return null;
+    const toolList = ALL_TOOLS.map(t => `- ${t.name} (${t.id}): ${t.description}`).join('\n');
+    return [
+        '## Available Tools & Capabilities',
+        'You have access to the following tools and MUST use them to take action on behalf of the user:',
+        toolList,
+        '',
+        'IMPORTANT: You CAN take action. When a user asks you to do something (clone a repo, search the web, run a command, read/write files, check email, etc.), use your tools to do it directly.',
+        'Do NOT tell the user you lack access or cannot perform actions — you are an agentic assistant with real execution capabilities.',
+        'If a specific action is truly outside your tools, explain what alternative approach you can take instead.'
+    ].join('\n');
+}
+
 function extractEmailFromText(text = '') {
     const normalized = String(text || '').trim().toLowerCase();
     const match = normalized.match(EMAIL_ADDRESS_REGEX);
@@ -1524,12 +1538,14 @@ router.post('/chat', authenticateToken, async (req, res) => {
         }
         const contextInjected = Boolean(contextSystemMessage);
 
-        // Inject Soul and Codebase Context (Identity & Environment)
+        // Inject Soul, Codebase, and Tool Capability Context
         const soulContext = buildSoulContext();
         const codebaseContext = buildCodebaseContext();
+        const toolCapabilityBlock = buildToolCapabilityBlock();
         const preambleParts = [];
         if (soulContext) preambleParts.push(soulContext);
         if (codebaseContext) preambleParts.push(codebaseContext);
+        if (toolCapabilityBlock) preambleParts.push(toolCapabilityBlock);
 
         if (preambleParts.length > 0) {
             const preamble = preambleParts.join('\n\n');
