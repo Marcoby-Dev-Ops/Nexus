@@ -12,7 +12,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/shared/components/ui/Dialog';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui';
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/shared/components/ui/table';
+} from '@/shared/components/ui/Table';
 import { useAuthenticatedApi } from '@/hooks/useAuthenticatedApi';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { useToast } from '@/shared/components/ui/use-toast';
@@ -407,13 +407,8 @@ export default function KnowledgePage() {
     setLoadingFiles(true);
     setFileError(null);
     try {
-      // Using user.token directly for consistency with original WorkspacePage implementation
-      // and to avoid potential issues if fetchWithAuth wraps things differently for non-JSON returns (though here it returns JSON)
-      const response = await fetch('/api/openclaw/workspace/files', {
-        headers: {
-          'Authorization': `Bearer ${user?.token}`
-        }
-      });
+      // Use fetchWithAuth which handles token insertion automatically
+      const response = await fetchWithAuth('/api/openclaw/workspace/files');
 
       if (!response.ok) {
         throw new Error(`Failed to fetch files: ${response.statusText}`);
@@ -441,11 +436,8 @@ export default function KnowledgePage() {
   const handleDownload = async (filename: string) => {
     setDownloading(filename);
     try {
-      const response = await fetch(`/api/openclaw/workspace/files/${encodeURIComponent(filename)}?download=true`, {
-        headers: {
-          'Authorization': `Bearer ${user?.token}`
-        }
-      });
+      // Use fetchWithAuth for download as well
+      const response = await fetchWithAuth(`/api/openclaw/workspace/files/${encodeURIComponent(filename)}?download=true`);
 
       if (!response.ok) {
         throw new Error('Download failed');
@@ -490,12 +482,14 @@ export default function KnowledgePage() {
     formData.append('file', file);
 
     try {
-      // Using direct fetch for FormData
-      const response = await fetch('/api/openclaw/workspace/files', {
+      // fetchWithAuth should handle FormData correctly by not setting Content-Type if body is FormData
+      // (assuming browser standard behavior), but we need to check if fetchWithAuth forces JSON headers.
+      // Based on typical implementations, it might key off headers passed.
+      // If we pass body directly, it should work.
+
+      const response = await fetchWithAuth('/api/openclaw/workspace/files', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${user?.token}`
-        },
+        // Do NOT set Content-Type header when sending FormData, let browser set it with boundary
         body: formData
       });
 
@@ -532,7 +526,8 @@ export default function KnowledgePage() {
 
   useEffect(() => {
     loadKnowledge();
-    fetchFiles(); // Fetch files on mount too
+    // Fetch files on mount too, or only when tab is active if we want to optimize.
+    fetchFiles();
   }, [loadKnowledge]);
 
   // --- Render Helpers ---

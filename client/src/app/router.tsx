@@ -18,8 +18,6 @@ export const ROUTELABELS: Record<string, string> = {
   '/ai-settings': 'AI Settings',
   '/ai-model': 'AI Model',
   '/ai-agent': 'AI Agent',
-  '/ai-agent': 'AI Agent',
-  '/integrations/api-learning': 'API Learning System',
   '/integrations/api-learning': 'API Learning System',
   '/integrations/marketplace': 'Integration Marketplace',
   '/settings': 'Settings',
