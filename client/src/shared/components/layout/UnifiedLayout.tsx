@@ -77,10 +77,10 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
           isSidebarOpen={sidebarOpen}
         />
 
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          {/* Utility Panel (formerly Sidebar) */}
+        <div className="relative flex-1 min-h-0 overflow-hidden">
+          {/* Utility Panel (formerly Sidebar) - overlays content */}
           <div className={`
-             border-r bg-muted/10 transition-all duration-300 ease-in-out
+             absolute inset-y-0 left-0 z-30 border-r bg-background transition-all duration-300 ease-in-out
              ${sidebarOpen ? 'w-[23rem] xl:w-[24rem] translate-x-0 opacity-100' : 'w-0 -translate-x-full overflow-hidden opacity-0'}
           `}>
             <Sidebar
@@ -93,7 +93,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
           <main
             id="main-content"
             role="main"
-            className={`flex-1 min-h-0 relative bg-background ${isChatRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
+            className={`h-full min-h-0 relative bg-background ${isChatRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
           >
             {children}
           </main>
