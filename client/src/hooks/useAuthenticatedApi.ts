@@ -107,10 +107,23 @@ export function useAuthenticatedApi(options: UseAuthenticatedApiOptions = {}): U
 
     return fetch(fullUrl, {
       ...options,
-      headers: {
-        ...headers,
-        ...options.headers,
-      },
+      // Merge default auth headers with options.headers
+      const rawHeaders: Record<string, string | undefined > = {
+      ...headers,
+      ...(options.headers as Record<string, string>),
+    };
+
+    // Filter out undefined values to allow unsetting defaults (e.g. Content-Type for FormData)
+    const cleanedHeaders: Record<string, string> = Object.keys(rawHeaders).reduce((acc, key) => {
+      if (rawHeaders[key] !== undefined) {
+        acc[key] = rawHeaders[key] as string;
+      }
+      return acc;
+    }, {} as Record<string, string>);
+
+    return fetch(fullUrl, {
+      ...options,
+      headers: cleanedHeaders,
     });
   }, [isReady, waitForAuth]);
 
