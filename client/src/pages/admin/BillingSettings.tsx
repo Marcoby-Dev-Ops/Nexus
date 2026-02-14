@@ -9,7 +9,7 @@ import { Label } from '@/shared/components/ui/Label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { useAuth } from '@/hooks/index';
 import { useSubscription } from '@/components/admin/user/hooks/useSubscription';
-import { useService } from '@/shared/hooks/useService';
+import { useServiceOperations } from '@/shared/hooks/useService';
 import { logger } from '@/shared/utils/logger';
 // import { serviceFactory } from '@/core/services/ServiceFactory'; // TEMPORARILY DISABLED
 import { toast } from 'sonner';
@@ -58,7 +58,7 @@ const BillingSettings: React.FC = () => {
   const { plan } = useSubscription();
 
   // Use BillingService directly
-  const billingService = useService('billing');
+  const billingService = useServiceOperations<any>('billing');
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
@@ -76,7 +76,7 @@ const BillingSettings: React.FC = () => {
 
       const filters = {
         user_id: user.id,
-        company_id: (user as any)?.company?.id
+        company_id: user.company?.id
       };
 
       // Fetch subscriptions
@@ -186,7 +186,7 @@ const BillingSettings: React.FC = () => {
         // Refresh billing data
         const refreshResult = await billingService.list({
           user_id: user?.id,
-          company_id: (user as any)?.company?.id
+          company_id: user?.company?.id
         });
         if (refreshResult.success && refreshResult.data) {
           setSubscriptions(refreshResult.data);
@@ -221,7 +221,7 @@ const BillingSettings: React.FC = () => {
     try {
       const result = await billingService.create({
         user_id: user.id,
-        company_id: (user as any).company.id,
+        company_id: user.company?.id || '',
         type: paymentData.type,
         brand: paymentData.brand,
         last4: paymentData.last4,
@@ -236,7 +236,7 @@ const BillingSettings: React.FC = () => {
         // Refresh payment methods
         const refreshResult = await billingService.list({
           user_id: user.id,
-          company_id: (user as any).company.id
+          company_id: user.company?.id
         });
         if (refreshResult.success && refreshResult.data) {
           setPaymentMethods(refreshResult.data);
@@ -260,7 +260,7 @@ const BillingSettings: React.FC = () => {
         // Refresh payment methods
         const refreshResult = await billingService.list({
           user_id: user?.id,
-          company_id: (user as any)?.company?.id
+          company_id: user?.company?.id
         });
         if (refreshResult.success && refreshResult.data) {
           setPaymentMethods(refreshResult.data);

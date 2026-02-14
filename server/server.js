@@ -374,6 +374,8 @@ app.use('/api/admin', adminRoutes);
 
 // OpenClaw integration routes
 app.use('/api/openclaw', openclawIntegrationRoutes);
+const openclawWorkspaceRoutes = require('./routes/openclaw-workspace');
+app.use('/api/openclaw/workspace', openclawWorkspaceRoutes);
 
 // OAuth routes
 const oauthRoutes = require('./src/routes/oauth');

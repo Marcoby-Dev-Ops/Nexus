@@ -271,10 +271,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <Button
             variant="ghost"
             className="h-9 w-full justify-start gap-2 text-[0.9rem] text-muted-foreground"
-            onClick={() => { navigate('/documents'); if (window.innerWidth < 768) onClose(); }}
+            onClick={() => { navigate('/workspace'); if (window.innerWidth < 768) onClose(); }}
           >
             <FileText className="w-4 h-4" />
-            <span>Documents</span>
+            <span>Workspace</span>
           </Button>
         </div>
       </div>

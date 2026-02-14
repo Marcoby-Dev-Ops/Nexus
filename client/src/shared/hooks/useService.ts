@@ -83,7 +83,7 @@ export const useServiceGet = <T>(
   config: ServiceHookConfig = {}
 ): ServiceOperationResult<T> => {
   const service = getServiceByName(serviceName);
-  
+
   const {
     data,
     isLoading,
@@ -92,7 +92,7 @@ export const useServiceGet = <T>(
   } = useQuery({
     queryKey: [serviceName, 'get', id],
     queryFn: async (): Promise<T> => {
-      const result = await service.get(id);
+      const result = await (service as any).get(id);
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to fetch data');
       }
@@ -122,7 +122,7 @@ export const useServiceList = <T>(
   config: ServiceHookConfig = {}
 ): ServiceOperationResult<T[]> => {
   const service = getServiceByName(serviceName);
-  
+
   const {
     data,
     isLoading,
@@ -131,7 +131,7 @@ export const useServiceList = <T>(
   } = useQuery({
     queryKey: [serviceName, 'list', filters],
     queryFn: async (): Promise<T[]> => {
-      const result = await service.list(filters);
+      const result = await (service as any).list(filters);
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to fetch data');
       }
@@ -160,17 +160,17 @@ export const useServiceCreate = <T>(
 ): ServiceMutationResult<T, Partial<T>> => {
   const service = getServiceByName(serviceName);
   const queryClient = useQueryClient();
-  
+
   const {
     data,
-    isLoading,
+    isPending,
     error,
     mutate,
     mutateAsync,
     reset
   } = useMutation({
     mutationFn: async (variables: Partial<T>): Promise<T> => {
-      const result = await service.create(variables);
+      const result = await (service as any).create(variables);
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to create item');
       }
@@ -184,11 +184,18 @@ export const useServiceCreate = <T>(
 
   return {
     data: data || null,
-    isLoading,
+    isLoading: isPending,
     error: error?.message || null,
     success: !error && !!data,
     mutate,
-    mutateAsync,
+    mutateAsync: async (variables: Partial<T>) => {
+      try {
+        const result = await mutateAsync(variables);
+        return { success: true, data: result, error: null };
+      } catch (err) {
+        return { success: false, data: null, error: err instanceof Error ? err.message : String(err) };
+      }
+    },
     reset,
   };
 };
@@ -202,17 +209,17 @@ export const useServiceUpdate = <T>(
 ): ServiceMutationResult<T, { id: string; data: Partial<T> }> => {
   const service = getServiceByName(serviceName);
   const queryClient = useQueryClient();
-  
+
   const {
     data,
-    isLoading,
+    isPending,
     error,
     mutate,
     mutateAsync,
     reset
   } = useMutation({
     mutationFn: async ({ id, data: updateData }: { id: string; data: Partial<T> }): Promise<T> => {
-      const result = await service.update(id, updateData);
+      const result = await (service as any).update(id, updateData);
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to update item');
       }
@@ -227,11 +234,18 @@ export const useServiceUpdate = <T>(
 
   return {
     data: data || null,
-    isLoading,
+    isLoading: isPending,
     error: error?.message || null,
     success: !error && !!data,
     mutate,
-    mutateAsync,
+    mutateAsync: async (variables: { id: string; data: Partial<T> }) => {
+      try {
+        const result = await mutateAsync(variables);
+        return { success: true, data: result, error: null };
+      } catch (err) {
+        return { success: false, data: null, error: err instanceof Error ? err.message : String(err) };
+      }
+    },
     reset,
   };
 };
@@ -245,17 +259,17 @@ export const useServiceDelete = (
 ): ServiceMutationResult<boolean, string> => {
   const service = getServiceByName(serviceName);
   const queryClient = useQueryClient();
-  
+
   const {
     data,
-    isLoading,
+    isPending,
     error,
     mutate,
     mutateAsync,
     reset
   } = useMutation({
     mutationFn: async (id: string): Promise<boolean> => {
-      const result = await service.delete(id);
+      const result = await (service as any).delete(id);
       if (!result.success) {
         throw new Error(result.error || 'Failed to delete item');
       }
@@ -269,11 +283,18 @@ export const useServiceDelete = (
 
   return {
     data: data || null,
-    isLoading,
+    isLoading: isPending,
     error: error?.message || null,
     success: !error && !!data,
     mutate,
-    mutateAsync,
+    mutateAsync: async (id: string) => {
+      try {
+        const result = await mutateAsync(id);
+        return { success: true, data: result, error: null };
+      } catch (err) {
+        return { success: false, data: null, error: err instanceof Error ? err.message : String(err) };
+      }
+    },
     reset,
   };
 };
@@ -288,7 +309,7 @@ export const useServiceSearch = <T>(
   config: ServiceHookConfig = {}
 ): ServiceOperationResult<T[]> => {
   const service = getServiceByName(serviceName);
-  
+
   const {
     data,
     isLoading,
@@ -297,7 +318,7 @@ export const useServiceSearch = <T>(
   } = useQuery({
     queryKey: [serviceName, 'search', query, options],
     queryFn: async (): Promise<T[]> => {
-      const result = await service.search(query, options);
+      const result = await (service as any).search(query, options);
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to search items');
       }
@@ -369,27 +390,27 @@ export const useServiceOperations = <T>(serviceName: string) => {
   }, []);
 
   const get = useCallback((id: string) => {
-    return executeOperation(() => service.get(id));
+    return executeOperation<T>(() => (service as any).get(id));
   }, [executeOperation, service]);
 
   const list = useCallback((filters?: Record<string, any>) => {
-    return executeOperation(() => service.list(filters));
+    return executeOperation<T[]>(() => (service as any).list(filters));
   }, [executeOperation, service]);
 
   const create = useCallback((data: Partial<T>) => {
-    return executeOperation(() => service.create(data));
+    return executeOperation<T>(() => (service as any).create(data));
   }, [executeOperation, service]);
 
   const update = useCallback((id: string, data: Partial<T>) => {
-    return executeOperation(() => service.update(id, data));
+    return executeOperation<T>(() => (service as any).update(id, data));
   }, [executeOperation, service]);
 
   const remove = useCallback((id: string) => {
-    return executeOperation(() => service.delete(id));
+    return executeOperation(() => (service as any).delete(id));
   }, [executeOperation, service]);
 
   const search = useCallback((query: string, options?: any) => {
-    return executeOperation(() => service.search(query, options));
+    return executeOperation<T[]>(() => (service as any).search(query, options));
   }, [executeOperation, service]);
 
   const reset = useCallback(() => {

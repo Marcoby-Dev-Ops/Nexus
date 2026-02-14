@@ -21,6 +21,11 @@ export interface AuthUser {
   groups?: string[];
   attributes?: Record<string, any>;
   instance_urls?: string[]; // Added for multi-instance support
+  company?: {
+    id: string;
+    name: string;
+    role?: string;
+  };
 }
 
 export interface AuthSession {

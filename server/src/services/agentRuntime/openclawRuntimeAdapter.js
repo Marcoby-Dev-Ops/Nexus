@@ -6,7 +6,8 @@ const CONTROL_RESOURCE_PATHS = {
   agents: ['/v1/agents', '/agents', '/api/agents', '/api/v1/agents'],
   sessions: ['/v1/sessions', '/sessions', '/api/sessions', '/api/v1/sessions'],
   channels: ['/v1/channels', '/channels', '/api/channels', '/api/v1/channels'],
-  plugins: ['/v1/plugins', '/plugins', '/api/plugins', '/api/v1/plugins']
+  plugins: ['/v1/plugins', '/plugins', '/api/plugins', '/api/v1/plugins'],
+  files: ['/v1/files', '/files', '/api/files', '/api/v1/files', '/v1/workspace/files']
 };
 
 function normalizeOpenClawBaseUrl(baseUrl) {
@@ -87,7 +88,7 @@ class OpenClawRuntimeAdapter {
       controlPlane: true,
       supportsAgentHeader: true,
       supportsConversationIsolation: true,
-      controlResources: ['agents', 'sessions', 'channels', 'plugins'],
+      controlResources: ['agents', 'sessions', 'channels', 'plugins', 'files'],
       controlProxy: true
     };
   }
@@ -214,6 +215,97 @@ class OpenClawRuntimeAdapter {
 
   async listPlugins(options = {}) {
     return this.listControlResource('plugins', options);
+  }
+
+  async listWorkspaceFiles(options = {}) {
+    const response = await this.listControlResource('files', options);
+    if (!response.ok) {
+      throw new Error(`Failed to list workspace files: ${response.statusText}`);
+    }
+    return response.json();
+  }
+
+  async getWorkspaceFile(filename, options = {}) {
+    // Note: This logic assumes that getControlResource for a single file follows a pattern.
+    // Since 'files' is in CONTROL_RESOURCE_PATHS, we need to handle the specific file path manually
+    // because listControlResource iterates over candidate base paths.
+    // For getting a single file, we might need a similar retry logic but appending the filename.
+
+    const resourceName = 'files';
+    const candidatePaths = CONTROL_RESOURCE_PATHS[resourceName];
+
+    let lastError = null;
+    for (const candidatePath of candidatePaths) {
+      // Construct path: candidatePath + '/' + filename
+      // e.g. /v1/files/my-doc.txt
+      const fullPath = `${candidatePath}/${encodeURIComponent(filename)}`;
+
+      try {
+        const response = await this.controlPlaneRequest({
+          method: 'GET',
+          path: fullPath,
+          query: options.query,
+          timeoutMs: options.timeoutMs
+        });
+
+        if (response.ok) {
+          // Return the response object directly so caller can handle streaming/blob
+          return response;
+        }
+
+        if (response.status === 404) {
+          // If 404, we might be hitting the wrong endpoint variation or file doesn't exist.
+          // But if we tried all endpoints and all are 404, then file truly doesn't exist.
+          lastError = new Error(`File not found`);
+        } else {
+          lastError = new Error(`HTTP ${response.status}`);
+        }
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw new Error(
+      `Failed to get workspace file "${filename}": ${lastError?.message || 'Unknown error'}`
+    );
+  }
+
+  async uploadWorkspaceFile(file, options = {}) {
+    const resourceName = 'files';
+    const candidatePaths = CONTROL_RESOURCE_PATHS[resourceName];
+    const { FormData } = await import('undici'); // Ensure we have FormData if node < 18
+
+    let lastError = null;
+    for (const candidatePath of candidatePaths) {
+      try {
+        const formData = new FormData();
+        // file object structure depends on how multer passes it or if it's a buffer
+        // Assuming 'file' here is an object { buffer, originalname, mimetype } from multer or similar
+        const blob = new Blob([file.buffer], { type: file.mimetype });
+        formData.append('file', blob, file.originalname);
+
+        const response = await this.controlPlaneRequest({
+          method: 'POST',
+          path: candidatePath,
+          body: formData,
+          timeoutMs: options.timeoutMs,
+          // When using FormData, let fetch set the Content-Type header with boundary
+          extraHeaders: { 'Content-Type': undefined }
+        });
+
+        if (response.ok) {
+          return response.json();
+        }
+
+        lastError = new Error(`HTTP ${response.status}`);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw new Error(
+      `Failed to upload workspace file: ${lastError?.message || 'Unknown error'}`
+    );
   }
 
   async chatCompletions(payload, options = {}) {
