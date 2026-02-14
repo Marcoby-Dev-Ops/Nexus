@@ -316,21 +316,41 @@ class OpenClawRuntimeAdapter {
       extraHeaders['x-openclaw-agent-id'] = options.agentId;
     }
 
-    try {
-      const timeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 60000;
-      const signal = options.signal || AbortSignal.timeout(timeoutMs);
+    const totalTimeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 60000;
+    const firstByteTimeoutMs = Number(options.firstByteTimeoutMs) > 0 ? Number(options.firstByteTimeoutMs) : totalTimeoutMs;
 
-      return await fetch(runtimeInfo.chatCompletionsUrl, {
+    const controller = new AbortController();
+    const signal = options.signal || controller.signal;
+
+    // Total timeout: hard ceiling for the entire request lifecycle
+    const totalTimer = setTimeout(() => controller.abort(new Error('Request timed out')), totalTimeoutMs);
+    // First-byte timeout: fail fast if the runtime is unreachable
+    const firstByteTimer = setTimeout(() => {
+      controller.abort(new Error('No response from agent runtime \u2014 it may be unavailable'));
+    }, firstByteTimeoutMs);
+
+    try {
+      const response = await fetch(runtimeInfo.chatCompletionsUrl, {
         method: 'POST',
         headers: this.buildAuthHeaders(extraHeaders),
         body: JSON.stringify(payload),
         signal
       });
+
+      // Got response headers — clear first-byte timer, keep total timer
+      clearTimeout(firstByteTimer);
+      // Clear total timer too: once we have a streaming response, the caller
+      // controls read timeouts via the stream loop
+      clearTimeout(totalTimer);
+
+      return response;
     } catch (error) {
-      if (error.name === 'TimeoutError') {
-        throw new Error(`OpenClaw runtime request timed out after ${options.timeoutMs}ms`);
+      clearTimeout(firstByteTimer);
+      clearTimeout(totalTimer);
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+        throw new Error(error.message || `Agent runtime request timed out after ${totalTimeoutMs}ms`);
       }
-      throw new Error(`OpenClaw runtime request failed: ${error.message}`);
+      throw new Error(`Agent runtime request failed: ${error.message}`);
     }
   }
 

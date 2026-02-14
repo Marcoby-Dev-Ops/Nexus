@@ -1267,24 +1267,59 @@ router.post('/chat', authenticateToken, async (req, res) => {
     let keepAliveIntervalId = null;
     const streamStartedAt = Date.now();
     let keepAliveTick = 0;
-    let keepAliveFrames = ['Reviewing your request'];
-    const setKeepAliveFrames = (frames = []) => {
-        const filtered = frames.filter((frame) => typeof frame === 'string' && frame.trim().length > 0);
-        keepAliveFrames = filtered.length > 0 ? filtered : ['Reviewing your request'];
-    };
+
+    // Duration-aware conversational keep-alive messages.
+    // Tone evolves naturally so the user feels attended to, not system-logged.
+    const KEEPALIVE_EARLY = [
+        'Looking into this for you.',
+        'Working on it.',
+        'Reading through everything.',
+        'On it.',
+        'Getting this together.',
+    ];
+    const KEEPALIVE_MID = [
+        'Still working on this \u2014 taking a careful look.',
+        'This one needs a bit more thought.',
+        'Gathering all the details.',
+        'Almost there, just being thorough.',
+        'Making sure I give you a solid answer.',
+    ];
+    const KEEPALIVE_LONG = [
+        'This is a complex one \u2014 still on it.',
+        'Running through a few things to get this right.',
+        'Taking extra care with this response.',
+        'Doing some deeper analysis.',
+        'Bear with me \u2014 working through the details.',
+    ];
+    const KEEPALIVE_EXTENDED = [
+        'Still here, working on a thorough answer.',
+        'This is taking longer than usual \u2014 I haven\'t forgotten about you.',
+        'Almost done, just wrapping things up.',
+        'Making progress \u2014 this is a meaty question.',
+        'Finishing up the last pieces.',
+    ];
+    function pickKeepAliveMessage(elapsedSeconds, tick) {
+        let pool;
+        if (elapsedSeconds < 30) pool = KEEPALIVE_EARLY;
+        else if (elapsedSeconds < 90) pool = KEEPALIVE_MID;
+        else if (elapsedSeconds < 180) pool = KEEPALIVE_LONG;
+        else pool = KEEPALIVE_EXTENDED;
+        return pool[(tick * 3 + 1) % pool.length];
+    }
+
     const startKeepAlive = () => {
         if (!stream || keepAliveIntervalId) return;
         keepAliveIntervalId = setInterval(() => {
             if (!res.writableEnded) {
                 keepAliveTick += 1;
                 const elapsedSeconds = Math.floor((Date.now() - streamStartedAt) / 1000);
-                const frame = keepAliveFrames[keepAliveTick % keepAliveFrames.length];
+                const message = pickKeepAliveMessage(elapsedSeconds, keepAliveTick);
                 writeSseEvent(
                     res,
-                    buildStreamStatus('processing', 'Agent is still working', `${frame} (${elapsedSeconds}s elapsed)`)
+                    buildStreamStatus('processing', message, null)
                 );
             }
-        }, 6000);
+        }, 8000);
     };
     const stopKeepAlive = () => {
         if (keepAliveIntervalId) {
@@ -1298,7 +1333,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
     if (stream) {
         beginSseStream(res);
         startKeepAlive();
-        writeSseEvent(res, buildStreamStatus('accepted', 'Request accepted', 'Connection established. Reviewing your request...'));
+        writeSseEvent(res, buildStreamStatus('accepted', 'Getting started', 'Looking at your message now.'));
         toolActivityBridge.register(userId, res, writeSseEvent, buildStreamStatus);
     }
 
@@ -1409,18 +1444,15 @@ router.post('/chat', authenticateToken, async (req, res) => {
         const historyTurns = messages.filter((item) => item?.role === 'user' || item?.role === 'assistant').length;
 
         if (stream) {
-            setKeepAliveFrames([
-                `Understanding your request (${intent.name}, ${phase} phase)`,
-                `Reviewing ${historyTurns} recent conversation turns`,
-                `Checking ${userAttachmentMetadata.length} uploaded attachment${userAttachmentMetadata.length === 1 ? '' : 's'}`
-            ]);
-
+            const attachmentNote = userAttachmentMetadata.length > 0
+                ? ` and ${userAttachmentMetadata.length === 1 ? 'your attachment' : `your ${userAttachmentMetadata.length} attachments`}`
+                : '';
             writeSseEvent(
                 res,
                 buildStreamStatus(
                     'context_loading',
-                    'Loading business context',
-                    `Reviewing ${historyTurns} recent turns and ${userAttachmentMetadata.length} attachment${userAttachmentMetadata.length === 1 ? '' : 's'}.`
+                    'Catching up on context',
+                    `Reading through our conversation${attachmentNote}.`
                 )
             );
             writeSseEvent(res, {
@@ -1488,15 +1520,10 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
         const contextInjected = Boolean(contextSystemMessage);
 
-        setKeepAliveFrames([
-            `Synthesizing context for ${intent.name} (${phase})`,
-            `Preparing agent instructions for ${resolvedAgentId}`,
-            `Waiting for OpenClaw to generate the response`
-        ]);
         if (stream && contextInjected) {
-            writeSseEvent(res, buildStreamStatus('context_ready', 'Context ready', 'Business context was injected from backend knowledge.'));
+            writeSseEvent(res, buildStreamStatus('context_ready', 'Ready to help', 'I have your business context in mind.'));
         } else if (stream) {
-            writeSseEvent(res, buildStreamStatus('context_ready', 'Context ready', 'Proceeding with conversation context only.'));
+            writeSseEvent(res, buildStreamStatus('context_ready', 'Ready to help', 'Let me work on this.'));
         }
 
         // Strip any system messages from client and inject deterministic backend context
@@ -1547,9 +1574,9 @@ router.post('/chat', authenticateToken, async (req, res) => {
             writeSseEvent(
                 res,
                 buildStreamStatus(
-                    'openclaw_request',
-                    'Handing off to OpenClaw',
-                    `Sending enriched prompt to ${openClawAgentId} for final response generation.`
+                    'working',
+                    'Thinking this through',
+                    'Putting together a thorough answer for you.'
                 )
             );
         }
@@ -1557,7 +1584,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
         // Call OpenClaw Chat Completions API
         const openClawResponse = await agentRuntime.chatCompletions(openClawPayload, {
             agentId: openClawAgentId,
-            timeoutMs: 300000 // 5m timeout for initial response (increased from 60s to handle long reasoning chains)
+            timeoutMs: 660000,        // 11m — exceeds OpenClaw's 600s agent timeout so it handles its own cutoff first
+            firstByteTimeoutMs: 60000  // 60s — fail fast if the runtime is unreachable
         });
 
         if (!openClawResponse.ok) {
@@ -1584,9 +1612,9 @@ router.post('/chat', authenticateToken, async (req, res) => {
             writeSseEvent(
                 res,
                 buildStreamStatus(
-                    'openclaw_connected',
-                    'OpenClaw connected',
-                    'Generating final answer now.'
+                    'generating',
+                    'Writing my response',
+                    'Almost ready to share my thoughts.'
                 )
             );
         }
@@ -1665,8 +1693,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
             // If client wanted stream, emit it as an SSE event sequence
             if (stream) {
-                writeSseEvent(res, buildStreamStatus('thinking', 'Agent is thinking', 'Preparing response with orchestration metadata.'));
-                writeSseEvent(res, buildStreamStatus('responding', 'Agent is responding', 'Streaming response started.'));
+                writeSseEvent(res, buildStreamStatus('thinking', 'Thinking', 'Working through this carefully.'));
+                writeSseEvent(res, buildStreamStatus('responding', 'Responding', 'Here we go.'));
                 if (toolUsage.used) {
                     writeSseEvent(res, buildStreamStatus('tool_invocation', 'Tool invocation', `Used: ${toolUsage.tools.join(', ')}`));
                     writeSseEvent(res, { metadata: { toolUsage, toolCalls: observedToolCalls } });
@@ -1796,8 +1824,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
         }
 
         // Streaming: set up SSE with metadata in initial event
-        writeSseEvent(res, buildStreamStatus('thinking', 'Agent is thinking', 'Preparing response stream.'));
-        writeSseEvent(res, buildStreamStatus('responding', 'Agent is responding', 'Streaming response started.'));
+        writeSseEvent(res, buildStreamStatus('thinking', 'Thinking', 'Working through this carefully.'));
+        writeSseEvent(res, buildStreamStatus('responding', 'Responding', 'Here we go.'));
 
         const reader = openClawResponse.body.getReader();
         const decoder = new TextDecoder();
@@ -2156,8 +2184,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     });
                 }
             }
-            writeSseEvent(res, buildStreamStatus('error', 'Response interrupted', streamErr.message));
-            writeSseEvent(res, { error: streamErr.message });
+            writeSseEvent(res, buildStreamStatus('error', 'Something went wrong', 'I ran into an issue. You can try sending your message again.'));
+            writeSseEvent(res, { error: 'Something went wrong while generating a response.' });
         } finally {
             stopKeepAlive();
             toolActivityBridge.unregister(userId);
@@ -2175,8 +2203,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
         // If headers already sent (streaming started), send error via SSE
         if (res.headersSent) {
-            writeSseEvent(res, buildStreamStatus('error', 'Request failed', error.message));
-            writeSseEvent(res, { error: error.message });
+            writeSseEvent(res, buildStreamStatus('error', 'Something went wrong', 'There was a problem processing your request. Please try again.'));
+            writeSseEvent(res, { error: 'Something went wrong. Please try again.' });
             res.end();
         } else {
             res.status(500).json({

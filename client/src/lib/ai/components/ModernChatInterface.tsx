@@ -115,7 +115,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   const currentStatusEvent = streamStatus
     ? {
       stage: streamStatus.stage || 'processing',
-      label: streamStatus.label || 'Agent is working',
+      label: streamStatus.label || 'Working',
       detail: streamStatus.detail || null
     }
     : null;
@@ -128,20 +128,41 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
     );
   });
   const shouldShowActivityTimeline = timelineDisplayEvents.length > 0;
+  const stageDisplayNames: Record<string, string> = {
+    accepted: 'Started',
+    context_loading: 'Preparing',
+    context_ready: 'Ready',
+    working: 'Working',
+    generating: 'Generating',
+    thinking: 'Thinking',
+    responding: 'Responding',
+    processing: 'Processing',
+    completed: 'Done',
+    error: 'Error',
+    tool_invocation: 'Using tools',
+    tool_execution: 'Using tools',
+    openclaw_request: 'Working',
+    openclaw_connected: 'Generating',
+  };
   const stageProgressMap: Record<string, number> = {
-    accepted: 8,
-    context_loading: 20,
-    context_ready: 34,
-    openclaw_request: 48,
-    openclaw_connected: 62,
-    thinking: 72,
-    responding: 84,
-    processing: 88,
-    completed: 100
+    accepted: 5,
+    context_loading: 12,
+    context_ready: 18,
+    working: 22,
+    generating: 35,
+    thinking: 45,
+    responding: 60,
+    processing: 80,
+    completed: 100,
+    // Legacy stage names (backward compat during rolling deploys)
+    openclaw_request: 22,
+    openclaw_connected: 35,
   };
   const baseProgress = stageProgressMap[streamStatus?.stage || 'thinking'] || 35;
+  // Smooth micro-increments so the bar never looks stuck — creeps ~9% per minute
+  const microIncrement = Math.min(12, Math.floor(streamingElapsedSeconds * 0.15));
   const animatedProgress = isStreaming
-    ? Math.min(96, baseProgress + Math.min(8, streamingElapsedSeconds % 9))
+    ? Math.min(96, baseProgress + microIncrement)
     : baseProgress;
   const formatDuration = (totalSeconds: number) => {
     if (totalSeconds < 60) return `${totalSeconds}s`;
@@ -371,7 +392,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                                     <div className="flex items-center justify-between gap-2 text-foreground/90">
                                       <span className="truncate">{event.label}</span>
                                       <span className="shrink-0 text-[10px] text-muted-foreground uppercase">
-                                        {event.stage.replace(/_/g, ' ')}
+                                        {stageDisplayNames[event.stage] || event.stage.replace(/_/g, ' ')}
                                       </span>
                                     </div>
                                     {event.detail && (

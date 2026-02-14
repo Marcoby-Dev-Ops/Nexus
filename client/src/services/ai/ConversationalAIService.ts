@@ -216,6 +216,12 @@ export class ConversationalAIService extends BaseService {
     const messages = [...historyMessages, { role: 'user' as const, content: message }];
 
     // Call the AI Gateway (pure proxy to OpenClaw)
+    // 12-minute client timeout — slightly exceeds server's 11-minute ceiling
+    // so the server handles timeout gracefully before the client cuts off
+    const CLIENT_STREAM_TIMEOUT_MS = 720000;
+    const controller = new AbortController();
+    const clientTimeout = setTimeout(() => controller.abort(), CLIENT_STREAM_TIMEOUT_MS);
+
     try {
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -230,7 +236,8 @@ export class ConversationalAIService extends BaseService {
           conversationId: runtime.conversationId,
           agentId: runtime.agentId,
           attachments: runtime.attachments || []
-        })
+        }),
+        signal: controller.signal
       });
 
       if (!response.ok) {
@@ -270,7 +277,7 @@ export class ConversationalAIService extends BaseService {
                 onThought(data.thought);
               }
               if (data.error) {
-                onToken(`\n[Error: ${data.error}]`);
+                onToken(`\n${data.error}`);
               } else if (data.content) {
                 onToken(data.content);
               }
@@ -282,7 +289,13 @@ export class ConversationalAIService extends BaseService {
       }
     } catch (err) {
       logger.error('Stream failure', err);
-      onToken(`\n[Connection Error: ${err instanceof Error ? err.message : 'Unknown'}]`);
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        onToken('\n\nThis request took too long and was cancelled. Try breaking your question into smaller parts, or try again.');
+      } else {
+        onToken('\n\nSomething went wrong while getting a response. Please try again.');
+      }
+    } finally {
+      clearTimeout(clientTimeout);
     }
   }
 }
