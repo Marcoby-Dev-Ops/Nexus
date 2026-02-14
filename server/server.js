@@ -256,7 +256,7 @@ async function performAllHealthChecks(verbose = false) {
 
   // Agent runtime (OpenClaw) health check
   try {
-    const runtimeHealthResponse = await runtime.healthCheck({ timeoutMs: 5000 });
+    const runtimeHealthResponse = await runtime.healthCheck({ timeoutMs: 2500 });
     const runtimeOk = runtimeHealthResponse.ok;
     const runtimeSummary = {
       status: runtimeOk ? 'ok' : 'error',
