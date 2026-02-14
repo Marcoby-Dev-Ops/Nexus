@@ -1,5 +1,5 @@
 const express = require('express');
-const { logger } = require('../src/utils/logger');
+const { logger } = require('../src/utils/logger.js');
 const router = express.Router();
 const crypto = require('crypto');
 const dns = require('dns').promises;

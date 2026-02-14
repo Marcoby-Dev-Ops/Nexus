@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { logger } = require('../src/utils/logger');
+const { logger } = require('../src/utils/logger.js');
 const { getAgentRuntime } = require('../src/services/agentRuntime');
 
 // Middleware to get current runtime
