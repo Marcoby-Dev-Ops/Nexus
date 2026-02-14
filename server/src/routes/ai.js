@@ -1527,7 +1527,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         // Call OpenClaw Chat Completions API
         const openClawResponse = await agentRuntime.chatCompletions(openClawPayload, {
             agentId: openClawAgentId,
-            timeoutMs: 60000 // 60s timeout for initial response
+            timeoutMs: 300000 // 5m timeout for initial response (increased from 60s to handle long reasoning chains)
         });
 
         if (!openClawResponse.ok) {
