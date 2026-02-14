@@ -1340,6 +1340,12 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
         // Persist Conversation and User Message
         const conversationId = await getOrCreateConversation(userId, providedConvId);
+
+        // Persist the current user message before fetching history
+        await saveMessage(conversationId, 'user', lastUserMessage);
+
+        // Fetch authoritative history for context injection and LLM processing
+        const dbConversationHistory = await fetchConversationHistory(conversationId);
         const incomingAttachmentRefs = normalizeIncomingAttachments(attachments);
         const storedAttachments = await fetchStoredAttachments(
             conversationId,

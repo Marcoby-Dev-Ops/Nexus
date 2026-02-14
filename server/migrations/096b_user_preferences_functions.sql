@@ -63,7 +63,7 @@ DECLARE
     push_notifications_val BOOLEAN := COALESCE((preferences_json->>'push_notifications')::BOOLEAN, false);
     sidebar_collapsed_val BOOLEAN := COALESCE((preferences_json->>'sidebar_collapsed')::BOOLEAN, false);
 BEGIN
-    SELECT id INTO existing_id FROM user_preferences WHERE user_id = user_id_param;
+    SELECT up.id INTO existing_id FROM user_preferences up WHERE up.user_id = user_id_param;
     IF existing_id IS NOT NULL THEN
         UPDATE user_preferences SET
             theme = theme_val,
@@ -75,8 +75,14 @@ BEGIN
             sidebar_collapsed = sidebar_collapsed_val,
             preferences = preferences_json,
             updated_at = NOW()
-        WHERE user_id = user_id_param;
-        RETURN QUERY SELECT * FROM user_preferences WHERE user_id = user_id_param;
+        WHERE user_preferences.user_id = user_id_param;
+        RETURN QUERY 
+        SELECT 
+            up.id, up.user_id, up.theme, up.language, up.timezone, 
+            up.notifications_enabled, up.email_notifications, up.push_notifications, 
+            up.sidebar_collapsed, up.preferences, up.created_at, up.updated_at
+        FROM user_preferences up
+        WHERE up.user_id = user_id_param;
     ELSE
         INSERT INTO user_preferences (
             user_id,
@@ -103,7 +109,13 @@ BEGIN
             NOW(),
             NOW()
         );
-        RETURN QUERY SELECT * FROM user_preferences WHERE user_id = user_id_param;
+        RETURN QUERY 
+        SELECT 
+            up.id, up.user_id, up.theme, up.language, up.timezone, 
+            up.notifications_enabled, up.email_notifications, up.push_notifications, 
+            up.sidebar_collapsed, up.preferences, up.created_at, up.updated_at
+        FROM user_preferences up
+        WHERE up.user_id = user_id_param;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -128,7 +140,7 @@ DECLARE
     existing_id UUID;
     current_preferences RECORD;
 BEGIN
-    SELECT * INTO current_preferences FROM user_preferences WHERE user_id = user_id_param;
+    SELECT * INTO current_preferences FROM user_preferences up WHERE up.user_id = user_id_param;
     IF current_preferences IS NULL THEN
         INSERT INTO user_preferences (
             user_id,
@@ -155,7 +167,7 @@ BEGIN
             NOW(),
             NOW()
         );
-        SELECT * INTO current_preferences FROM user_preferences WHERE user_id = user_id_param;
+        SELECT * INTO current_preferences FROM user_preferences up WHERE up.user_id = user_id_param;
     END IF;
     UPDATE user_preferences SET
         theme = COALESCE(updates_json->>'theme', current_preferences.theme),
@@ -167,8 +179,14 @@ BEGIN
         sidebar_collapsed = COALESCE((updates_json->>'sidebar_collapsed')::BOOLEAN, current_preferences.sidebar_collapsed),
         preferences = COALESCE(current_preferences.preferences || updates_json, updates_json),
         updated_at = NOW()
-    WHERE user_id = user_id_param;
-    RETURN QUERY SELECT * FROM user_preferences WHERE user_id = user_id_param;
+    WHERE user_preferences.user_id = user_id_param;
+    RETURN QUERY 
+    SELECT 
+        up.id, up.user_id, up.theme, up.language, up.timezone, 
+        up.notifications_enabled, up.email_notifications, up.push_notifications, 
+        up.sidebar_collapsed, up.preferences, up.created_at, up.updated_at
+    FROM user_preferences up
+    WHERE up.user_id = user_id_param;
 END;
 $$ LANGUAGE plpgsql;
 
