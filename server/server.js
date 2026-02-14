@@ -383,9 +383,15 @@ const gracefulShutdown = async (signal) => {
 
   try {
     // Close database connections
+    // Close database connections
     const { closePool } = require('./src/database/connection');
     await closePool();
-    logger.info('Database connections closed');
+
+    // Close Redis connection
+    const redis = require('./src/utils/redis');
+    await redis.disconnect();
+
+    logger.info('Database and Redis connections closed');
     process.exit(0);
   } catch (error) {
     logger.error('Error during shutdown:', error);
@@ -432,7 +438,15 @@ if (process.env.NODE_ENV !== 'test') {
         logger.info(`Migrations completed: ${migrationResult.applied}/${migrationResult.total} applied`);
       }
 
-      server.listen(PORT, '0.0.0.0', () => {
+      server.listen(PORT, '0.0.0.0', async () => {
+        // Connect to Redis
+        try {
+          const redis = require('./src/utils/redis');
+          await redis.connect();
+        } catch (err) {
+          logger.warn('Failed to connect to Redis on startup', err);
+        }
+
         logger.info('🚀 API server started with Socket.IO', {
           port: PORT,
           environment: process.env.NODE_ENV || 'development',
@@ -456,7 +470,15 @@ if (process.env.NODE_ENV !== 'test') {
       logger.warn('Migration runner failed, but continuing with server startup', { error: error.message });
 
       // Start server even if migrations fail
-      server.listen(PORT, '0.0.0.0', () => {
+      server.listen(PORT, '0.0.0.0', async () => {
+        // Connect to Redis
+        try {
+          const redis = require('./src/utils/redis');
+          await redis.connect();
+        } catch (err) {
+          logger.warn('Failed to connect to Redis on startup', err);
+        }
+
         logger.info('🚀 API server started with Socket.IO (migrations skipped)', {
           port: PORT,
           environment: process.env.NODE_ENV || 'development',

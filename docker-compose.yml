@@ -62,7 +62,7 @@ services:
   # Redis for caching and session storage
   # ------------------------------
   redis:
-    image: redis:7-alpine
+    image: dragonflydb/dragonfly
     container_name: nexus-redis
     ports:
       - "${REDIS_PORT:-6379}:6379"

@@ -610,6 +610,37 @@ function createKnowledgeContextService(deps = {}) {
 
     const agentSnapshot = snapshotBuilder(resolvedAgentId);
 
+    // CACHING: Check Redis for cached context
+    const redis = require('../utils/redis');
+    // Create a deterministic cache key based on inputs
+    // We include updated_at from profile/projects if available to auto-invalidate when data changes?
+    // For now, simpler TTL-based approach is safer.
+    // Key: knowledge-context:{userId}:{agentId}:{digest-of-options}
+    const optionsDigest = crypto.createHash('sha256').update(JSON.stringify({
+      includedHorizons,
+      maxBlocks,
+      conversationId // Include conversationId so context is specific to the thread (e.g. recent messages)
+    })).digest('hex').slice(0, 16);
+
+    const cacheKey = `knowledge-context:${userId}:${resolvedAgentId}:${optionsDigest}`;
+
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        logger.debug('Knowledge context cache hit', { userId, cacheKey });
+        return {
+          ...cached,
+          metrics: {
+            ...cached.metrics,
+            cacheHit: true,
+            generationMs: Date.now() - startedAt
+          }
+        };
+      }
+    } catch (err) {
+      logger.warn('Redis cache get failed', { error: err.message });
+    }
+
     // OPTIMIZATION: Run profile fetch in parallel with other independent queries
     const [profile, projects, recentMessages, crossConversationMessages] = await Promise.all([
       fetchUserBusinessProfile(userId, jwtPayload),
@@ -668,7 +699,7 @@ function createKnowledgeContextService(deps = {}) {
       updatedAt: scopedBlocks.map((block) => block.updatedAt)
     });
 
-    return {
+    const result = {
       contextBlocks: scopedBlocks.map((block) => {
         const { priority, ...safeBlock } = block;
         return safeBlock;
@@ -679,8 +710,8 @@ function createKnowledgeContextService(deps = {}) {
       contextDigest,
       tokenEstimate,
       cache: {
-        key: `knowledge-context:${userId}:${resolvedAgentId}:${contextDigest}`,
-        ttlSeconds: 60,
+        key: cacheKey,
+        ttlSeconds: 600, // 10 minutes
         generatedAt: new Date().toISOString()
       },
       resolved: {
@@ -691,9 +722,19 @@ function createKnowledgeContextService(deps = {}) {
       },
       metrics: {
         generationMs: Date.now() - startedAt,
-        totalCandidates: candidateBlocks.length
+        totalCandidates: candidateBlocks.length,
+        cacheHit: false
       }
     };
+
+    // Store in Redis
+    try {
+      await redis.set(cacheKey, result, 600); // 10 minutes
+    } catch (err) {
+      logger.warn('Redis cache set failed', { error: err.message });
+    }
+
+    return result;
   }
 
   return {
