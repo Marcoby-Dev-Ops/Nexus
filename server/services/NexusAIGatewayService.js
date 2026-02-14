@@ -38,7 +38,10 @@ class NexusAIGatewayService {
       try {
         const openclawUrl = process.env.OPENCLAW_API_URL || 'http://localhost:18789/v1';
         const openclawApiKey = process.env.OPENCLAW_API_KEY || 'sk-openclaw-local';
-        this.providers.set('openclaw', new OpenClawProvider(openclawUrl, openclawApiKey));
+        this.providers.set('openclaw', new OpenClawProvider(openclawUrl, openclawApiKey, {
+          maxRetries: this.config.maxRetries,
+          retryDelayMs: this.config.retryDelayMs
+        }));
         logger.info('OpenClaw provider initialized - WILL BE USED AS DEFAULT AI ENGINE');
 
         // Set OpenClaw as preferred provider if available
@@ -499,54 +502,86 @@ class NexusAIGatewayService {
 }
 
 class OpenClawProvider {
-  constructor(baseUrl, apiKey) {
+  constructor(baseUrl, apiKey, config = {}) {
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
+    this.config = {
+      maxRetries: 3,
+      retryDelayMs: 1000,
+      ...config
+    };
   }
 
   async call(request) {
-    // Send standard OpenAI format
     const startTime = performance.now();
+    let lastError = null;
 
-    try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        body: JSON.stringify({
-          ...(request.model && { model: request.model }), // Only include if specified
-          messages: this.buildMessages(request),
-          max_tokens: this.getMaxTokens(request),
-          temperature: this.getTemperature(request),
-          stream: false,
-          user: request.userId // Vital for OpenClaw memory
-        })
-      });
+    for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
+      try {
+        const response = await fetch(`${this.baseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`
+          },
+          body: JSON.stringify({
+            ...(request.model && { model: request.model }), // Only include if specified
+            messages: this.buildMessages(request),
+            max_tokens: this.getMaxTokens(request),
+            temperature: this.getTemperature(request),
+            stream: false,
+            user: request.userId // Vital for OpenClaw memory
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error(`OpenClaw API error: ${response.status} ${response.statusText}`);
+        if (!response.ok) {
+          // Retry on server errors (5xx) or rate limits (429)
+          if (response.status >= 500 || response.status === 429) {
+            const errorText = await response.text();
+            throw new Error(`OpenClaw API error: ${response.status} ${response.statusText} - ${errorText}`);
+          }
+          // Do not retry on client errors (4xx)
+          throw new Error(`OpenClaw API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const endTime = performance.now();
+        const latencyMs = endTime - startTime;
+
+        return {
+          output: data.choices[0]?.message?.content || '',
+          tokens: {
+            prompt: data.usage?.prompt_tokens || 0,
+            completion: data.usage?.completion_tokens || 0
+          },
+          costCents: this.calculateCost(data.usage, data.model || request.model),
+          model: data.model || request.model || 'openclaw-default',
+          provider: 'openclaw',
+          latencyMs
+        };
+      } catch (error) {
+        lastError = error;
+        const isRetryable = error.message.includes('fetch failed') ||
+          error.message.includes('500') ||
+          error.message.includes('502') ||
+          error.message.includes('503') ||
+          error.message.includes('504') ||
+          error.message.includes('429') ||
+          error.name === 'AbortError';
+
+        if (attempt < this.config.maxRetries && isRetryable) {
+          const delay = this.config.retryDelayMs * Math.pow(2, attempt); // Exponential backoff
+          logger.warn(`OpenClaw request failed (attempt ${attempt + 1}/${this.config.maxRetries + 1}). Retrying in ${delay}ms...`, { error: error.message });
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // If not retryable or max retries reached, throw
+        throw error;
       }
-
-      const data = await response.json();
-      const endTime = performance.now();
-      const latencyMs = endTime - startTime;
-
-      return {
-        output: data.choices[0]?.message?.content || '',
-        tokens: {
-          prompt: data.usage?.prompt_tokens || 0,
-          completion: data.usage?.completion_tokens || 0
-        },
-        costCents: this.calculateCost(data.usage, data.model || request.model),
-        model: data.model || request.model || 'openclaw-default',
-        provider: 'openclaw',
-        latencyMs
-      };
-    } catch (error) {
-      throw new Error(`OpenClaw request failed: ${error.message}`);
     }
+
+    throw new Error(`OpenClaw request failed after ${this.config.maxRetries + 1} attempts: ${lastError.message}`);
   }
 
   buildMessages(request) {

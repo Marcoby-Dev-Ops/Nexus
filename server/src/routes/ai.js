@@ -1283,6 +1283,14 @@ router.post('/chat', authenticateToken, async (req, res) => {
         }
     };
 
+    // IMMEDIATE STREAMING START for Cloudflare 524 avoidance
+    // We must send headers and initial data immediately, before any DB or AI work.
+    if (stream) {
+        beginSseStream(res);
+        startKeepAlive();
+        writeSseEvent(res, buildStreamStatus('accepted', 'Request accepted', 'Connection established. Reviewing your request...'));
+    }
+
     try {
         const resolvedAgentId = normalizeAgentId(typeof requestedAgentId === 'string' ? requestedAgentId : undefined);
         const openClawAgentId = toOpenClawAgentId(resolvedAgentId);
@@ -1299,7 +1307,6 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 const switchContent = `🔄 **Switching Context**\n\nI've located the conversation for: "${lastUserMessage.replace(/continue this:|switch to:/gi, '').trim()}". Switching your active session now...`;
 
                 if (stream) {
-                    beginSseStream(res);
                     writeSseEvent(res, {
                         metadata: {
                             modelWay: switchMetadata,
@@ -1321,7 +1328,6 @@ router.post('/chat', authenticateToken, async (req, res) => {
             } else {
                 const failContent = `⚠️ **Conversation Not Found**\n\nI couldn't find a conversation matching: "${lastUserMessage.replace(/continue this:|switch to:/gi, '').trim()}". Please check the title and try again.`;
                 if (stream) {
-                    beginSseStream(res);
                     writeSseEvent(res, { content: failContent });
                     res.write('data: [DONE]\n\n');
                     if (typeof res.flush === 'function') res.flush();
@@ -1346,131 +1352,14 @@ router.post('/chat', authenticateToken, async (req, res) => {
         const phase = determinePhase(messages);
         const modelWayMetadata = buildModelWayMetadata(intent, phase, conversationId);
         const historyTurns = messages.filter((item) => item?.role === 'user' || item?.role === 'assistant').length;
-        setKeepAliveFrames([
-            `Understanding your request (${intent.name}, ${phase} phase)`,
-            `Reviewing ${historyTurns} recent conversation turns`,
-            `Checking ${userAttachmentMetadata.length} uploaded attachment${userAttachmentMetadata.length === 1 ? '' : 's'}`
-        ]);
-
-        // PERSIST METADATA for continuity organization
-        // Update the conversation context with intent and phase for Sidebar display
-        await query(
-            `UPDATE ai_conversations 
-             SET context = jsonb_set(
-                COALESCE(context, '{}'::jsonb), 
-                '{modelWay}', 
-                jsonb_build_object('intent', $1::text, 'phase', $2::text, 'last_topic', $3::text)
-             ),
-             updated_at = NOW()
-             WHERE id = $4`,
-            [intent.id, phase, lastUserMessage.substring(0, 100), conversationId]
-        );
-
-        // AUTO-TITLING: If the conversation has a generic or redundant title, update it
-        const currentConv = await query('SELECT title FROM ai_conversations WHERE id = $1', [conversationId]);
-        const currentTitle = currentConv.data?.[0]?.title;
-        const isGeneric = !currentTitle ||
-            currentTitle === 'New Conversation' ||
-            currentTitle === 'Untitled Conversation' ||
-            currentTitle.toLowerCase().startsWith('continue this:') ||
-            currentTitle.toLowerCase().startsWith('switch to:');
-
-        if (isGeneric) {
-            const newTitle = lastUserMessage.replace(/^(continue this:|switch to:|hey|hi|hello|yo)\s*/i, '').trim();
-            if (newTitle && newTitle.length > 5) {
-                const truncatedTitle = newTitle.substring(0, 60) + (newTitle.length > 60 ? '...' : '');
-                await query('UPDATE ai_conversations SET title = $1 WHERE id = $2', [truncatedTitle, conversationId]);
-            }
-        }
-
-        conversations.set(conversationId, {
-            intent: intent.id,
-            phase,
-            updatedAt: new Date().toISOString()
-        });
-
-        // Save the last user message
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage.role === 'user') {
-            const userMetadata = {
-                ...(lastMessage.metadata || {}),
-                attachments: userAttachmentMetadata
-            };
-            await saveMessage(conversationId, 'user', lastMessage.content, userMetadata);
-        }
-
-        // Fetch authoritative history from DB (Long Term Memory)
-        // This ensures OpenClaw sees the full conversation even if client truncated it
-        const dbConversationHistory = await fetchConversationHistory(conversationId, 50);
-
-        if (shouldRefuseDirectExecutionInDiscovery(phase, lastUserMessage)) {
-            const refusalContent = buildDiscoveryRefusalMessage();
-            await saveMessage(conversationId, 'assistant', refusalContent, {
-                model: 'nexus:policy-guard',
-                usage: null,
-                modelWay: modelWayMetadata,
-                modelTrace: {
-                    runtimeId: 'nexus-policy-guard',
-                    runtimeEndpoint: null,
-                    requestedModel: null,
-                    nexusAgentId: resolvedAgentId,
-                    openClawAgentId: null,
-                    conversationId,
-                    streamRequested: Boolean(stream),
-                    upstreamRequestId: null,
-                    upstreamStatus: null,
-                    responseId: null,
-                    provider: 'nexus',
-                    systemFingerprint: null,
-                    resolvedModel: 'nexus:policy-guard',
-                    observedModels: ['nexus:policy-guard'],
-                    partial: false
-                }
-            });
-            logger.info('Chat model trace', {
-                userId,
-                conversationId,
-                stream: Boolean(stream),
-                requestedModel: null,
-                resolvedModel: 'nexus:policy-guard',
-                runtimeId: 'nexus-policy-guard',
-                openClawAgentId: null,
-                nexusAgentId: resolvedAgentId,
-                upstreamRequestId: null,
-                responseId: null,
-                provider: 'nexus',
-                partial: false
-            });
-
-            if (stream) {
-                beginSseStream(res);
-
-                writeSseEvent(res, buildStreamStatus('policy_guard', 'Discovery guard active', 'Nexus requested one clarifying input before implementation.'));
-                writeSseEvent(res, {
-                    metadata: {
-                        modelWay: modelWayMetadata,
-                        contextInjected: false
-                    }
-                });
-                writeSseEvent(res, { content: refusalContent });
-                res.write('data: [DONE]\n\n');
-                if (typeof res.flush === 'function') res.flush();
-                res.end();
-                return;
-            }
-
-            return res.json(structureResponse(refusalContent, modelWayMetadata, {
-                success: true,
-                content: refusalContent,
-                model: 'nexus:policy-guard',
-                usage: null
-            }));
-        }
 
         if (stream) {
-            beginSseStream(res);
-            startKeepAlive();
-            writeSseEvent(res, buildStreamStatus('accepted', 'Request accepted', 'Preparing context and connecting to agent runtime.'));
+            setKeepAliveFrames([
+                `Understanding your request (${intent.name}, ${phase} phase)`,
+                `Reviewing ${historyTurns} recent conversation turns`,
+                `Checking ${userAttachmentMetadata.length} uploaded attachment${userAttachmentMetadata.length === 1 ? '' : 's'}`
+            ]);
+
             writeSseEvent(
                 res,
                 buildStreamStatus(
