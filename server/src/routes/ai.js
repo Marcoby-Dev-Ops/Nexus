@@ -617,10 +617,17 @@ function normalizeIncomingAttachments(attachments) {
             name: typeof attachment.name === 'string' ? attachment.name : 'Attachment',
             type: typeof attachment.type === 'string' ? attachment.type : 'application/octet-stream',
             size: Number.isFinite(attachment.size) ? attachment.size : null,
-            url: typeof attachment.url === 'string' ? attachment.url : '',
             downloadUrl: typeof attachment.downloadUrl === 'string' ? attachment.downloadUrl : ''
         }))
         .filter((attachment) => attachment.id);
+}
+
+function resolveModelName(modelId) {
+    if (modelId === 'openclaw:nexus') return 'DeepSeek v3.2 (via OpenClaw)';
+    if (typeof modelId === 'string' && modelId.startsWith('openclaw:')) {
+        return `${modelId.replace('openclaw:', '')} (via OpenClaw)`;
+    }
+    return modelId || 'default';
 }
 
 function toAttachmentMetadataRow(attachmentRow) {
@@ -1680,7 +1687,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
             const data = await openClawResponse.json();
             const rawContent = data.choices?.[0]?.message?.content || '';
             const content = enforceResolvedProviderResponse(rawContent, emailProviderGuard);
-            const resolvedModel = extractModelFromPayload(data) || openClawPayload.model || 'openclaw';
+            const resolvedModel = resolveModelName(extractModelFromPayload(data) || openClawPayload.model || 'openclaw');
             const usage = extractUsageFromPayload(data) || data.usage || null;
             const responseId = extractResponseIdFromPayload(data);
             const provider = extractProviderFromPayload(data);
@@ -1757,6 +1764,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
             }
             );
 
+            // Update resolved model on conversation
+            if (resolvedModel && resolvedModel !== 'default' && resolvedModel !== 'openclaw') {
+                await query('UPDATE ai_conversations SET model = $1 WHERE id = $2', [resolvedModel, conversationId]);
+            }
+
             return res.json(response);
         }
 
@@ -1788,7 +1800,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         const buildStreamingAssistantMetadata = (generatedAttachments, partial = false) => {
             const toolUsage = summarizeToolUsage(observedToolCalls);
             return {
-                model: streamResolvedModel || openClawPayload.model || (partial ? 'openclaw:stream-partial' : 'openclaw:stream'),
+                model: resolveModelName(streamResolvedModel || openClawPayload.model || (partial ? 'openclaw:stream-partial' : 'openclaw:stream')),
                 usage: streamUsage || null,
                 modelWay: modelWayMetadata,
                 toolCalls: observedToolCalls,
@@ -1935,6 +1947,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
                                 }
                                 fullAssistantContent = ''; // Prevent double save if loop continues
                                 fullReasoningContent = '';
+
+                                // Update resolved model on conversation for streaming path
+                                if (assistantMetadata.model && assistantMetadata.model !== 'default' && assistantMetadata.model !== 'openclaw') {
+                                    await query('UPDATE ai_conversations SET model = $1 WHERE id = $2', [assistantMetadata.model, conversationId]);
+                                }
                             }
                             writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
                             res.write('data: [DONE]\n\n');
