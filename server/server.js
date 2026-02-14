@@ -176,19 +176,11 @@ app.use(helmet({
       // Prefer nonces/hashes over 'unsafe-inline'.
       scriptSrc: [
         "'self'",
+        "'unsafe-inline'",
         "https://static.cloudflareinsights.com",
-        // Inline script hashes observed in production.
-        // Prefer nonces/hashes over 'unsafe-inline'.
-        "'sha256-d2YSkA49HLdjngaF+0EcXMxNSRwoe/GEriqK+A2G0UU='",
-        "'sha256-vDRXYtG0JCx4vG4d/wsNH83cpGjOwjcVNBo8EnvTw+U='",
       ],
       // Some browsers separate elem/directives; keep consistent.
-      scriptSrcElem: [
-        "'self'",
-        "https://static.cloudflareinsights.com",
-        "'sha256-d2YSkA49HLdjngaF+0EcXMxNSRwoe/GEriqK+A2G0UU='",
-        "'sha256-vDRXYtG0JCx4vG4d/wsNH83cpGjOwjcVNBo8EnvTw+U='",
-      ],
+      scriptSrcElem: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "https:", "wss:"],
     },
@@ -373,9 +365,9 @@ app.use('/api/rpc', dbLimiter, rpcRoutes);
 app.use('/api/admin', adminRoutes);
 
 // OpenClaw integration routes
-app.use('/api/openclaw', openclawIntegrationRoutes);
 const openclawWorkspaceRoutes = require('./routes/openclaw-workspace');
 app.use('/api/openclaw/workspace', openclawWorkspaceRoutes);
+app.use('/api/openclaw', openclawIntegrationRoutes);
 
 // OAuth routes
 const oauthRoutes = require('./src/routes/oauth');

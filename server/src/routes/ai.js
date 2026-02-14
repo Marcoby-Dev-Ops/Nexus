@@ -375,6 +375,9 @@ function structureResponse(content, modelWayMetadata, originalResponse = {}) {
 
 function writeSseEvent(res, payload) {
     res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    if (typeof res.flush === 'function') {
+        res.flush();
+    }
 }
 
 function beginSseStream(res) {
@@ -383,6 +386,9 @@ function beginSseStream(res) {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
+    if (typeof res.flush === 'function') {
+        res.flush();
+    }
 }
 
 function buildStreamStatus(stage, label, detail) {
@@ -1302,6 +1308,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     });
                     writeSseEvent(res, { content: switchContent });
                     res.write('data: [DONE]\n\n');
+                    if (typeof res.flush === 'function') res.flush();
                     res.end();
                     return;
                 }
@@ -1317,6 +1324,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     beginSseStream(res);
                     writeSseEvent(res, { content: failContent });
                     res.write('data: [DONE]\n\n');
+                    if (typeof res.flush === 'function') res.flush();
                     res.end();
                     return;
                 }
@@ -1446,6 +1454,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 });
                 writeSseEvent(res, { content: refusalContent });
                 res.write('data: [DONE]\n\n');
+                if (typeof res.flush === 'function') res.flush();
                 res.end();
                 return;
             }
@@ -1748,6 +1757,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 // 3. Done event
                 writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
                 res.write('data: [DONE]\n\n');
+                if (typeof res.flush === 'function') res.flush();
                 stopKeepAlive();
                 res.end();
                 return;
@@ -1956,6 +1966,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     }
                     writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
                     res.write('data: [DONE]\n\n');
+                    if (typeof res.flush === 'function') res.flush();
                     stopKeepAlive();
                     break;
                 }
@@ -2024,6 +2035,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                             }
                             writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
                             res.write('data: [DONE]\n\n');
+                            if (typeof res.flush === 'function') res.flush();
                             stopKeepAlive();
                             continue;
                         }
@@ -2093,6 +2105,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                                 if (!holdAssistantChunksForProviderGuard) {
                                     // Forward the content to the client unless deterministic guard is active.
                                     res.write(`data: ${JSON.stringify({ content })}\n\n`);
+                                    if (typeof res.flush === 'function') res.flush();
                                 }
                             }
                         } catch (parseErr) {

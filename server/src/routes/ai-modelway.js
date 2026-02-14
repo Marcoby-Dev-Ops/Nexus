@@ -321,6 +321,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         res.setHeader('Connection', 'keep-alive');
         res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
         res.flushHeaders();
+        if (typeof res.flush === 'function') res.flush();
 
         // Send Model-Way metadata as first event
         res.write(`data: ${JSON.stringify({
@@ -342,6 +343,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 }
             }
         })}\n\n`);
+        if (typeof res.flush === 'function') res.flush();
 
         const reader = openClawResponse.body.getReader();
         const decoder = new TextDecoder();
@@ -353,6 +355,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
                 if (done) {
                     res.write('data: [DONE]\n\n');
+                    if (typeof res.flush === 'function') res.flush();
                     break;
                 }
 
@@ -369,6 +372,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
                         if (dataStr === '[DONE]') {
                             res.write('data: [DONE]\n\n');
+                            if (typeof res.flush === 'function') res.flush();
                             continue;
                         }
 
@@ -379,6 +383,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                             if (content) {
                                 // Forward the content to the client
                                 res.write(`data: ${JSON.stringify({ content })}\n\n`);
+                                if (typeof res.flush === 'function') res.flush();
                             }
                         } catch (parseErr) {
                             // Skip malformed JSON chunks
@@ -390,6 +395,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         } catch (streamErr) {
             logger.error('Stream reading error', { error: streamErr.message });
             res.write(`data: ${JSON.stringify({ error: streamErr.message })}\n\n`);
+            if (typeof res.flush === 'function') res.flush();
         } finally {
             res.end();
         }
@@ -404,6 +410,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         // If headers already sent (streaming started), send error via SSE
         if (res.headersSent) {
             res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+            if (typeof res.flush === 'function') res.flush();
             res.end();
         } else {
             res.status(500).json({
