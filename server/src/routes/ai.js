@@ -15,9 +15,9 @@ try {
 } catch (_error) {
     // Optional dependency for PDF extraction
 }
-let xlsx = null;
+let ExcelJS = null;
 try {
-    xlsx = require('xlsx');
+    ExcelJS = require('exceljs');
 } catch (_error) {
     // Optional dependency for spreadsheet extraction
 }
@@ -733,30 +733,25 @@ async function readPdfPreview(absolutePath) {
 }
 
 async function readSpreadsheetPreview(absolutePath) {
-    if (!xlsx) return '';
+    if (!ExcelJS) return '';
 
-    const workbook = xlsx.readFile(absolutePath, { dense: true });
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(absolutePath);
     const lines = [];
-    const sheetNames = (workbook.SheetNames || []).slice(0, 3);
+    const sheets = workbook.worksheets.slice(0, 3);
 
-    for (const sheetName of sheetNames) {
-        const sheet = workbook.Sheets?.[sheetName];
-        if (!sheet) continue;
-
-        lines.push(`Sheet: ${sheetName}`);
-        const rows = xlsx.utils.sheet_to_json(sheet, {
-            header: 1,
-            raw: false,
-            defval: ''
-        });
-
-        const limitedRows = rows.slice(0, 50);
-        for (const row of limitedRows) {
-            if (!Array.isArray(row)) continue;
-            const cells = row.slice(0, 12).map((cell) => String(cell ?? '').trim());
-            if (cells.every((value) => !value)) continue;
+    for (const sheet of sheets) {
+        lines.push(`Sheet: ${sheet.name}`);
+        let rowCount = 0;
+        sheet.eachRow({ includeEmpty: false }, (row) => {
+            if (rowCount >= 50) return;
+            const cells = row.values
+                .slice(1, 13) // ExcelJS row.values is 1-indexed; take up to 12 columns
+                .map((cell) => String(cell ?? '').trim());
+            if (cells.every((value) => !value)) return;
             lines.push(cells.join(' | '));
-        }
+            rowCount += 1;
+        });
     }
 
     return clipPreview(lines.join('\n'));
