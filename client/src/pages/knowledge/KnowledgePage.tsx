@@ -7,7 +7,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, Brain, Database, RefreshCw, Shield, User, TrendingUp, Sparkles, Save, X, FileText, Download, Upload, FolderOpen, Loader2, AlertCircle } from 'lucide-react';
+import { Bot, Brain, Database, RefreshCw, Shield, User, TrendingUp, Sparkles, Save, X, FileText, Download, Upload, FolderOpen, Loader2, AlertCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/shared/components/ui/Dialog';
 import { Textarea } from '@/shared/components/ui/Textarea';
@@ -242,6 +242,7 @@ export default function KnowledgePage() {
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -521,6 +522,24 @@ export default function KnowledgePage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleDelete = async (filename: string) => {
+    if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return;
+    setDeleting(filename);
+    try {
+      const response = await fetchWithAuth(`/api/openclaw/workspace/files/${encodeURIComponent(filename)}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Delete failed');
+      toast({ title: 'File Deleted', description: `${filename} has been removed.` });
+      fetchFiles();
+    } catch (err) {
+      console.error('Delete error:', err);
+      toast({ variant: 'destructive', title: 'Delete Failed', description: `Could not delete ${filename}.` });
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -880,6 +899,20 @@ export default function KnowledgePage() {
                                 <Download className="h-4 w-4" />
                               )}
                               <span className="sr-only">Download</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(file.name)}
+                              disabled={deleting === file.name}
+                              className="hover:bg-red-900/30 hover:text-red-400 text-slate-400"
+                            >
+                              {deleting === file.name ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                              <span className="sr-only">Delete</span>
                             </Button>
                           </TableCell>
                         </TableRow>

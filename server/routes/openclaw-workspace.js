@@ -1,44 +1,38 @@
+/**
+ * Workspace Files API
+ *
+ * Nexus-native file storage endpoints.
+ * Replaces the former OpenClaw workspace proxy with direct filesystem access.
+ *
+ * Routes:
+ *   GET    /api/workspace/files              — list user's files
+ *   GET    /api/workspace/files/:filename    — download/view a file
+ *   POST   /api/workspace/files              — upload a file
+ *   DELETE /api/workspace/files/:filename    — delete a file
+ */
+
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const { authenticateToken } = require('../src/middleware/auth');
 const { logger } = require('../src/utils/logger.js');
-const { getAgentRuntime } = require('../src/services/agentRuntime');
+const workspaceFileService = require('../src/services/workspaceFileService');
 
-// Middleware to get current runtime
-const withRuntime = (req, res, next) => {
-    try {
-        req.runtime = getAgentRuntime();
-        next();
-    } catch (error) {
-        logger.error('Failed to get agent runtime:', error);
-        res.status(503).json({
-            success: false,
-            error: 'Agent runtime unavailable',
-            code: 'SERVICE_UNAVAILABLE'
-        });
-    }
-};
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: workspaceFileService.MAX_FILE_SIZE }
+});
 
 /**
- * GET /api/openclaw/workspace/files
- * List all files in the OpenClaw workspace
+ * GET /api/workspace/files
+ * List all files in the authenticated user's workspace.
  */
-router.get('/files', withRuntime, async (req, res) => {
+router.get('/files', authenticateToken, async (req, res) => {
     try {
-        const { query } = req;
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        // Check if runtime supports file listing
-        if (typeof req.runtime.listWorkspaceFiles !== 'function') {
-            return res.status(501).json({
-                success: false,
-                error: 'Workspace file listing not supported by current runtime',
-                code: 'NOT_IMPLEMENTED'
-            });
-        }
-
-        const result = await req.runtime.listWorkspaceFiles({ query });
-
-        // Normalize result to ensure it's a list
-        const files = Array.isArray(result) ? result : (result.files || []);
+        const files = await workspaceFileService.listFiles();
 
         return res.json({
             success: true,
@@ -47,7 +41,6 @@ router.get('/files', withRuntime, async (req, res) => {
         });
     } catch (error) {
         logger.error('Failed to list workspace files:', error);
-
         return res.status(500).json({
             success: false,
             error: error.message || 'Failed to list workspace files',
@@ -57,58 +50,28 @@ router.get('/files', withRuntime, async (req, res) => {
 });
 
 /**
- * GET /api/openclaw/workspace/files/:filename
- * Download or view a specific file
+ * GET /api/workspace/files/:filename
+ * Download or view a specific workspace file.
  */
-router.get('/files/:filename', withRuntime, async (req, res) => {
+router.get('/files/:filename', authenticateToken, async (req, res) => {
     try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
         const { filename } = req.params;
+        const { buffer, mimeType, size } = await workspaceFileService.readFile(filename);
 
-        if (!filename) {
-            return res.status(400).json({
-                success: false,
-                error: 'Filename is required',
-                code: 'VALIDATION_ERROR'
-            });
-        }
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('Content-Length', size);
 
-        // Check if runtime supports file retrieval
-        if (typeof req.runtime.getWorkspaceFile !== 'function') {
-            return res.status(501).json({
-                success: false,
-                error: 'File retrieval not supported by current runtime',
-                code: 'NOT_IMPLEMENTED'
-            });
-        }
-
-        const response = await req.runtime.getWorkspaceFile(filename, {
-            timeoutMs: 30000 // Higher timeout for downloads
-        });
-
-        // Pipe the response to the client
-        // Copy headers from response if needed (ContentType, ContentLength, etc.)
-        const contentType = response.headers.get('content-type');
-        if (contentType) res.setHeader('Content-Type', contentType);
-
-        const contentLength = response.headers.get('content-length');
-        if (contentLength) res.setHeader('Content-Length', contentLength);
-
-        // Set disposition if it's a download
         if (req.query.download === 'true') {
             res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         }
 
-        // Convert web stream to node stream or buffer
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        res.send(buffer);
-
+        return res.send(buffer);
     } catch (error) {
+        const status = error.code === 'NOT_FOUND' ? 404 : 500;
         logger.error(`Failed to get workspace file "${req.params.filename}":`, error);
-
-        const status = error.message.includes('404') || error.message.includes('File not found') ? 404 : 500;
-
         return res.status(status).json({
             success: false,
             error: error.message || 'Failed to retrieve file',
@@ -117,15 +80,15 @@ router.get('/files/:filename', withRuntime, async (req, res) => {
     }
 });
 
-const multer = require('multer');
-const upload = multer({ storage: multer.memoryStorage() });
-
 /**
- * POST /api/openclaw/workspace/files
- * Upload a file to the workspace
+ * POST /api/workspace/files
+ * Upload a file to the user's workspace.
  */
-router.post('/files', withRuntime, upload.single('file'), async (req, res) => {
+router.post('/files', authenticateToken, upload.single('file'), async (req, res) => {
     try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -134,29 +97,49 @@ router.post('/files', withRuntime, upload.single('file'), async (req, res) => {
             });
         }
 
-        // Check if runtime supports upload
-        if (typeof req.runtime.uploadWorkspaceFile !== 'function') {
-            return res.status(501).json({
-                success: false,
-                error: 'File upload not supported by current runtime',
-                code: 'NOT_IMPLEMENTED'
-            });
-        }
-
-        const result = await req.runtime.uploadWorkspaceFile(req.file);
+        const result = await workspaceFileService.writeFile(
+            req.file.originalname,
+            req.file.buffer,
+            { mimeType: req.file.mimetype, source: 'user' }
+        );
 
         return res.json({
             success: true,
             data: result
         });
-
     } catch (error) {
         logger.error('Failed to upload workspace file:', error);
-
         return res.status(500).json({
             success: false,
             error: error.message || 'Failed to upload file',
             code: 'INTERNAL_ERROR'
+        });
+    }
+});
+
+/**
+ * DELETE /api/workspace/files/:filename
+ * Delete a file from the user's workspace.
+ */
+router.delete('/files/:filename', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const { filename } = req.params;
+        await workspaceFileService.deleteFile(filename);
+
+        return res.json({
+            success: true,
+            message: `File "${filename}" deleted successfully`
+        });
+    } catch (error) {
+        const status = error.code === 'NOT_FOUND' ? 404 : 500;
+        logger.error(`Failed to delete workspace file "${req.params.filename}":`, error);
+        return res.status(status).json({
+            success: false,
+            error: error.message || 'Failed to delete file',
+            code: status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR'
         });
     }
 });

@@ -24,6 +24,8 @@ services:
       REDIS_URL: redis://redis:6379
     ports:
       - "3001:3001"
+    volumes:
+      - workspace_data:/data/workspace
     restart: unless-stopped
     networks:
       - nexus-network
@@ -133,6 +135,8 @@ volumes:
   pgadmin_data:
     driver: local
   pg_data:
+    driver: local
+  workspace_data:
     driver: local
 
 networks:

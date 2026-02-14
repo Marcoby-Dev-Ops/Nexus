@@ -4,6 +4,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const dns = require('dns').promises;
 const { toolActivityBridge } = require('../src/services/toolActivityBridge');
+const workspaceFileService = require('../src/services/workspaceFileService');
 
 const SUPPORTED_EMAIL_OAUTH_SLUGS = ['microsoft', 'google-workspace', 'google_workspace', 'google'];
 const EMAIL_ADDRESS_REGEX = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
@@ -913,6 +914,44 @@ async function executeToolByName(req, toolName, args = {}) {
     };
   }
 
+  // --- Workspace File Tools ---
+
+  if (safeName === 'nexus_list_files') {
+    const files = await workspaceFileService.listFiles();
+    return {
+      files,
+      count: files.length
+    };
+  }
+
+  if (safeName === 'nexus_read_file') {
+    const filename = String(args.filename || '').trim();
+    if (!filename) throw new Error('filename is required');
+    const { buffer, mimeType, size } = await workspaceFileService.readFile(filename);
+    const isText = workspaceFileService.isTextMimeType(mimeType);
+    return {
+      filename,
+      mimeType,
+      size,
+      content: isText ? buffer.toString('utf-8') : buffer.toString('base64'),
+      encoding: isText ? 'utf-8' : 'base64'
+    };
+  }
+
+  if (safeName === 'nexus_write_file') {
+    const filename = String(args.filename || '').trim();
+    if (!filename) throw new Error('filename is required');
+    const content = args.content;
+    if (content === undefined || content === null) throw new Error('content is required');
+    const encoding = String(args.encoding || 'utf-8').trim();
+    const buf = encoding === 'base64' ? Buffer.from(content, 'base64') : Buffer.from(String(content), 'utf-8');
+    const result = await workspaceFileService.writeFile(filename, buf, { source: 'agent' });
+    return {
+      success: true,
+      ...result
+    };
+  }
+
   // Distinguish between OpenClaw-native tools (which should never arrive here)
   // and genuinely unknown tools. The nexus-toolbridge plugin should only route
   // nexus_* tools to this endpoint; anything else indicates a plugin misconfiguration.
@@ -1047,6 +1086,41 @@ const NEXUS_TOOL_CATALOG = [
       properties: {
         integrationId: { type: 'string' },
         provider: { type: 'string' }
+      },
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'nexus_list_files',
+    description: 'List all files in the current user\'s workspace. Returns file names, sizes, and modification dates.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'nexus_read_file',
+    description: 'Read the contents of a file from the user\'s workspace. Text files are returned as UTF-8 strings, binary files as base64.',
+    inputSchema: {
+      type: 'object',
+      required: ['filename'],
+      properties: {
+        filename: { type: 'string', description: 'Name of the file to read' }
+      },
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'nexus_write_file',
+    description: 'Create or overwrite a file in the user\'s workspace. Use this to generate documents, reports, CSVs, markdown files, or any other content the user can download.',
+    inputSchema: {
+      type: 'object',
+      required: ['filename', 'content'],
+      properties: {
+        filename: { type: 'string', description: 'Name of the file to create (e.g. report.md, data.csv)' },
+        content: { type: 'string', description: 'File content. For text files, provide plain text. For binary, provide base64-encoded content.' },
+        encoding: { type: 'string', enum: ['utf-8', 'base64'], description: 'Content encoding. Defaults to utf-8.' }
       },
       additionalProperties: false
     }
