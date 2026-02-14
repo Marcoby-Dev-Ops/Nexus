@@ -610,26 +610,27 @@ function createKnowledgeContextService(deps = {}) {
 
     const agentSnapshot = snapshotBuilder(resolvedAgentId);
 
-    const profile = await fetchUserBusinessProfile(userId, jwtPayload);
-    const sharedSubjectIds = uniqueStrings([
-      'global',
-      'default',
-      profile?.company_id ? String(profile.company_id) : null
-    ]);
-
-    const [projects, recentMessages, crossConversationMessages, knowledgeFactRows] = await Promise.all([
+    // OPTIMIZATION: Run profile fetch in parallel with other independent queries
+    const [profile, projects, recentMessages, crossConversationMessages] = await Promise.all([
+      fetchUserBusinessProfile(userId, jwtPayload),
       fetchTopActiveProjects(userId, jwtPayload),
       fetchRecentConversation(conversationId, userId, jwtPayload),
-      fetchCrossConversationMessages(conversationId, userId, jwtPayload),
-      fetchKnowledgeFacts({
-        userId,
-        agentId: resolvedAgentId,
-        sharedSubjectIds,
-        includedHorizons,
-        maxRows: maxBlocks * 4,
-        jwtPayload
-      })
+      fetchCrossConversationMessages(conversationId, userId, jwtPayload)
     ]);
+
+    // Derive shared subject IDs now that we have the profile (and its company_id)
+    const companyId = profile?.company_id ? String(profile.company_id) : null;
+    const sharedSubjectIds = uniqueStrings(['global', 'default', companyId].filter(Boolean));
+
+    // Fetch facts using the shared subject IDs
+    const knowledgeFactRows = await fetchKnowledgeFacts({
+      userId,
+      agentId: resolvedAgentId,
+      sharedSubjectIds,
+      includedHorizons,
+      maxRows: maxBlocks * 4,
+      jwtPayload
+    });
 
     const candidateBlocks = [
       buildAgentCoreBlock(agentSnapshot),

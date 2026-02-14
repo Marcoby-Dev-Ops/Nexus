@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const { performance } = require('perf_hooks');
 const dns = require('dns').promises;
 let mammoth = null;
 try {
@@ -1307,7 +1308,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
         const intent = detectIntent(messages);
         const lastUserMessage = getLastUserMessage(messages);
-        const emailProviderGuard = await resolveEmailProviderForGuard(lastUserMessage, messages);
+        // OPTIMIZATION: Start email guard lookup early (it's slow DNS), but don't await yet
+        const emailProviderGuardPromise = resolveEmailProviderForGuard(lastUserMessage, messages);
 
         // Handle Switching Intent BEFORE creating a conversation to prevent dummy threads
         if (intent.id === 'switch') {
@@ -1349,20 +1351,57 @@ router.post('/chat', authenticateToken, async (req, res) => {
         }
 
         // Persist Conversation and User Message
-        const conversationId = await getOrCreateConversation(userId, providedConvId);
+        const [conversationId, emailProviderGuard] = await Promise.all([
+            getOrCreateConversation(userId, providedConvId),
+            emailProviderGuardPromise
+        ]);
+        const preContextStart = performance.now();
 
-        // Persist the current user message before fetching history
-        await saveMessage(conversationId, 'user', lastUserMessage);
-
-        // Fetch authoritative history for context injection and LLM processing
-        const dbConversationHistory = await fetchConversationHistory(conversationId);
+        // PARALLEL BLOCK: Run all major context gathering and persistence concurrently
+        // 1. Save the user message (doesn't block history fetch because message is in RAM)
+        // 2. Fetch history (needed for OpenClaw context)
+        // 3. Fetch attachment data (needed for attachment context)
+        // 4. Assemble Knowledge Context (heavy DB ops)
+        // 5. Build Integration Context (DB ops)
         const incomingAttachmentRefs = normalizeIncomingAttachments(attachments);
-        const storedAttachments = await fetchStoredAttachments(
-            conversationId,
+
+        const [
+            // saveMessage result (we don't strictly need it, just that it completes)
+            ,
+            dbConversationHistory,
+            storedAttachments,
+            knowledgeContext,
+            integrationContextRaw
+        ] = await Promise.all([
+            saveMessage(conversationId, 'user', lastUserMessage),
+            fetchConversationHistory(conversationId),
+            fetchStoredAttachments(conversationId, userId, incomingAttachmentRefs, req.user?.jwtPayload),
+            assembleKnowledgeContext({
+                userId,
+                jwtPayload: req.user?.jwtPayload,
+                agentId: resolvedAgentId,
+                conversationId,
+                includeShort: false, // Usage of dbConversationHistory makes this redundant
+                includeMedium: true,
+                includeLong: true,
+                maxBlocks: 8
+            }).catch(err => {
+                logger.warn('Failed to assemble knowledge context', { error: err.message });
+                return null;
+            }),
+            buildIntegrationSystemContext(userId, req.user?.jwtPayload).catch(err => {
+                logger.warn('Failed to build integration context', { error: err.message });
+                return null;
+            })
+        ]);
+
+        const preContextEnd = performance.now();
+        logger.info('Chat context assembly timing', {
             userId,
-            incomingAttachmentRefs,
-            req.user?.jwtPayload
-        );
+            conversationId,
+            durationMs: Math.round(preContextEnd - preContextStart)
+        });
+
         const userAttachmentMetadata = storedAttachments.map(toAttachmentMetadataRow);
 
         const phase = determinePhase(messages);
@@ -1393,48 +1432,27 @@ router.post('/chat', authenticateToken, async (req, res) => {
         }
 
         let contextSystemMessage = null;
-        try {
-            const context = await assembleKnowledgeContext({
-                userId,
-                jwtPayload: req.user?.jwtPayload,
-                agentId: resolvedAgentId,
-                conversationId,
-                includeShort: false, // Usage of dbConversationHistory makes this redundant
-                includeMedium: true,
-                includeLong: true,
-                maxBlocks: 8
-            });
 
-            if (context?.systemContext) {
-                contextSystemMessage = [
-                    'Nexus Working Context (source-of-truth from backend):',
-                    context.systemContext,
-                    `Context Digest: ${context.contextDigest}`
-                ].join('\n\n');
-            }
-        } catch (contextError) {
-            logger.warn('Failed to inject assembled knowledge context into chat', {
-                userId,
-                conversationId,
-                agentId: resolvedAgentId,
-                error: contextError instanceof Error ? contextError.message : String(contextError)
-            });
+        // Process Knowledge Context Result
+        if (knowledgeContext?.systemContext) {
+            contextSystemMessage = [
+                'Nexus Working Context (source-of-truth from backend):',
+                knowledgeContext.systemContext,
+                `Context Digest: ${knowledgeContext.contextDigest}`
+            ].join('\n\n');
         }
-        try {
-            const integrationSystemContext = await buildIntegrationSystemContext(userId, req.user?.jwtPayload);
-            if (integrationSystemContext) {
-                contextSystemMessage = contextSystemMessage
-                    ? `${contextSystemMessage}\n\n${integrationSystemContext}`
-                    : integrationSystemContext;
-            }
-        } catch (integrationContextError) {
-            logger.warn('Failed to inject integration context into chat', {
-                userId,
-                conversationId,
-                error: integrationContextError instanceof Error ? integrationContextError.message : String(integrationContextError)
-            });
+
+        // Process Integration Context Result
+        if (integrationContextRaw) {
+            contextSystemMessage = contextSystemMessage
+                ? `${contextSystemMessage}\n\n${integrationContextRaw}`
+                : integrationContextRaw;
         }
+
+        // Build Attachment Context (Dependent on storedAttachments)
         const attachmentContext = await buildAttachmentContext(storedAttachments);
+
+
         if (attachmentContext) {
             contextSystemMessage = contextSystemMessage
                 ? `${contextSystemMessage}\n\n${attachmentContext}`
@@ -1450,7 +1468,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 ? `${contextSystemMessage}\n\n${emailProviderGuardInstruction}`
                 : emailProviderGuardInstruction;
         }
-        const contextInjected = Boolean(contextSystemMessage);
+
 
         // Inject Soul, Codebase, and Tool Capability Context
         const soulContext = buildSoulContext();
@@ -1467,6 +1485,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 ? `${preamble}\n\n${contextSystemMessage}`
                 : preamble;
         }
+
+        const contextInjected = Boolean(contextSystemMessage);
 
         setKeepAliveFrames([
             `Synthesizing context for ${intent.name} (${phase})`,
