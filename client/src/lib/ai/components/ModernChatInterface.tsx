@@ -119,7 +119,10 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
       detail: streamStatus.detail || null
     }
     : null;
-  const timelineDisplayEvents = timelineEvents.filter((event, index) => {
+  const timelineDisplayEvents = timelineEvents.filter((event, index, arr) => {
+    // Deduplicate consecutive entries with the same stage (e.g. repeated "processing")
+    if (index > 0 && arr[index - 1].stage === event.stage) return false;
+    // Deduplicate entry that matches the current live status
     if (!currentStatusEvent || index !== 0) return true;
     return !(
       event.stage === currentStatusEvent.stage
@@ -127,7 +130,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
       && (event.detail || '') === (currentStatusEvent.detail || '')
     );
   });
-  const shouldShowActivityTimeline = timelineDisplayEvents.length > 0;
+  const shouldShowActivityTimeline = timelineDisplayEvents.length > 0 && streamingElapsedSeconds > 30;
   const stageDisplayNames: Record<string, string> = {
     accepted: 'Started',
     context_loading: 'Preparing',
@@ -160,7 +163,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   };
   const baseProgress = stageProgressMap[streamStatus?.stage || 'thinking'] || 35;
   // Smooth micro-increments so the bar never looks stuck — creeps ~9% per minute
-  const microIncrement = Math.min(12, Math.floor(streamingElapsedSeconds * 0.15));
+  const microIncrement = Math.min(20, Math.floor(streamingElapsedSeconds * 0.3));
   const animatedProgress = isStreaming
     ? Math.min(96, baseProgress + microIncrement)
     : baseProgress;

@@ -1309,12 +1309,14 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 keepAliveTick += 1;
                 const elapsedSeconds = Math.floor((Date.now() - streamStartedAt) / 1000);
                 const message = pickKeepAliveMessage(elapsedSeconds, keepAliveTick);
+                // Evolving stage names so the UI shows meaningful transitions
+                const stage = elapsedSeconds < 30 ? 'working' : elapsedSeconds < 90 ? 'thinking' : 'generating';
                 writeSseEvent(
                     res,
-                    buildStreamStatus('processing', message, null)
+                    buildStreamStatus(stage, message, null)
                 );
             }
-        }, 8000);
+        }, 15000);
     };
     const stopKeepAlive = () => {
         if (keepAliveIntervalId) {
@@ -2100,6 +2102,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
                             if (reasoning) {
                                 fullReasoningContent += reasoning;
+                                stopKeepAlive(); // Stop keep-alive once real reasoning flows
                                 // Forward reasoning as "thought" event
                                 writeSseEvent(res, { thought: reasoning });
                             }
@@ -2136,6 +2139,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                                     // Suppressed
                                 } else {
                                     // Standard streaming
+                                    stopKeepAlive(); // Stop keep-alive once real content flows
                                     fullAssistantContent += content;
                                     res.write(`data: ${JSON.stringify({ content })}\n\n`);
                                     if (typeof res.flush === 'function') res.flush();
