@@ -617,6 +617,7 @@ function normalizeIncomingAttachments(attachments) {
             name: typeof attachment.name === 'string' ? attachment.name : 'Attachment',
             type: typeof attachment.type === 'string' ? attachment.type : 'application/octet-stream',
             size: Number.isFinite(attachment.size) ? attachment.size : null,
+            url: typeof attachment.url === 'string' ? attachment.url : '',
             downloadUrl: typeof attachment.downloadUrl === 'string' ? attachment.downloadUrl : ''
         }))
         .filter((attachment) => attachment.id);
