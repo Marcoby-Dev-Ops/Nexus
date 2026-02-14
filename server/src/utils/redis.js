@@ -4,7 +4,9 @@ const { logger } = require('./logger');
 let client = null;
 let isConnecting = false;
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_HOST = process.env.REDIS_HOST || '172.18.0.13';
+const REDIS_PORT = process.env.REDIS_PORT || 6379;
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD || 'kVq23PDa9He8Z6WRBrY6MuFazJLNmivrfcvNPPCX9b2GD1q6hemhPQYGcKLJNjqT';
 
 async function connect() {
     if (client && (client.isOpen || isConnecting)) {
@@ -15,8 +17,10 @@ async function connect() {
 
     try {
         client = createClient({
-            url: REDIS_URL,
             socket: {
+                host: REDIS_HOST,
+                port: Number(REDIS_PORT),
+                connectTimeout: 5000,
                 reconnectStrategy: (retries) => {
                     if (retries > 10) {
                         logger.error('Redis max retries reached. Giving up.');
@@ -25,7 +29,8 @@ async function connect() {
                     const delay = Math.min(retries * 100, 3000);
                     return delay;
                 }
-            }
+            },
+            password: REDIS_PASSWORD
         });
 
         client.on('error', (err) => logger.error('Redis Client Error', err));

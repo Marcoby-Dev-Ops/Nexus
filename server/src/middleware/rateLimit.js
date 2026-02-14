@@ -10,13 +10,11 @@ let redisClient = null;
  * Falls back to in-memory store if Redis is not configured or fails to connect
  */
 function initializeRedisStore() {
-  const redisUrl = process.env.REDIS_URL;
-  logger.info(`Initializing rate limit store. REDIS_URL configured: ${Boolean(redisUrl)}`);
+  const redisHost = process.env.REDIS_HOST || '172.18.0.13';
+  const redisPort = process.env.REDIS_PORT || 6379;
+  const redisPassword = process.env.REDIS_PASSWORD || 'kVq23PDa9He8Z6WRBrY6MuFazJLNmivrfcvNPPCX9b2GD1q6hemhPQYGcKLJNjqT';
 
-  if (!redisUrl) {
-    logger.warn('REDIS_URL not configured - using in-memory rate limiting store (OK for dev, not for multi-instance prod)');
-    return false;
-  }
+  logger.info(`Initializing rate limit store. Redis Host: ${redisHost}`);
 
   try {
     const redis = require('redis');
@@ -24,8 +22,10 @@ function initializeRedisStore() {
     RedisStore = require('rate-limit-redis').default;
 
     redisClient = redis.createClient({
-      url: redisUrl,
       socket: {
+        host: redisHost,
+        port: Number(redisPort),
+        connectTimeout: 5000,
         reconnectStrategy: (retries) => {
           if (retries > 10) {
             logger.error('Redis reconnect retry limit exceeded');
@@ -33,7 +33,8 @@ function initializeRedisStore() {
           }
           return Math.min(retries * 100, 3000);
         }
-      }
+      },
+      password: redisPassword
     });
 
     redisClient.on('error', (err) => logger.error('Redis client error:', err));
@@ -145,9 +146,9 @@ const authLimiter = rateLimit({
   skip: (req) => {
     const url = req.originalUrl || req.url;
     if (req.method === 'GET') {
-      return /\/api\/auth\/check-username\//.test(url) || 
-             /\/api\/auth\/check-user\//.test(url) ||
-             /\/api\/auth\/session-info\b/.test(url);
+      return /\/api\/auth\/check-username\//.test(url) ||
+        /\/api\/auth\/check-user\//.test(url) ||
+        /\/api\/auth\/session-info\b/.test(url);
     }
 
     if (req.method === 'POST') {
