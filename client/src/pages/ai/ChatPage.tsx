@@ -801,7 +801,7 @@ export const ChatPage: React.FC = () => {
       setStreamStatus({ stage: 'thinking', label: 'Agent is thinking', detail: 'Preparing response.' });
 
       // Use Conversational AI Service (Streaming)
-      const orgId = 'default';
+      const orgId = profile?.company_id || 'default';
 
       const contextInit = await conversationalAIService.initializeContext(user.id, orgId);
       const aiContext = (contextInit.success && contextInit.data) ? contextInit.data : {

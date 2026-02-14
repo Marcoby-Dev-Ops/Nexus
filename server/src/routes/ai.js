@@ -1393,7 +1393,39 @@ router.post('/chat', authenticateToken, async (req, res) => {
         // 3. Fetch attachment data (needed for attachment context)
         // 4. Assemble Knowledge Context (heavy DB ops)
         // 5. Build Integration Context (DB ops)
-        const incomingAttachmentRefs = normalizeIncomingAttachments(attachments);
+        // PARALLEL BLOCK: Run all major context gathering and persistence concurrently
+        logger.info('Starting parallel context gathering', { conversationId });
+
+        const saveMessagePromise = saveMessage(conversationId, 'user', lastUserMessage)
+            .then(res => { logger.info('saveMessage completed', { conversationId }); return res; });
+
+        const historyPromise = fetchConversationHistory(conversationId)
+            .then(res => { logger.info('fetchConversationHistory completed', { conversationId }); return res; });
+
+        const attachmentsPromise = fetchStoredAttachments(conversationId, userId, incomingAttachmentRefs, req.user?.jwtPayload)
+            .then(res => { logger.info('fetchStoredAttachments completed', { conversationId }); return res; });
+
+        const knowledgePromise = assembleKnowledgeContext({
+            userId,
+            jwtPayload: req.user?.jwtPayload,
+            agentId: resolvedAgentId,
+            conversationId,
+            includeShort: false, // Usage of dbConversationHistory makes this redundant
+            includeMedium: true,
+            includeLong: true,
+            maxBlocks: 8
+        }).then(res => { logger.info('assembleKnowledgeContext completed', { conversationId }); return res; })
+            .catch(err => {
+                logger.warn('Failed to assemble knowledge context', { error: err.message });
+                return null;
+            });
+
+        const integrationPromise = buildIntegrationSystemContext(userId, req.user?.jwtPayload)
+            .then(res => { logger.info('buildIntegrationSystemContext completed', { conversationId }); return res; })
+            .catch(err => {
+                logger.warn('Failed to build integration context', { error: err.message });
+                return null;
+            });
 
         const [
             // saveMessage result (we don't strictly need it, just that it completes)
@@ -1403,26 +1435,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
             knowledgeContext,
             integrationContextRaw
         ] = await Promise.all([
-            saveMessage(conversationId, 'user', lastUserMessage),
-            fetchConversationHistory(conversationId),
-            fetchStoredAttachments(conversationId, userId, incomingAttachmentRefs, req.user?.jwtPayload),
-            assembleKnowledgeContext({
-                userId,
-                jwtPayload: req.user?.jwtPayload,
-                agentId: resolvedAgentId,
-                conversationId,
-                includeShort: false, // Usage of dbConversationHistory makes this redundant
-                includeMedium: true,
-                includeLong: true,
-                maxBlocks: 8
-            }).catch(err => {
-                logger.warn('Failed to assemble knowledge context', { error: err.message });
-                return null;
-            }),
-            buildIntegrationSystemContext(userId, req.user?.jwtPayload).catch(err => {
-                logger.warn('Failed to build integration context', { error: err.message });
-                return null;
-            })
+            saveMessagePromise,
+            historyPromise,
+            attachmentsPromise,
+            knowledgePromise,
+            integrationPromise
         ]);
 
         const preContextEnd = performance.now();
