@@ -149,75 +149,140 @@ function parseSenderFilters(fromValue) {
   return [normalizeEmailAddress(fromValue)].filter(Boolean);
 }
 
-function buildTimeWindow(args = {}) {
-  const preset = String(args.datePreset || '').trim().toLowerCase();
-  const now = new Date();
-  const start = new Date(now);
-  const end = new Date(now);
+/**
+ * Convert a Date to a different timezone and return its local year/month/date/day.
+ * Uses Intl.DateTimeFormat so no external tz library is needed.
+ */
+function getLocalDateParts(date, tz) {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  const parts = {};
+  for (const { type, value } of formatter.formatToParts(date)) {
+    parts[type] = value;
+  }
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    weekday: parts.weekday, // Mon, Tue, etc.
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    second: Number(parts.second)
+  };
+}
 
-  const setUtcStartOfDay = (date) => date.setUTCHours(0, 0, 0, 0);
-  const setUtcEndOfDay = (date) => date.setUTCHours(23, 59, 59, 999);
+/**
+ * Build start-of-day and end-of-day ISO strings for a given local date in a timezone.
+ */
+function localDayBoundsToUtc(year, month, day, tz) {
+  // Build local time strings and convert via Date parsing with timezone offset
+  const startLocal = new Date(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T00:00:00`);
+  const endLocal = new Date(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T23:59:59.999`);
+
+  // Use Intl to find the UTC offset for this timezone at this date
+  const getUtcOffset = (date) => {
+    const utcStr = date.toLocaleString('en-US', { timeZone: 'UTC' });
+    const tzStr = date.toLocaleString('en-US', { timeZone: tz });
+    return (new Date(utcStr) - new Date(tzStr));
+  };
+
+  const offset = getUtcOffset(startLocal);
+  return {
+    startUtc: new Date(startLocal.getTime() + offset),
+    endUtc: new Date(endLocal.getTime() + offset)
+  };
+}
+
+function buildTimeWindow(args = {}, timezone = 'UTC') {
+  const preset = String(args.datePreset || '').trim().toLowerCase();
+  const tz = timezone || 'UTC';
+  const now = new Date();
+  const local = getLocalDateParts(now, tz);
+
+  // Helper to create day bounds in the user's timezone
+  const dayBounds = (year, month, day) => localDayBoundsToUtc(year, month, day, tz);
 
   if (!preset || preset === 'today') {
-    setUtcStartOfDay(start);
-    setUtcEndOfDay(end);
-    return { startIso: start.toISOString(), endIso: end.toISOString(), preset: preset || 'today' };
+    const { startUtc, endUtc } = dayBounds(local.year, local.month, local.day);
+    return { startIso: startUtc.toISOString(), endIso: endUtc.toISOString(), preset: preset || 'today', timezone: tz };
   }
 
   if (preset === 'last_7_days') {
-    start.setUTCDate(start.getUTCDate() - 7);
-    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+    const pastDate = new Date(now.getTime() - 7 * 86400000);
+    const pastLocal = getLocalDateParts(pastDate, tz);
+    const { startUtc } = dayBounds(pastLocal.year, pastLocal.month, pastLocal.day);
+    const { endUtc } = dayBounds(local.year, local.month, local.day);
+    return { startIso: startUtc.toISOString(), endIso: endUtc.toISOString(), preset, timezone: tz };
   }
 
   if (preset === 'last_30_days') {
-    start.setUTCDate(start.getUTCDate() - 30);
-    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+    const pastDate = new Date(now.getTime() - 30 * 86400000);
+    const pastLocal = getLocalDateParts(pastDate, tz);
+    const { startUtc } = dayBounds(pastLocal.year, pastLocal.month, pastLocal.day);
+    const { endUtc } = dayBounds(local.year, local.month, local.day);
+    return { startIso: startUtc.toISOString(), endIso: endUtc.toISOString(), preset, timezone: tz };
   }
 
   if (preset === 'this_week') {
-    const day = now.getUTCDay();
-    const diffToMonday = day === 0 ? 6 : day - 1;
-    start.setUTCDate(now.getUTCDate() - diffToMonday);
-    setUtcStartOfDay(start);
-    setUtcEndOfDay(end);
-    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+    // Map weekday abbreviation to number (Sun=0 .. Sat=6)
+    const dayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const dayOfWeek = dayMap[local.weekday] ?? 0;
+    const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const mondayDate = new Date(now.getTime() - diffToMonday * 86400000);
+    const mondayLocal = getLocalDateParts(mondayDate, tz);
+    const { startUtc } = dayBounds(mondayLocal.year, mondayLocal.month, mondayLocal.day);
+    const { endUtc } = dayBounds(local.year, local.month, local.day);
+    return { startIso: startUtc.toISOString(), endIso: endUtc.toISOString(), preset, timezone: tz };
   }
 
   if (preset === 'last_week') {
-    const day = now.getUTCDay();
-    const diffToMonday = day === 0 ? 6 : day - 1;
-    start.setUTCDate(now.getUTCDate() - diffToMonday - 7);
-    setUtcStartOfDay(start);
-    end.setUTCDate(now.getUTCDate() - diffToMonday - 1);
-    setUtcEndOfDay(end);
-    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+    const dayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const dayOfWeek = dayMap[local.weekday] ?? 0;
+    const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const lastMondayDate = new Date(now.getTime() - (diffToMonday + 7) * 86400000);
+    const lastSundayDate = new Date(now.getTime() - (diffToMonday + 1) * 86400000);
+    const lastMondayLocal = getLocalDateParts(lastMondayDate, tz);
+    const lastSundayLocal = getLocalDateParts(lastSundayDate, tz);
+    const { startUtc } = dayBounds(lastMondayLocal.year, lastMondayLocal.month, lastMondayLocal.day);
+    const { endUtc } = dayBounds(lastSundayLocal.year, lastSundayLocal.month, lastSundayLocal.day);
+    return { startIso: startUtc.toISOString(), endIso: endUtc.toISOString(), preset, timezone: tz };
   }
 
   if (preset === 'this_month') {
-    start.setUTCDate(1);
-    setUtcStartOfDay(start);
-    setUtcEndOfDay(end);
-    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+    const { startUtc } = dayBounds(local.year, local.month, 1);
+    const { endUtc } = dayBounds(local.year, local.month, local.day);
+    return { startIso: startUtc.toISOString(), endIso: endUtc.toISOString(), preset, timezone: tz };
   }
 
   if (preset === 'last_month') {
-    start.setUTCDate(1);
-    start.setUTCMonth(start.getUTCMonth() - 1);
-    setUtcStartOfDay(start);
-    end.setUTCDate(0);
-    setUtcEndOfDay(end);
-    return { startIso: start.toISOString(), endIso: end.toISOString(), preset };
+    let lastMonthYear = local.year;
+    let lastMonth = local.month - 1;
+    if (lastMonth < 1) { lastMonth = 12; lastMonthYear -= 1; }
+    // Last day of last month = day 0 of current month
+    const lastDayOfPrevMonth = new Date(local.year, local.month - 1, 0).getDate();
+    const { startUtc } = dayBounds(lastMonthYear, lastMonth, 1);
+    const { endUtc } = dayBounds(lastMonthYear, lastMonth, lastDayOfPrevMonth);
+    return { startIso: startUtc.toISOString(), endIso: endUtc.toISOString(), preset, timezone: tz };
   }
 
   if (preset === 'custom') {
     const startIso = toIsoOrNull(args.startDate);
     const endIso = toIsoOrNull(args.endDate);
-    return { startIso, endIso, preset };
+    return { startIso, endIso, preset, timezone: tz };
   }
 
   const startIso = toIsoOrNull(args.startDate);
   const endIso = toIsoOrNull(args.endDate);
-  return { startIso, endIso, preset: 'custom' };
+  return { startIso, endIso, preset: 'custom', timezone: tz };
 }
 
 function parseSearchLimit(limitValue, fallback = 50) {
@@ -556,6 +621,20 @@ async function executeToolByName(req, toolName, args = {}) {
   if (safeName === 'nexus_search_emails') {
     const limit = parseSearchLimit(args.limit, 20);
     const providersToTry = resolveProviderPreference(args.provider);
+
+    // Resolve timezone: explicit arg > user profile preference > UTC
+    let userTimezone = args.timezone || null;
+    if (!userTimezone) {
+      try {
+        const tzResult = await query(
+          `SELECT preferences->>'timezone' AS tz FROM user_preferences WHERE user_id = $1 LIMIT 1`,
+          [userId]
+        );
+        userTimezone = tzResult.data?.[0]?.tz || null;
+      } catch (_tzErr) { /* fall through to UTC */ }
+    }
+    if (!userTimezone) userTimezone = 'UTC';
+
     const tokenResult = await query(
       `SELECT integration_slug, access_token, expires_at, updated_at
        FROM oauth_tokens
@@ -586,7 +665,7 @@ async function executeToolByName(req, toolName, args = {}) {
       throw new Error(`Connected email token(s) are expired for: ${expiredProviders.join(', ')}. Reconnect required.`);
     }
 
-    const timeWindow = buildTimeWindow(args);
+    const timeWindow = buildTimeWindow(args, userTimezone);
     const commonFilters = {
       from: args.from,
       query: args.query,
@@ -716,6 +795,20 @@ async function executeToolByName(req, toolName, args = {}) {
   if (safeName === 'nexus_get_calendar_events') {
     const limit = parseSearchLimit(args.limit, 20);
     const providersToTry = resolveProviderPreference(args.provider);
+
+    // Resolve timezone: explicit arg > user profile preference > UTC
+    let calTz = args.timezone || null;
+    if (!calTz) {
+      try {
+        const tzResult = await query(
+          `SELECT preferences->>'timezone' AS tz FROM user_preferences WHERE user_id = $1 LIMIT 1`,
+          [userId]
+        );
+        calTz = tzResult.data?.[0]?.tz || null;
+      } catch (_tzErr) { /* fall through to UTC */ }
+    }
+    if (!calTz) calTz = 'UTC';
+
     const tokenResult = await query(
       `SELECT integration_slug, access_token, updated_at
        FROM oauth_tokens
@@ -731,7 +824,7 @@ async function executeToolByName(req, toolName, args = {}) {
 
     const entry = tokens[0];
     const provider = normalizeProviderSlug(entry.integration_slug);
-    const timeWindow = buildTimeWindow(args);
+    const timeWindow = buildTimeWindow(args, calTz);
 
     if (provider === 'microsoft') {
       const graphParams = new URLSearchParams({
@@ -892,7 +985,7 @@ const NEXUS_TOOL_CATALOG = [
   },
   {
     name: 'nexus_search_emails',
-    description: 'Search connected inbox emails by date range, sender(s), and free-text query.',
+    description: 'Search connected inbox emails by date range, sender(s), and free-text query. Date presets (today, this_week, etc.) use the user\'s timezone from their profile. Pass timezone explicitly to override.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -908,7 +1001,8 @@ const NEXUS_TOOL_CATALOG = [
         },
         query: { type: 'string' },
         unreadOnly: { type: 'boolean' },
-        limit: { type: 'number' }
+        limit: { type: 'number' },
+        timezone: { type: 'string', description: 'IANA timezone (e.g. America/Chicago). Defaults to user profile timezone or UTC.' }
       },
       additionalProperties: false
     }
@@ -930,7 +1024,7 @@ const NEXUS_TOOL_CATALOG = [
   },
   {
     name: 'nexus_get_calendar_events',
-    description: 'Fetch upcoming calendar events for a specific date range.',
+    description: 'Fetch upcoming calendar events for a specific date range. Date presets use the user\'s timezone from their profile. Pass timezone explicitly to override.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -938,7 +1032,8 @@ const NEXUS_TOOL_CATALOG = [
         datePreset: { type: 'string', enum: ['today', 'last_7_days', 'last_30_days', 'this_week', 'last_week', 'this_month', 'last_month', 'custom'] },
         startDate: { type: 'string' },
         endDate: { type: 'string' },
-        limit: { type: 'number' }
+        limit: { type: 'number' },
+        timezone: { type: 'string', description: 'IANA timezone (e.g. America/Chicago). Defaults to user profile timezone or UTC.' }
       },
       additionalProperties: false
     }
