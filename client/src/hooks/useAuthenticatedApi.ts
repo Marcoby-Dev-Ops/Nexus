@@ -105,18 +105,20 @@ export function useAuthenticatedApi(options: UseAuthenticatedApiOptions = {}): U
     const baseUrl = getApiBaseUrl();
     const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
 
-    return fetch(fullUrl, {
-      ...options,
-      // Merge default auth headers with options.headers
-      const rawHeaders: Record<string, string | undefined > = {
+    const mergedHeaders: Record<string, string | undefined> = {
       ...headers,
-      ...(options.headers as Record<string, string>),
+      ...(options.headers instanceof Headers
+        ? Object.fromEntries(options.headers.entries())
+        : Array.isArray(options.headers)
+          ? Object.fromEntries(options.headers)
+          : (options.headers as Record<string, string> || {})),
     };
 
     // Filter out undefined values to allow unsetting defaults (e.g. Content-Type for FormData)
-    const cleanedHeaders: Record<string, string> = Object.keys(rawHeaders).reduce((acc, key) => {
-      if (rawHeaders[key] !== undefined) {
-        acc[key] = rawHeaders[key] as string;
+    const cleanedHeaders = Object.keys(mergedHeaders).reduce((acc, key) => {
+      const value = mergedHeaders[key];
+      if (value !== undefined) {
+        acc[key] = value;
       }
       return acc;
     }, {} as Record<string, string>);

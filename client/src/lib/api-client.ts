@@ -311,12 +311,29 @@ export class ApiClient {
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const url = `${this.config.baseUrl}${endpoint}`;
-    const headers = await this.buildHeaders(options.headers as Record<string, string> | undefined);
+    const authAndBaseHeaders = await this.buildHeaders();
+    const headers = {
+      ...authAndBaseHeaders,
+      // Safely handle different header types
+      ...(options.headers instanceof Headers
+        ? Object.fromEntries(options.headers.entries())
+        : Array.isArray(options.headers)
+          ? Object.fromEntries(options.headers)
+          : (options.headers as Record<string, string> || {})),
+    };
 
     try {
       const response = await makeAuthenticatedRequest(url, {
         ...options,
-        headers,
+        headers: {
+          ...headers,
+          // Safely handle different header types for request options
+          ...(options.headers instanceof Headers
+            ? Object.fromEntries(options.headers.entries())
+            : Array.isArray(options.headers)
+              ? Object.fromEntries(options.headers)
+              : (options.headers as Record<string, string> || {})),
+        },
       });
 
       const contentType = response.headers.get('content-type');
