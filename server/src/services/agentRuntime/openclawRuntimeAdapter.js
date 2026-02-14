@@ -317,8 +317,8 @@ class OpenClawRuntimeAdapter {
     }
 
     try {
-      const timeoutMs = Number(options.timeoutMs);
-      const signal = options.signal || (timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined);
+      const timeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 60000;
+      const signal = options.signal || AbortSignal.timeout(timeoutMs);
 
       return await fetch(runtimeInfo.chatCompletionsUrl, {
         method: 'POST',

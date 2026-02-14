@@ -224,129 +224,125 @@ app.use((req, res, next) => {
   logger.logRequest(req, res, next);
 });
 
+// Shared health check logic for /health and /healthz
+async function performAllHealthChecks(verbose = false) {
+  const runtime = getAgentRuntime();
+  const runtimeInfo = runtime.getRuntimeInfo();
+  const runtimeCapabilities = runtime.getCapabilities();
+  const runtimeRequired = (
+    process.env.AGENT_RUNTIME || 'openclaw'
+  ).toLowerCase() !== 'mock' && process.env.HEALTH_REQUIRE_RUNTIME === 'true';
+
+  const healthStatus = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+  };
+
+  if (verbose) {
+    healthStatus.version = process.env.npm_package_version || '1.0.0';
+    healthStatus.uptime = process.uptime();
+    healthStatus.memory = process.memoryUsage();
+    healthStatus.checks = {};
+  }
+
+  // Agent runtime (OpenClaw) health check
+  try {
+    const runtimeHealthResponse = await runtime.healthCheck({ timeoutMs: 5000 });
+    const runtimeOk = runtimeHealthResponse.ok;
+    const runtimeSummary = {
+      status: runtimeOk ? 'ok' : 'error',
+      runtime: runtimeInfo.id,
+      required: runtimeRequired
+    };
+
+    if (verbose) {
+      healthStatus.checks.runtime = {
+        ...runtimeSummary,
+        url: runtimeInfo.baseUrl,
+        statusCode: runtimeHealthResponse.status,
+        capabilities: runtimeCapabilities
+      };
+    } else {
+      healthStatus.runtime = runtimeOk ? 'ok' : 'error';
+    }
+  } catch (runtimeError) {
+    const runtimeSummary = {
+      status: runtimeRequired ? 'error' : 'degraded',
+      runtime: runtimeInfo.id,
+      required: runtimeRequired,
+      error: runtimeError.message
+    };
+
+    if (verbose) {
+      healthStatus.checks.runtime = {
+        ...runtimeSummary,
+        url: runtimeInfo.baseUrl,
+        capabilities: runtimeCapabilities
+      };
+    } else {
+      healthStatus.runtime = runtimeRequired ? 'error' : 'degraded';
+    }
+  }
+
+  // Database health check
+  try {
+    const { testConnection } = require('./src/database/connection');
+    const dbHealth = await testConnection();
+    if (verbose) {
+      healthStatus.checks.database = {
+        status: dbHealth.success ? 'ok' : 'error',
+        ...(dbHealth.success && { version: dbHealth.version }),
+        ...(dbHealth.error && { error: dbHealth.error })
+      };
+    } else {
+      healthStatus.database = dbHealth.success ? 'ok' : 'error';
+    }
+  } catch (dbError) {
+    if (verbose) {
+      healthStatus.checks.database = { status: 'error', error: dbError.message };
+    } else {
+      healthStatus.database = 'error';
+    }
+  }
+
+  // Determine overall status
+  const runtimeCheck = healthStatus.checks?.runtime || { status: healthStatus.runtime };
+  const dbCheck = healthStatus.checks?.database || { status: healthStatus.database };
+
+  const dbOk = dbCheck.status === 'ok';
+  const runtimeOk = runtimeRequired ? runtimeCheck.status === 'ok' : runtimeCheck.status !== 'error';
+
+  healthStatus.status = (dbOk && runtimeOk) ? 'ok' : 'degraded';
+  if (!dbOk && runtimeRequired) healthStatus.status = 'error';
+  if (!runtimeOk && runtimeRequired) healthStatus.status = 'error';
+
+  return healthStatus;
+}
+
 // Health check endpoint with detailed status
 app.get('/health', async (req, res) => {
   try {
     const verbose = process.env.HEALTH_VERBOSE === 'true' || process.env.NODE_ENV !== 'production';
-    const runtime = getAgentRuntime();
-    const runtimeInfo = runtime.getRuntimeInfo();
-    const runtimeCapabilities = runtime.getCapabilities();
-    // Runtime readiness should be opt-in for /health so orchestrators don't
-    // recycle a healthy API process when OpenClaw is temporarily unavailable.
-    const runtimeRequired = (
-      process.env.AGENT_RUNTIME || 'openclaw'
-    ).toLowerCase() !== 'mock' && process.env.HEALTH_REQUIRE_RUNTIME === 'true';
-
-    const baseStatus = {
-      status: 'ok'
-    };
-
-    const healthStatus = verbose ? {
-      ...baseStatus,
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      version: process.env.npm_package_version || '1.0.0',
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      checks: {}
-    } : { ...baseStatus };
-
-    // Agent runtime (OpenClaw) health check
-    try {
-      const runtimeHealthResponse = await runtime.healthCheck({ timeoutMs: 5000 });
-      const runtimeOk = runtimeHealthResponse.ok;
-      const runtimeSummary = {
-        status: runtimeOk ? 'ok' : 'error',
-        runtime: runtimeInfo.id,
-        required: runtimeRequired
-      };
-
-      if (verbose) {
-        healthStatus.checks = healthStatus.checks || {};
-        healthStatus.checks.runtime = {
-          ...runtimeSummary,
-          url: runtimeInfo.baseUrl,
-          statusCode: runtimeHealthResponse.status,
-          capabilities: runtimeCapabilities
-        };
-      } else {
-        healthStatus.runtime = runtimeOk ? 'ok' : 'error';
-      }
-    } catch (runtimeError) {
-      const runtimeSummary = {
-        status: runtimeRequired ? 'error' : 'degraded',
-        runtime: runtimeInfo.id,
-        required: runtimeRequired,
-        error: runtimeError.message
-      };
-
-      if (verbose) {
-        healthStatus.checks = healthStatus.checks || {};
-        healthStatus.checks.runtime = {
-          ...runtimeSummary,
-          url: runtimeInfo.baseUrl,
-          capabilities: runtimeCapabilities
-        };
-      } else {
-        healthStatus.runtime = runtimeRequired ? 'error' : 'degraded';
-      }
-    }
-
-    // Database health check
-    try {
-      const { testConnection } = require('./src/database/connection');
-      const dbHealth = await testConnection();
-      if (verbose) {
-        healthStatus.checks = healthStatus.checks || {};
-        healthStatus.checks.database = {
-          status: dbHealth.success ? 'ok' : 'error',
-          ...(dbHealth.success && { version: dbHealth.version }),
-          ...(dbHealth.error && { error: dbHealth.error })
-        };
-      } else {
-        // Minimal signal in production
-        healthStatus.database = dbHealth.success ? 'ok' : 'error';
-      }
-    } catch (dbError) {
-      if (verbose) {
-        healthStatus.checks = healthStatus.checks || {};
-        healthStatus.checks.database = {
-          status: 'error',
-          error: dbError.message
-        };
-      } else {
-        healthStatus.database = 'error';
-      }
-    }
-
-    // Overall health status
-    const checks = healthStatus.checks ? Object.values(healthStatus.checks) : [];
-    const dbOk = healthStatus.database ? healthStatus.database === 'ok' : true;
-    const runtimeCheck = healthStatus.checks?.runtime;
-    const runtimeOk = runtimeCheck
-      ? (runtimeCheck.required ? runtimeCheck.status === 'ok' : runtimeCheck.status !== 'error')
-      : (healthStatus.runtime ? (runtimeRequired ? healthStatus.runtime === 'ok' : healthStatus.runtime !== 'error') : true);
-    const allChecksPassed = checks.every(check => check.status === 'ok' || (!runtimeRequired && check.runtime && check.status === 'degraded')) && dbOk && runtimeOk;
-    healthStatus.status = allChecksPassed ? 'ok' : 'degraded';
-
-    const statusCode = allChecksPassed ? 200 : 503;
+    const healthStatus = await performAllHealthChecks(verbose);
+    const statusCode = healthStatus.status === 'ok' ? 200 : 503;
     res.status(statusCode).json(healthStatus);
-
   } catch (error) {
     logger.error('Health check failed:', error);
-    res.status(503).json({
-      status: 'error',
-      timestamp: new Date().toISOString(),
-      error: 'Health check failed'
-    });
+    res.status(503).json({ status: 'error', timestamp: new Date().toISOString(), error: 'Health check failed' });
   }
 });
 
 // Simple healthz endpoint for orchestration (Kubernetes/Coolify)
-// This avoids the need for a sidecar proxy just for health checks
-app.get('/healthz', (req, res) => {
-  res.set('Cache-Control', 'no-store');
-  res.status(200).json({ ok: true, service: 'openclaw-coolify' });
+app.get('/healthz', async (req, res) => {
+  try {
+    const healthStatus = await performAllHealthChecks(false);
+    const statusCode = healthStatus.status === 'ok' ? 200 : 503;
+    res.set('Cache-Control', 'no-store');
+    res.status(statusCode).json({ ok: healthStatus.status === 'ok', status: healthStatus.status });
+  } catch (error) {
+    res.status(503).json({ ok: false, error: 'Health check failed' });
+  }
 });
 
 // API routes with specific rate limiting

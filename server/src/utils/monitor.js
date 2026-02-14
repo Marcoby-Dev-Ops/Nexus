@@ -6,6 +6,7 @@
 
 const { logger } = require('./logger');
 const { getPoolStats, testConnection } = require('../database/connection');
+const { getAgentRuntime } = require('../services/agentRuntime');
 
 class ServerMonitor {
   constructor() {
@@ -31,6 +32,10 @@ class ServerMonitor {
       errors: {
         byType: {},
         recent: []
+      },
+      runtime: {
+        status: 'unknown',
+        error: null
       }
     };
 
@@ -75,7 +80,7 @@ class ServerMonitor {
     }
 
     this.isMonitoring = false;
-    
+
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval);
     }
@@ -96,21 +101,21 @@ class ServerMonitor {
     if (!this.isMonitoring) return;
 
     this.metrics.requests.total++;
-    
+
     const statusCode = res.statusCode;
     const endpoint = req.route?.path || req.path;
 
     // Record by status code
-    this.metrics.requests.byStatus[statusCode] = 
+    this.metrics.requests.byStatus[statusCode] =
       (this.metrics.requests.byStatus[statusCode] || 0) + 1;
 
     // Record by endpoint
-    this.metrics.requests.byEndpoint[endpoint] = 
+    this.metrics.requests.byEndpoint[endpoint] =
       (this.metrics.requests.byEndpoint[endpoint] || 0) + 1;
 
     // Record response time
     this.metrics.requests.responseTimes.push(duration);
-    
+
     // Keep only last 1000 response times
     if (this.metrics.requests.responseTimes.length > 1000) {
       this.metrics.requests.responseTimes.shift();
@@ -154,7 +159,7 @@ class ServerMonitor {
     if (!this.isMonitoring) return;
 
     const errorType = error.name || 'UnknownError';
-    this.metrics.errors.byType[errorType] = 
+    this.metrics.errors.byType[errorType] =
       (this.metrics.errors.byType[errorType] || 0) + 1;
 
     // Record recent errors (keep last 100)
@@ -170,7 +175,7 @@ class ServerMonitor {
     };
 
     this.metrics.errors.recent.push(errorRecord);
-    
+
     if (this.metrics.errors.recent.length > 100) {
       this.metrics.errors.recent.shift();
     }
@@ -209,9 +214,27 @@ class ServerMonitor {
         };
       }
 
+      // Check agent runtime health
+      try {
+        const runtime = getAgentRuntime();
+        const runtimeHealth = await runtime.healthCheck({ timeoutMs: 5000 });
+        healthStatus.runtime = {
+          status: runtimeHealth.ok ? 'ok' : 'error',
+          statusCode: runtimeHealth.status
+        };
+        this.metrics.runtime.status = healthStatus.runtime.status;
+      } catch (runtimeError) {
+        healthStatus.runtime = {
+          status: 'error',
+          error: runtimeError.message
+        };
+        this.metrics.runtime.status = 'error';
+        this.metrics.runtime.error = runtimeError.message;
+      }
+
       // Check for critical issues
       const issues = this.detectIssues(healthStatus);
-      
+
       if (issues.length > 0) {
         logger.warn('Health check issues detected', { issues, healthStatus });
       }
@@ -247,9 +270,9 @@ class ServerMonitor {
       // Check for memory leaks
       if (this.metrics.system.memory.length > 10) {
         const recentMemory = this.metrics.system.memory.slice(-10);
-        const memoryGrowth = recentMemory[recentMemory.length - 1].heapUsed - 
-                           recentMemory[0].heapUsed;
-        
+        const memoryGrowth = recentMemory[recentMemory.length - 1].heapUsed -
+          recentMemory[0].heapUsed;
+
         if (memoryGrowth > 50 * 1024 * 1024) { // 50MB growth
           logger.warn('Potential memory leak detected', {
             growth: `${Math.round(memoryGrowth / 1024 / 1024)}MB`
@@ -287,9 +310,9 @@ class ServerMonitor {
     const issues = [];
 
     // Check error rate
-    const errorRate = this.metrics.requests.total > 0 ? 
+    const errorRate = this.metrics.requests.total > 0 ?
       (this.metrics.requests.errors / this.metrics.requests.total) * 100 : 0;
-    
+
     if (errorRate > 10) {
       issues.push(`High error rate: ${errorRate.toFixed(2)}%`);
     }
@@ -313,7 +336,7 @@ class ServerMonitor {
     // Check memory usage
     const memoryUsage = healthStatus.memory;
     const heapUsedMB = memoryUsage.heapUsed / 1024 / 1024;
-    
+
     if (heapUsedMB > 500) { // 500MB
       issues.push(`High memory usage: ${Math.round(heapUsedMB)}MB`);
     }
@@ -331,14 +354,14 @@ class ServerMonitor {
    */
   getMetricsSummary() {
     const responseTimes = this.metrics.requests.responseTimes;
-    const avgResponseTime = responseTimes.length > 0 ? 
+    const avgResponseTime = responseTimes.length > 0 ?
       responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length : 0;
 
     return {
       requests: {
         total: this.metrics.requests.total,
         errors: this.metrics.requests.errors,
-        errorRate: this.metrics.requests.total > 0 ? 
+        errorRate: this.metrics.requests.total > 0 ?
           (this.metrics.requests.errors / this.metrics.requests.total) * 100 : 0,
         avgResponseTime: Math.round(avgResponseTime),
         byStatus: this.metrics.requests.byStatus
@@ -404,7 +427,7 @@ class ServerMonitor {
 // Create singleton monitor instance
 const serverMonitor = new ServerMonitor();
 
-module.exports = { 
+module.exports = {
   serverMonitor,
   ServerMonitor
 };
