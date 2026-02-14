@@ -317,12 +317,19 @@ class OpenClawRuntimeAdapter {
     }
 
     try {
+      const timeoutMs = Number(options.timeoutMs);
+      const signal = options.signal || (timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined);
+
       return await fetch(runtimeInfo.chatCompletionsUrl, {
         method: 'POST',
         headers: this.buildAuthHeaders(extraHeaders),
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal
       });
     } catch (error) {
+      if (error.name === 'TimeoutError') {
+        throw new Error(`OpenClaw runtime request timed out after ${options.timeoutMs}ms`);
+      }
       throw new Error(`OpenClaw runtime request failed: ${error.message}`);
     }
   }

@@ -1526,7 +1526,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
         // Call OpenClaw Chat Completions API
         const openClawResponse = await agentRuntime.chatCompletions(openClawPayload, {
-            agentId: openClawAgentId
+            agentId: openClawAgentId,
+            timeoutMs: 60000 // 60s timeout for initial response
         });
 
         if (!openClawResponse.ok) {
@@ -1806,11 +1807,15 @@ router.post('/chat', authenticateToken, async (req, res) => {
             };
         };
 
+        let streamDoneHandled = false;
         try {
-            while (true) {
+            streamLoop: while (true) {
                 const { done, value } = await reader.read();
 
                 if (done) {
+                    if (streamDoneHandled) break streamLoop;
+                    streamDoneHandled = true;
+
                     const finalGuardedContent = enforceResolvedProviderResponse(fullAssistantContent, emailProviderGuard);
                     if (holdAssistantChunksForProviderGuard && finalGuardedContent) {
                         writeSseEvent(res, { content: finalGuardedContent });
@@ -1863,7 +1868,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     res.write('data: [DONE]\n\n');
                     if (typeof res.flush === 'function') res.flush();
                     stopKeepAlive();
-                    break;
+                    break streamLoop;
                 }
 
                 buffer += decoder.decode(value, { stream: true });
@@ -1878,6 +1883,9 @@ router.post('/chat', authenticateToken, async (req, res) => {
                         const dataStr = trimmed.slice(6);
 
                         if (dataStr === '[DONE]') {
+                            if (streamDoneHandled) break streamLoop;
+                            streamDoneHandled = true;
+
                             const finalGuardedContent = enforceResolvedProviderResponse(fullAssistantContent, emailProviderGuard);
                             if (holdAssistantChunksForProviderGuard && finalGuardedContent) {
                                 writeSseEvent(res, { content: finalGuardedContent });
@@ -1932,7 +1940,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                             res.write('data: [DONE]\n\n');
                             if (typeof res.flush === 'function') res.flush();
                             stopKeepAlive();
-                            continue;
+                            break streamLoop;
                         }
 
                         try {
