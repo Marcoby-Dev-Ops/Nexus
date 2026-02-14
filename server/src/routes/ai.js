@@ -1402,7 +1402,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         const historyPromise = fetchConversationHistory(conversationId)
             .then(res => { logger.info('fetchConversationHistory completed', { conversationId }); return res; });
 
-        const attachmentsPromise = fetchStoredAttachments(conversationId, userId, incomingAttachmentRefs, req.user?.jwtPayload)
+        const attachmentsPromise = fetchStoredAttachments(conversationId, userId, attachments, req.user?.jwtPayload)
             .then(res => { logger.info('fetchStoredAttachments completed', { conversationId }); return res; });
 
         const knowledgePromise = assembleKnowledgeContext({
