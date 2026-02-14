@@ -490,7 +490,12 @@ export default function KnowledgePage() {
 
       const response = await fetchWithAuth('/api/openclaw/workspace/files', {
         method: 'POST',
-        // Do NOT set Content-Type header when sending FormData, let browser set it with boundary
+        headers: {
+          // Explicitly do not set Content-Type; fetchWithAuth (via getAuthHeaders) sets application/json by default.
+          // By passing a headers object with Content-Type as undefined or deleting it, we prevent the default.
+          // Since fetchWithAuth spreads options.headers, we can override it here.
+          'Content-Type': undefined as any
+        },
         body: formData
       });
 

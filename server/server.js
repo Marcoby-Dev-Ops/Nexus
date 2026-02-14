@@ -178,9 +178,17 @@ app.use(helmet({
         "'self'",
         "'unsafe-inline'",
         "https://static.cloudflareinsights.com",
+        "'sha256-d2YSkA49HLdjngaF+0EcXMxNSRwoe/GEriqK+A2G0UU='",
+        "'sha256-vDRXYtG0JCx4vG4d/wsNH83cpGjOwjcVNBo8EnvTw+U='",
       ],
       // Some browsers separate elem/directives; keep consistent.
-      scriptSrcElem: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com"],
+      scriptSrcElem: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://static.cloudflareinsights.com",
+        "'sha256-d2YSkA49HLdjngaF+0EcXMxNSRwoe/GEriqK+A2G0UU='",
+        "'sha256-vDRXYtG0JCx4vG4d/wsNH83cpGjOwjcVNBo8EnvTw+U='",
+      ],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "https:", "wss:"],
     },
