@@ -31,6 +31,7 @@ const { logger } = require('../utils/logger');
 const { normalizeAgentId } = require('../config/agentCatalog');
 const { assembleKnowledgeContext } = require('../services/knowledgeContextService');
 const { getAgentRuntime } = require('../services/agentRuntime');
+const { toolActivityBridge } = require('../services/toolActivityBridge');
 const {
     INTENT_TYPES,
     PHASES,
@@ -1297,6 +1298,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         beginSseStream(res);
         startKeepAlive();
         writeSseEvent(res, buildStreamStatus('accepted', 'Request accepted', 'Connection established. Reviewing your request...'));
+        toolActivityBridge.register(userId, res, writeSseEvent, buildStreamStatus);
     }
 
     try {
@@ -2088,6 +2090,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
             writeSseEvent(res, { error: streamErr.message });
         } finally {
             stopKeepAlive();
+            toolActivityBridge.unregister(userId);
             res.end();
         }
 
@@ -2098,6 +2101,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
             userId
         });
         stopKeepAlive();
+        toolActivityBridge.unregister(userId);
 
         // If headers already sent (streaming started), send error via SSE
         if (res.headersSent) {

@@ -73,7 +73,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [streamingElapsedSeconds, setStreamingElapsedSeconds] = useState(0);
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(true);
-  const [isActivityExpanded, setIsActivityExpanded] = useState(true);
+  const [isActivityExpanded, setIsActivityExpanded] = useState(false);
   const [statusEvents, setStatusEvents] = useState<Array<{
     stage: string;
     label: string;
@@ -114,10 +114,10 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   const timelineEvents = statusEvents.length ? [...statusEvents].reverse() : [];
   const currentStatusEvent = streamStatus
     ? {
-        stage: streamStatus.stage || 'processing',
-        label: streamStatus.label || 'Agent is working',
-        detail: streamStatus.detail || null
-      }
+      stage: streamStatus.stage || 'processing',
+      label: streamStatus.label || 'Agent is working',
+      detail: streamStatus.detail || null
+    }
     : null;
   const timelineDisplayEvents = timelineEvents.filter((event, index) => {
     if (!currentStatusEvent || index !== 0) return true;
@@ -320,7 +320,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                     )}>
                       <Bot className="h-5 w-5 text-white" />
                     </div>
-                      <div className="space-y-2 overflow-hidden w-full max-w-2xl">
+                    <div className="space-y-2 overflow-hidden w-full max-w-2xl">
                       <div className="min-h-[20px] p-4 rounded-xl bg-card/95 border border-border/70 shadow-sm text-sm">
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-blue-500 dark:text-blue-300 leading-relaxed">

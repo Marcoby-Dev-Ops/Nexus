@@ -15,7 +15,15 @@ interface UnifiedLayoutProps {
 export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
   const { preferences, loading: preferencesLoading, updatePreferences } = useUserPreferences();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const SIDEBAR_LS_KEY = 'nexus:sidebar_open';
+  const readSidebarLS = () => {
+    try { const v = localStorage.getItem(SIDEBAR_LS_KEY); return v === null ? null : v === '1'; } catch { return null; }
+  };
+  const writeSidebarLS = (open: boolean) => {
+    try { localStorage.setItem(SIDEBAR_LS_KEY, open ? '1' : '0'); } catch { /* noop */ }
+  };
+
+  const [sidebarOpen, setSidebarOpen] = useState(() => readSidebarLS() ?? false);
   const location = useLocation();
   const { loading, initialized } = useAuth();
   const { isPublicRoute, redirectInProgress } = useRedirectManager();
@@ -28,12 +36,15 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
     }
 
     if (preferencesLoading) return;
-    setSidebarOpen(!(preferences?.sidebar_collapsed ?? false));
+    const serverValue = !(preferences?.sidebar_collapsed ?? false);
+    setSidebarOpen(serverValue);
+    writeSidebarLS(serverValue);
   }, [isMobile, preferencesLoading, preferences?.sidebar_collapsed]);
 
   const handleSidebarToggle = () => {
     setSidebarOpen((previous) => {
       const next = !previous;
+      writeSidebarLS(next);
       if (!isMobile) {
         void updatePreferences({ sidebar_collapsed: !next });
       }

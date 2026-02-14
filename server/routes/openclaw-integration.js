@@ -3,6 +3,7 @@ const { logger } = require('../src/utils/logger.js');
 const router = express.Router();
 const crypto = require('crypto');
 const dns = require('dns').promises;
+const { toolActivityBridge } = require('../src/services/toolActivityBridge');
 
 const SUPPORTED_EMAIL_OAUTH_SLUGS = ['microsoft', 'google-workspace', 'google_workspace', 'google'];
 const EMAIL_ADDRESS_REGEX = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
@@ -1091,10 +1092,13 @@ router.post('/tools/execute', authenticateOpenClaw, async (req, res) => {
       });
     }
 
+    const toolUserId = getTrustedUserId(req);
+    toolActivityBridge.emitToolStart(toolUserId, toolName);
     const result = await executeToolByName(req, toolName, args);
+    toolActivityBridge.emitToolResult(toolUserId, toolName, true);
     logger.info('OpenClaw tool executed', {
       tool: toolName,
-      userId: getTrustedUserId(req),
+      userId: toolUserId,
       correlationId: String(req.headers['x-correlation-id'] || '').trim() || null
     });
     return res.json({
@@ -1104,6 +1108,8 @@ router.post('/tools/execute', authenticateOpenClaw, async (req, res) => {
     });
   } catch (error) {
     const isAuthError = String(error?.message || '').includes('x-nexus-user-id header is required');
+    const failUserId = getTrustedUserId(req);
+    toolActivityBridge.emitToolResult(failUserId, req.body?.tool || 'unknown', false, error?.message);
     logger.error('OpenClaw tool execution failed', {
       tool: req.body?.tool,
       error: error?.message || String(error)
