@@ -1842,6 +1842,13 @@ router.post('/chat', authenticateToken, async (req, res) => {
             };
         };
 
+        // Initialize optional streaming guard for provider confirmation
+        // Instead of buffering the whole response, we only buffer the start to check for the specific question.
+        let providerGuardBuffer = '';
+        let providerGuardIntercepted = false;
+        let providerGuardFlushed = !Boolean(emailProviderGuard?.recommendation && ['microsoft', 'google_workspace'].includes(emailProviderGuard.recommendation.provider));
+        const PROVIDER_GUARD_BUFFER_LIMIT = 200; // Sufficient to catch "Could you please confirm if this is..."
+
         let streamDoneHandled = false;
         try {
             streamLoop: while (true) {
@@ -1851,11 +1858,25 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     if (streamDoneHandled) break streamLoop;
                     streamDoneHandled = true;
 
-                    const finalGuardedContent = enforceResolvedProviderResponse(fullAssistantContent, emailProviderGuard);
-                    if (holdAssistantChunksForProviderGuard && finalGuardedContent) {
-                        writeSseEvent(res, { content: finalGuardedContent });
+                    // Flush any remaining buffer if we haven't yet
+                    if (!providerGuardFlushed && !providerGuardIntercepted && providerGuardBuffer) {
+                        // Final check on the small buffer
+                        if (emailProviderGuard && PROVIDER_CONFIRMATION_QUESTION_REGEX.test(providerGuardBuffer)) {
+                            // Intercept at the very end
+                            const replacement = enforceResolvedProviderResponse(providerGuardBuffer, emailProviderGuard);
+                            if (replacement !== providerGuardBuffer) {
+                                writeSseEvent(res, { content: replacement });
+                                fullAssistantContent = replacement;
+                            } else {
+                                writeSseEvent(res, { content: providerGuardBuffer });
+                                fullAssistantContent += providerGuardBuffer;
+                            }
+                        } else {
+                            writeSseEvent(res, { content: providerGuardBuffer });
+                            fullAssistantContent += providerGuardBuffer;
+                        }
                     }
-                    fullAssistantContent = finalGuardedContent;
+
                     // Audit: Save collected assistant response
                     if (fullAssistantContent || fullReasoningContent) {
                         const generatedAttachments = mergeUniqueAttachments(
@@ -2044,9 +2065,38 @@ router.post('/chat', authenticateToken, async (req, res) => {
                             }
 
                             if (content) {
-                                fullAssistantContent += content;
-                                if (!holdAssistantChunksForProviderGuard) {
-                                    // Forward the content to the client unless deterministic guard is active.
+                                // Logic for provider guard buffering
+                                if (!providerGuardFlushed && !providerGuardIntercepted) {
+                                    providerGuardBuffer += content;
+
+                                    // Check if we hit the limit or matched the regex
+                                    if (emailProviderGuard && PROVIDER_CONFIRMATION_QUESTION_REGEX.test(providerGuardBuffer)) {
+                                        // INTERCEPT!
+                                        providerGuardIntercepted = true;
+                                        providerGuardFlushed = true;
+
+                                        // Replace the "bad" question with our structured confirmation
+                                        const replacement = enforceResolvedProviderResponse(providerGuardBuffer, emailProviderGuard);
+                                        writeSseEvent(res, { content: replacement });
+
+                                        // Update the audit trail to reflect what we sent
+                                        fullAssistantContent = replacement;
+
+                                        // Discard the buffer's original bad content
+                                        providerGuardBuffer = '';
+                                    } else if (providerGuardBuffer.length > PROVIDER_GUARD_BUFFER_LIMIT) {
+                                        // Safe to flush
+                                        providerGuardFlushed = true;
+                                        writeSseEvent(res, { content: providerGuardBuffer });
+                                        fullAssistantContent += providerGuardBuffer;
+                                        providerGuardBuffer = '';
+                                    }
+                                    // Else: continue buffering
+                                } else if (providerGuardIntercepted) {
+                                    // Suppressed
+                                } else {
+                                    // Standard streaming
+                                    fullAssistantContent += content;
                                     res.write(`data: ${JSON.stringify({ content })}\n\n`);
                                     if (typeof res.flush === 'function') res.flush();
                                 }
