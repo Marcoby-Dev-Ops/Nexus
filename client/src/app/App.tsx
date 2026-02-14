@@ -40,7 +40,10 @@ import AIModelSettings from '@/pages/admin/AIModelSettings';
 import IntegrationMarketplacePage from '@/pages/integrations/IntegrationMarketplacePage';
 import TestOAuthPage from '../pages/integrations/TestOAuthPage';
 import { OAuthCallbackPage } from '../pages/integrations/OAuthCallbackPage';
-import WorkspacePage from '@/pages/openclaw/WorkspacePage';
+// Integrations pages
+import IntegrationMarketplacePage from '@/pages/integrations/IntegrationMarketplacePage';
+import TestOAuthPage from '../pages/integrations/TestOAuthPage';
+import { OAuthCallbackPage } from '../pages/integrations/OAuthCallbackPage';
 
 // Loading component
 const LoadingSpinner = () => (
@@ -144,15 +147,7 @@ function AppRoutes() {
         }
       />
 
-      {/* OpenClaw Workspace */}
-      <Route
-        path="/workspace"
-        element={
-          <ProtectedRoute>
-            <WorkspacePage />
-          </ProtectedRoute>
-        }
-      />
+
 
       {/* AI Chat route */}
       <Route
