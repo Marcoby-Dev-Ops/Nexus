@@ -985,7 +985,7 @@ const NEXUS_TOOL_CATALOG = [
       type: 'object',
       required: ['to', 'subject', 'body'],
       properties: {
-        provider: { type: 'string', enum: ['auto', 'microsoft', 'google_workspace', 'google-workspace'], description: 'The email provider to use (e.g., microsoft, google-workspace). Defaults to 'auto' to pick the most recently updated integration.' },
+        provider: { type: 'string', enum: ['auto', 'microsoft', 'google_workspace', 'google-workspace'], description: "The email provider to use (e.g., microsoft, google-workspace). Defaults to 'auto' to pick the most recently updated integration." },
         to: {
           oneOf: [
             { type: 'string', format: 'email' },
