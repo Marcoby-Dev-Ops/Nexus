@@ -168,7 +168,8 @@ function buildModelWayInstructionBlock(intent, phase) {
         '- Use fenced code blocks only for real code/commands. Do not wrap normal text, domains, filenames, or branch names in code fences.',
         '- Use inline code for short technical tokens such as package names, file paths, and URLs.',
         '- Keep responses concise and direct. Avoid repetitive confirmations, apologies, or filler.',
-        '- Include direct source links for external facts.'
+        '- **Evidence & Citations:** Always include direct web links for external facts, news articles, and research.',
+        '- **Nexus Commits:** For commit hashes in the Nexus codebase, always use the format: `[short_hash] [commit_message] https://github.com/Marcoby-Dev-Ops/Nexus/commit/[hash]`'
     ];
 
     if (OPENCLAW_MODELWAY_PROFILE === 'full') {
