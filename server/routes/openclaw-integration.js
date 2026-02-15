@@ -1,5 +1,6 @@
 const express = require('express');
 const { logger } = require('../src/utils/logger.js');
+const emailService = require('../src/services/emailService');
 const router = express.Router();
 const crypto = require('crypto');
 const dns = require('dns').promises;
@@ -721,77 +722,7 @@ async function executeToolByName(req, toolName, args = {}) {
   }
 
   if (safeName === 'nexus_send_email') {
-    const providersToTry = resolveProviderPreference(args.provider);
-    const tokenResult = await query(
-      `SELECT integration_slug, access_token, updated_at
-       FROM oauth_tokens
-       WHERE user_id = $1
-         AND integration_slug = ANY($2::text[])
-       ORDER BY updated_at DESC`,
-      [userId, providersToTry]
-    );
-    if (tokenResult.error) throw new Error(tokenResult.error);
-
-    const tokens = (tokenResult.data || []).filter(row => row && row.access_token);
-    if (!tokens.length) throw new Error('No connected email provider token found.');
-
-    const entry = tokens[0]; // Use the most recently updated active connection
-    const provider = normalizeProviderSlug(entry.integration_slug);
-
-    if (provider === 'microsoft') {
-      const response = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${entry.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: {
-            subject: args.subject,
-            body: { contentType: 'Text', content: args.body },
-            toRecipients: [{ emailAddress: { address: args.to } }]
-          }
-        })
-      });
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(`Microsoft send failed: ${payload.error?.message || response.status}`);
-      }
-      return { success: true, provider: 'microsoft', to: args.to };
-    }
-
-    if (provider === 'google-workspace') {
-      const utf8Subject = `=?utf-8?B?${Buffer.from(args.subject).toString('base64')}?=`;
-      const message = [
-        `To: ${args.to}`,
-        `Subject: ${utf8Subject}`,
-        'Content-Type: text/plain; charset="UTF-8"',
-        'MIME-Version: 1.0',
-        '',
-        args.body
-      ].join('\r\n');
-
-      const encodedMessage = Buffer.from(message)
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-
-      const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${entry.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ raw: encodedMessage })
-      });
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(`Google send failed: ${payload.error?.message || response.status}`);
-      }
-      return { success: true, provider: 'google-workspace', to: args.to };
-    }
-    throw new Error(`Provider "${provider}" does not support nexus_send_email`);
+    return await emailService.sendEmail(args, userId);
   }
 
   if (safeName === 'nexus_get_calendar_events') {
@@ -1049,15 +980,45 @@ const NEXUS_TOOL_CATALOG = [
   },
   {
     name: 'nexus_send_email',
-    description: 'Draft and send a plain text email to a specific recipient.',
+    description: 'Send an email to specific recipients with a subject, body, and optional CC, BCC, and attachments.',
     inputSchema: {
       type: 'object',
       required: ['to', 'subject', 'body'],
       properties: {
-        provider: { type: 'string', enum: ['auto', 'microsoft', 'google_workspace', 'google-workspace'] },
-        to: { type: 'string' },
-        subject: { type: 'string' },
-        body: { type: 'string' }
+        provider: { type: 'string', enum: ['auto', 'microsoft', 'google_workspace', 'google-workspace'], description: 'The email provider to use (e.g., microsoft, google-workspace). Defaults to 'auto' to pick the most recently updated integration.' },
+        to: {
+          oneOf: [
+            { type: 'string', format: 'email' },
+            { type: 'array', items: { type: 'string', format: 'email' } }
+          ],
+          description: 'A single recipient email address or an array of recipient email addresses.'
+        },
+        subject: { type: 'string', description: 'The subject line of the email.' },
+        body: { type: 'string', description: 'The main content of the email (HTML or plain text).' },
+        cc: {
+          type: 'array',
+          items: { type: 'string', format: 'email' },
+          description: 'Optional array of CC recipient email addresses.'
+        },
+        bcc: {
+          type: 'array',
+          items: { type: 'string', format: 'email' },
+          description: 'Optional array of BCC recipient email addresses.'
+        },
+        attachments: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              filename: { type: 'string', description: 'The name of the file to attach (e.g., document.pdf)' },
+              path: { type: 'string', description: 'The path to the file in the workspace (e.g., /data/.openclaw/workspace/document.pdf)' },
+              contentType: { type: 'string', description: 'The MIME type of the attachment (e.g., application/pdf). Will be inferred if not provided.' }
+            },
+            required: ['filename', 'path'],
+            additionalProperties: false
+          },
+          description: 'Optional array of attachment objects, each with a filename and file path.'
+        }
       },
       additionalProperties: false
     }

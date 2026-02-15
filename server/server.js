@@ -41,6 +41,7 @@ const { getAgentRuntime } = require('./src/services/agentRuntime');
 
 // Import OpenClaw integration routes
 const openclawIntegrationRoutes = require('./routes/openclaw-integration');
+const openclawToolsRouter = require('./src/routes/openclawToolsRouter');
 
 const app = express();
 const server = createServer(app);
@@ -371,6 +372,7 @@ app.use('/api/admin', adminRoutes);
 // OpenClaw integration routes
 const openclawWorkspaceRoutes = require('./routes/openclaw-workspace');
 app.use('/api/openclaw/workspace', openclawWorkspaceRoutes);
+app.use('/api/openclaw', openclawToolsRouter);
 app.use('/api/openclaw', openclawIntegrationRoutes);
 
 // OAuth routes
