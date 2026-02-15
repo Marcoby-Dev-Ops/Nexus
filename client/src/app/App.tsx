@@ -35,6 +35,7 @@ import EmailIntelligencePage from '@/pages/email/EmailIntelligencePage';
 import AIAgentPage from '@/pages/ai/AIAgentPage';
 import AISettingsPage from '@/pages/ai/AISettingsPage';
 import AIModelSettings from '@/pages/admin/AIModelSettings';
+import DashboardPage from '@/pages/dashboard/DashboardPage';
 
 
 
@@ -79,7 +80,14 @@ function AppRoutes() {
       <Route path="/auth/debug" element={<AuthDebug />} />
 
       {/* Protected routes */}
-      {/* /dashboard route removed: only core, sidebar-linked pages remain */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/profile"
         element={
