@@ -92,7 +92,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
           {/* Utility Panel (formerly Sidebar) - overlays content */}
           <div className={`
              absolute inset-y-0 left-0 z-30 border-r bg-background transition-all duration-300 ease-in-out
-             ${sidebarOpen ? 'w-[23rem] xl:w-[24rem] translate-x-0 opacity-100' : 'w-0 -translate-x-full overflow-hidden opacity-0'}
+             ${sidebarOpen ? 'w-[85vw] sm:w-[23rem] xl:w-[24rem] translate-x-0 opacity-100' : 'w-0 -translate-x-full overflow-hidden opacity-0'}
           `}>
             <Sidebar
               isOpen={sidebarOpen}

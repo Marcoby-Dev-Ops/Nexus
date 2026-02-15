@@ -31,7 +31,7 @@ const getFirstName = (userName: string) => {
 };
 
 const HeroSection = ({ userName, userAvatarUrl, userInitials, todayFocus, progressPercent, onStartDeepWork, onLogWin }: any) => (
-  <section className="w-full bg-card/80 rounded-xl shadow border p-8 flex flex-col md: flex-row md:items-center md:justify-between gap-8 mb-10">
+  <section className="w-full bg-card/80 rounded-xl shadow border p-4 sm:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6 md:gap-8 mb-10">
     <div className="flex items-center gap-6 flex-1 min-w-0">
       {userAvatarUrl ? (
         <img src={userAvatarUrl} alt={userName} className="w-16 h-16 rounded-full object-cover border" />
@@ -58,7 +58,7 @@ const HeroSection = ({ userName, userAvatarUrl, userInitials, todayFocus, progre
         </div>
       </div>
     </div>
-    <div className="flex flex-col gap-3 md: gap-4 md:items-end">
+    <div className="flex flex-col gap-3 md:gap-4 md:items-end">
       <Button onClick={onStartDeepWork} size="lg" className="font-semibold flex items-center gap-2 w-full md:w-auto"><Zap className="w-4 h-4" /> Start Deep Work</Button>
       <Button onClick={onLogWin} size="lg" variant="outline" className="font-semibold flex items-center gap-2 w-full md:w-auto"><CheckCircle className="w-4 h-4" /> Log a Win</Button>
     </div>
@@ -67,7 +67,7 @@ const HeroSection = ({ userName, userAvatarUrl, userInitials, todayFocus, progre
 
 // --- Card Components ---
 const DeepWorkCard = ({ tasks = [], onStart }: { tasks?: string[]; onStart: () => void }) => (
-  <section className="bg-card rounded-lg shadow border p-6 flex flex-col min-w-[300px] max-w-[400px] flex-1 mb-6 md: mb-0">
+  <section className="bg-card rounded-lg shadow border p-4 sm:p-6 flex flex-col w-full md:min-w-[300px] md:max-w-[400px] flex-1 mb-6 md:mb-0">
     <div className="flex items-center gap-2 mb-2 text-lg font-semibold"><Zap className="w-5 h-5 text-primary" /> Deep Work Block</div>
     <ul className="list-disc ml-6 mb-2 flex-1">
       {tasks.length === 0 ? (
@@ -81,7 +81,7 @@ const DeepWorkCard = ({ tasks = [], onStart }: { tasks?: string[]; onStart: () =
 );
 
 const RevenuePulseCard = ({ actions = [], onLogWin }: { actions?: string[]; onLogWin: () => void }) => (
-  <section className="bg-card rounded-lg shadow border p-6 flex flex-col min-w-[300px] max-w-[400px] flex-1 mb-6 md: mb-0">
+  <section className="bg-card rounded-lg shadow border p-4 sm:p-6 flex flex-col w-full md:min-w-[300px] md:max-w-[400px] flex-1 mb-6 md:mb-0">
     <div className="flex items-center gap-2 mb-2 text-lg font-semibold"><DollarSign className="w-5 h-5 text-primary" /> Revenue Pulse</div>
     <ul className="list-disc ml-6 mb-2 flex-1">
       {actions.length === 0 ? (
@@ -95,7 +95,7 @@ const RevenuePulseCard = ({ actions = [], onLogWin }: { actions?: string[]; onLo
 );
 
 const AgentOpsCard = ({ agents = [] }: { agents?: { name: string; status: 'due' | 'idle' | 'failed'; onRun: () => void; onFix?: () => void }[] }) => (
-  <section className="bg-card rounded-lg shadow border p-6 flex flex-col min-w-[300px] max-w-[400px] flex-1 mb-6 md: mb-0">
+  <section className="bg-card rounded-lg shadow border p-4 sm:p-6 flex flex-col w-full md:min-w-[300px] md:max-w-[400px] flex-1 mb-6 md:mb-0">
     <div className="flex items-center gap-2 mb-2 text-lg font-semibold"><Cpu className="w-5 h-5 text-primary" /> Agent Ops</div>
     <ul className="ml-2 mb-2 flex-1">
       {agents.length === 0 ? (
@@ -125,7 +125,7 @@ const AgentOpsCard = ({ agents = [] }: { agents?: { name: string; status: 'due' 
 );
 
 const StrategicProjectsCard = ({ highlights = [], onDelegate, onRequestSupport }: { highlights?: string[]; onDelegate: () => void; onRequestSupport: () => void }) => (
-  <section className="bg-card rounded-lg shadow border p-6 flex flex-col min-w-[300px] max-w-[400px] flex-1 mb-6 md: mb-0">
+  <section className="bg-card rounded-lg shadow border p-4 sm:p-6 flex flex-col w-full md:min-w-[300px] md:max-w-[400px] flex-1 mb-6 md:mb-0">
     <div className="flex items-center gap-2 mb-2 text-lg font-semibold"><Briefcase className="w-5 h-5 text-primary" /> Strategic Projects</div>
     <ul className="list-disc ml-6 mb-2 flex-1">
       {highlights.length === 0 ? (
@@ -142,7 +142,7 @@ const StrategicProjectsCard = ({ highlights = [], onDelegate, onRequestSupport }
 );
 
 const FamilyMarginCard = ({ onLogMargin }: { onLogMargin: () => void }) => (
-  <section className="bg-card rounded-lg shadow border p-6 flex flex-col min-w-[300px] max-w-[400px] flex-1 mb-6 md: mb-0">
+  <section className="bg-card rounded-lg shadow border p-4 sm:p-6 flex flex-col w-full md:min-w-[300px] md:max-w-[400px] flex-1 mb-6 md:mb-0">
     <div className="flex items-center gap-2 mb-2 text-lg font-semibold"><Heart className="w-5 h-5 text-primary" /> Family / Margin</div>
     <div className="text-sm mb-2 flex-1">Remember to take breaks and protect your margin time.</div>
     <Button onClick={onLogMargin} variant="ghost">Log Margin Time</Button>
@@ -150,7 +150,7 @@ const FamilyMarginCard = ({ onLogMargin }: { onLogMargin: () => void }) => (
 );
 
 const EveningReviewCard = ({ onCompleteFireLog, onPlanTomorrow }: { onCompleteFireLog: () => void; onPlanTomorrow: () => void }) => (
-  <section className="bg-card rounded-lg shadow border p-6 flex flex-col min-w-[300px] max-w-[400px] flex-1 mb-6 md: mb-0">
+  <section className="bg-card rounded-lg shadow border p-4 sm:p-6 flex flex-col w-full md:min-w-[300px] md:max-w-[400px] flex-1 mb-6 md:mb-0">
     <div className="flex items-center gap-2 mb-2 text-lg font-semibold"><CalendarCheck className="w-5 h-5 text-primary" /> Evening Review</div>
     <div className="flex gap-2 mt-auto">
       <Button onClick={onCompleteFireLog} variant="default">Complete Daily FIRE Log</Button>
@@ -210,9 +210,9 @@ export const TodayDashboard: React.FC<TodayDashboardProps> = ({
         <div className="max-w-7xl mx-auto">
           <Skeleton className="h-10 w-1/3 mb-4" />
           <Skeleton className="h-6 w-1/2 mb-8" />
-          <div className="flex flex-wrap gap-6 mt-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-8">
             {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-40 w-[350px] rounded-lg" />
+              <Skeleton key={i} className="h-40 w-full rounded-lg" />
             ))}
           </div>
         </div>
@@ -243,7 +243,7 @@ export const TodayDashboard: React.FC<TodayDashboardProps> = ({
           onStartDeepWork={onStartDeepWork}
           onLogWin={onLogWin}
         />
-        <div className="flex flex-wrap gap-6 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-8">
           <DeepWorkCard tasks={deepWorkTasks} onStart={onStartDeepWork} />
           <RevenuePulseCard actions={revenueActions} onLogWin={onLogWin} />
           <AgentOpsCard agents={agentStatuses} />
