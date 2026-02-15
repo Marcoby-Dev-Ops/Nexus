@@ -1504,32 +1504,46 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 ? `${contextSystemMessage}\n\n${attachmentContext}`
                 : attachmentContext;
         }
-        const modelWayInstructionBlock = buildModelWayInstructionBlock(intent, phase);
-        contextSystemMessage = contextSystemMessage
-            ? `${contextSystemMessage}\n\n${modelWayInstructionBlock}`
-            : modelWayInstructionBlock;
-        const emailProviderGuardInstruction = buildEmailProviderGuardInstruction(emailProviderGuard);
-        if (emailProviderGuardInstruction) {
+        // Lightweight mode: casual intents (brainstorm, learn) skip heavy orchestration
+        // so the model can respond naturally without processing 15+ directives.
+        // Agentic intents (solve, decide, write) get the full context stack.
+        const isAgenticIntent = ['solve', 'decide', 'write'].includes(intent.id);
+
+        if (isAgenticIntent) {
+            const modelWayInstructionBlock = buildModelWayInstructionBlock(intent, phase);
             contextSystemMessage = contextSystemMessage
-                ? `${contextSystemMessage}\n\n${emailProviderGuardInstruction}`
-                : emailProviderGuardInstruction;
+                ? `${contextSystemMessage}\n\n${modelWayInstructionBlock}`
+                : modelWayInstructionBlock;
+            const emailProviderGuardInstruction = buildEmailProviderGuardInstruction(emailProviderGuard);
+            if (emailProviderGuardInstruction) {
+                contextSystemMessage = contextSystemMessage
+                    ? `${contextSystemMessage}\n\n${emailProviderGuardInstruction}`
+                    : emailProviderGuardInstruction;
+            }
         }
 
-
-        // Inject Soul, Codebase, and Tool Capability Context
+        // Inject Soul context always (lightweight — defines personality)
         const soulContext = buildSoulContext();
-        const codebaseContext = buildCodebaseContext();
-        const toolCapabilityBlock = buildToolCapabilityBlock();
-        const preambleParts = [];
-        if (soulContext) preambleParts.push(soulContext);
-        if (codebaseContext) preambleParts.push(codebaseContext);
-        if (toolCapabilityBlock) preambleParts.push(toolCapabilityBlock);
-
-        if (preambleParts.length > 0) {
-            const preamble = preambleParts.join('\n\n');
+        if (soulContext) {
             contextSystemMessage = contextSystemMessage
-                ? `${preamble}\n\n${contextSystemMessage}`
-                : preamble;
+                ? `${soulContext}\n\n${contextSystemMessage}`
+                : soulContext;
+        }
+
+        // Codebase and tool capability blocks only for agentic intents
+        if (isAgenticIntent) {
+            const codebaseContext = buildCodebaseContext();
+            const toolCapabilityBlock = buildToolCapabilityBlock();
+            const preambleParts = [];
+            if (codebaseContext) preambleParts.push(codebaseContext);
+            if (toolCapabilityBlock) preambleParts.push(toolCapabilityBlock);
+
+            if (preambleParts.length > 0) {
+                const preamble = preambleParts.join('\n\n');
+                contextSystemMessage = contextSystemMessage
+                    ? `${contextSystemMessage}\n\n${preamble}`
+                    : preamble;
+            }
         }
 
         const contextInjected = Boolean(contextSystemMessage);
@@ -1584,6 +1598,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
             openClawAgentId,
             openClawSessionId,
             injectedContext: contextInjected,
+            contextMode: isAgenticIntent ? 'full' : 'lightweight',
             attachmentCount: userAttachmentMetadata.length,
             modelWayTools: modelWayTools.length > 0 ? modelWayTools : undefined,
             forceEmailConnectTools,
