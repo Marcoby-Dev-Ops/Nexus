@@ -1544,6 +1544,13 @@ router.post('/chat', authenticateToken, async (req, res) => {
         // Use dbConversationHistory instead of client messages to ensure full context
         const openClawMessages = buildOpenClawMessages(dbConversationHistory, contextSystemMessage);
 
+        // Guard: ensure the current user message is present (race condition on new conversations
+        // where saveMessage and fetchConversationHistory run in parallel)
+        const hasUserMessage = openClawMessages.some(m => m.role === 'user');
+        if (!hasUserMessage && lastUserMessage) {
+            openClawMessages.push({ role: 'user', content: lastUserMessage });
+        }
+
         const openClawSessionId = buildOpenClawSessionId(userId, conversationId);
 
         // Pure proxy payload: OpenClaw's agent runtime (SOUL.md, AGENTS.md) drives behavior
